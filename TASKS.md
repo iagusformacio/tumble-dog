@@ -5,9 +5,9 @@ Criterio general de «hecha»: CI en verde, `main` jugable, 60 fps, nota en `PRO
 
 | ID | Tarea | Depende de | Estado |
 |---|---|---|---|
-| T01 | Bucle de juego a paso fijo (60 Hz) con render interpolado, escalado de canvas responsive, pausa al perder foco | — | en-curso (FETS) |
-| T02 | Entrada unificada: teclado, mando (Gamepad API) y táctil con botones en pantalla | T01 | bloqueada (T01) |
-| T03 | Fondo de **La Moncloa** dibujado por código (cielo, palacio, jardines, columnas) en capa cacheada | T01 | bloqueada (T01) |
+| T01 | Bucle de juego a paso fijo (60 Hz) con render interpolado, escalado de canvas responsive, pausa al perder foco | — | hecha |
+| T02 | Entrada unificada: teclado, mando (Gamepad API) y táctil con botones en pantalla | T01 | hecha |
+| T03 | Fondo de **La Moncloa** dibujado por código (cielo, palacio, jardines, columnas) en capa cacheada | T01 | en-curso (FETS) |
 | T04 | Plataformas y colisiones (AABB), gravedad, salto | T01 | bloqueada (T01) |
 | T05 | Protagonista *Don Presi* con sprite provisional, andar/saltar/aspirar | T02, T04 | bloqueada |
 | T06 | Primer enemigo (La Portavoz Airada) con IA simple y estado «aspirado» | T04 | bloqueada |
