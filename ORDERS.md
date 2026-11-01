@@ -47,3 +47,11 @@
 16. **PR con cambios visibles:** pegar en el PR una captura de pantalla (cuando exista el artefacto del CI, issue T15).
 17. **Enlace jugable:** lo publica el coordinador al final de cada oleada de tareas (el repo es privado, no hay Pages). Los agentes no pierden tiempo con eso.
 18. **Empaquetar para jugar:** `python3 tools/bundle.py . /tmp/game.html` genera el juego en un solo HTML (sin npm). Cualquier import nuevo debe ser `import {…} from './x.js'` con rutas relativas y `export` simples, para que el empaquetador los entienda.
+
+## Normas añadidas (2026-11-01, tercera tanda)
+19. **Conflictos:** el agente que lleva la tarea resuelve los conflictos de su PR (rebase sobre `main` + `npm test`) ANTES de fusionar. Si el agente está parado, lo hace el coordinador.
+20. **Imágenes (cupo de 10 por sesión y agente):** cada agente debe **gastar sus 10 imágenes en cada sesión** para adelantar el arte. Coge una issue `ART-n` libre y genera sus imágenes. Cada imagen debe ir al repo, con su prompt anotado.
+    - Estilo y reglas: ver `ART.md`. **Todo inventado: nada de personas reales ni personajes protegidos.**
+    - Guardar en `assets/<tipo>/<nombre>.png`, PNG, ≤ 200 KB cada uno (reducir si hace falta). El prompt de cada imagen, en `assets/PROMPTS.md`.
+    - Si en esa sesión no quedan issues `ART-n` libres, generar imágenes para lo que falte en `DESIGN.md` y anotarlo.
+    - Con imágenes ya en `main`, el código las usa (`src/assets.js`); el arte dibujado por código queda solo como provisional.
