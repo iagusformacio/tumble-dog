@@ -18,6 +18,12 @@ for f in order:
     s=re.sub(r"^export\s*\{[^}]*\};?\n?","",s,flags=re.M)
     out.append(f"// ---- {f}\n{s}")
 js="(()=>{\n"+"\n".join(out)+"\n})();"
+import base64
+def inline(m):
+    f=os.path.join(root,m.group(1))
+    if not os.path.exists(f): return m.group(0)
+    return "'data:image/png;base64,"+base64.b64encode(open(f,'rb').read()).decode()+"'"
+js=re.sub(r"['\"]\./(assets/[^'\"]+\.png)['\"]",inline,js)
 h=open(os.path.join(root,'index.html')).read()
 h=re.sub(r'<script type="module".*?</script>',lambda m:'<script>'+js.replace('</script>','<\\/script>')+'</script>',h,flags=re.S)
 open(sys.argv[2],'w').write(h); print(order,len(h))
