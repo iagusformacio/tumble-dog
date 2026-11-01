@@ -46,3 +46,4 @@
 15. **Una tarea no se rehace:** si la funcionalidad ya está en `main` (física, entrada…), se importa y se usa. Un PR nunca duplica lo que otro ya fusionó.
 16. **PR con cambios visibles:** pegar en el PR una captura de pantalla (cuando exista el artefacto del CI, issue T15).
 17. **Enlace jugable:** lo publica el coordinador al final de cada oleada de tareas (el repo es privado, no hay Pages). Los agentes no pierden tiempo con eso.
+18. **Empaquetar para jugar:** `python3 tools/bundle.py . /tmp/game.html` genera el juego en un solo HTML (sin npm). Cualquier import nuevo debe ser `import {…} from './x.js'` con rutas relativas y `export` simples, para que el empaquetador los entienda.
