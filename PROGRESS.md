@@ -1,6 +1,6 @@
 # PROGRESS
 
-**Última actualización:** 2026-11-01 (FETS)
+**Última actualización:** 2026-11-01 (AGB) · ART-1 Don Presi: diez poses en PNG optimizados, hoja 5×2 y prompts añadidos; falta integrarlos desde `src/assets.js`.
 
 - Estructura base creada: ORDERS, AGENTS, TASKS, CI, página provisional.
 - T01: bucle fijo de 60 Hz, render interpolado, canvas responsive y pausa por pérdida de foco/visibilidad; pruebas automatizadas verdes.
