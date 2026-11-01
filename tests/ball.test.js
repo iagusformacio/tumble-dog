@@ -94,6 +94,10 @@ test('combo en cadena: 100, 200, 400, 800... y se reinicia con cada lanzamiento'
   const player = createPlayer();
   player.body.x = 300; // lejos de los enemigos
 
+  // Oleada controlada: vaciamos la oleada inicial y ponemos los del test.
+  manager.enemies.length = 0;
+  manager.enemies.push(createEnemy({ x: 40, y: 136 }));
+
   // Mete a uno dentro y lanza: eso reinicia la cadena del combo.
   manager.enemies[0].suck();
   assert.ok(manager.launchBall(player));

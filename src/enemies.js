@@ -5,25 +5,45 @@ import { createBall } from './ball.js';
 
 const CRUSH_ONOMATOPEYAS = Object.freeze(['¡PAF!', '¡PUM!', '¡PLAF!', '¡TOMA!']);
 
+/** Oleada inicial (T08): un enemigo de cada tipo inventado, repartido por plataformas. */
+const DEFAULT_SPAWNS = Object.freeze([
+  { type: 'portavoz', x: 40, platform: 1 },
+  { type: 'activista', x: 80, platform: 1 },
+  { type: 'tertuliano', x: 230, platform: 2 },
+  { type: 'diputado', x: 268, platform: 2 },
+  { type: 'asesor', x: 150, platform: 3 },
+  { type: 'influencer', x: 60, platform: 0 },
+  { type: 'baron', x: 130, platform: 0 },
+  { type: 'lider', x: 230, platform: 0 },
+]);
+
 /**
- * T06: un solo enemigo (La Portavoz Airada) sobre la plataforma izquierda.
- * T07 añade lanzar la bola: aplastar enemigos, rebotes y combos.
- * T10 añade integración de sprites y onomatopeyas de tebeo al aspirar/lanzar/aplastar.
+ * Gestor de enemigos. T06 trajo a La Portavoz Airada; T07 añadió lanzar la
+ * bola (aplastar, rebotes, combos); T08 puebla la pantalla con los 8 tipos
+ * inventados, cada uno con su comportamiento; T10 integra sprites y
+ * onomatopeyas. T09 añadirá oleadas y victoria/derrota.
  */
 export function createEnemyManager({
   platforms = DEFAULT_PLATFORMS,
-  spawn = { x: 40, y: 136 },
+  spawns = DEFAULT_SPAWNS,
   assets,
   effects = null,
 } = {}) {
-  const enemies = [createEnemy({ platforms, x: spawn.x, y: spawn.y, assets })];
-  let respawnLeft = 0;
+  const enemies = spawns.map((spawn, i) => createEnemy({
+    type: spawn.type,
+    x: spawn.x,
+    y: platforms[spawn.platform].y - (CONFIG.enemy[spawn.type]?.height ?? 22),
+    platforms,
+    direction: i % 2 === 0 ? 1 : -1,
+    assets,
+  }));
+  const bullets = []; // bulos disparados por El Tertuliano (T08)
   let lives = CONFIG.player.lives;
   let invulnerableLeft = 0;
   let hits = 0;
   let score = 0;
-  let comboChain = 0;
-  let lastCombo = 0;
+  let comboChain = 0; // enemigos aplastados con la bola en vuelo ahora mismo
+  let lastCombo = 0;  // cadena del último lanzamiento (para el HUD)
 
   function hitPlayer(player) {
     if (invulnerableLeft > 0) return false;
@@ -34,17 +54,12 @@ export function createEnemyManager({
       fill: '#ff8787',
       accent: '#111',
     });
+    // Reaparición limpia en el centro del suelo, como manda DESIGN.md.
     player.body.x = (CONFIG.screen.width - player.body.width) / 2;
     player.body.y = CONFIG.player.spawnY;
     player.body.vx = 0;
     player.body.vy = 0;
     return true;
-  }
-
-  function respawn() {
-    const free = enemies[0];
-    enemies[0] = createEnemy({ platforms, x: spawn.x, y: spawn.y, direction: -1, assets });
-    return free;
   }
 
   /**
@@ -73,11 +88,11 @@ export function createEnemyManager({
     });
   }
 
-  /** La bola aplasta a los enemigos libres o mareados que toca; cada uno sube el combo. */
+  /** La bola aplasta a los enemigos libres, mareados o escondidos que toca; cada uno sube el combo. */
   function hitByBall(ball) {
     if (!ball || !ball.alive) return;
     for (const enemy of enemies) {
-      const aplastable = enemy.isDangerous() || enemy.state === 'stunned';
+      const aplastable = enemy.isDangerous() || enemy.state === 'stunned' || enemy.isHidden();
       if (!aplastable || !overlaps(ball.body, enemy.body)) continue;
       if (enemy.crush()) {
         const points = CONFIG.combo[Math.min(comboChain, CONFIG.combo.length - 1)];
@@ -95,14 +110,37 @@ export function createEnemyManager({
     }
   }
 
+  /** Los bulos del Tertuliano dañan a Don Presi (T08). */
+  function updateBullets(dt, player) {
+    for (let i = bullets.length - 1; i >= 0; i -= 1) {
+      const bulo = bullets[i];
+      bulo.update(dt);
+      if (!bulo.alive) { bullets.splice(i, 1); continue; }
+      if (overlaps(bulo.body, player.body)) {
+        hitPlayer(player);
+        bullets.splice(i, 1);
+      }
+    }
+  }
+
   function update(dt, player, input = {}, ball = null) {
     if (invulnerableLeft > 0) invulnerableLeft -= dt;
 
     for (const enemy of enemies) {
-      enemy.update(dt, { player });
+      enemy.update(dt, { player, bullets });
       if (enemy.isDangerous() && overlaps(enemy.body, player.body)) hitPlayer(player);
+      // T08: cada enemigo aplastado reaparece solo en su punto de partida.
+      if (enemy.isDefeated()) {
+        enemy.respawnLeft = (enemy.respawnLeft ?? CONFIG.enemy.respawnSeconds) - dt;
+        if (enemy.respawnLeft <= 0) {
+          enemy.respawn();
+          // Al reaparecer da un respiro: invulnerable un momento.
+          invulnerableLeft = Math.max(invulnerableLeft, 0.4);
+        }
+      }
     }
 
+    updateBullets(dt, player);
     hitByBall(ball);
 
     // Aspirar: solo si Don Presi mantiene la acción y no lleva ya a alguien dentro.
@@ -119,18 +157,6 @@ export function createEnemyManager({
           break;
         }
       }
-    }
-
-    // Reaparición tras ser aspirado y escapado sin lanzarlo, para no dejar el nivel vacío.
-    if (!enemies.some((enemy) => enemy.canBeSucked() || enemy.isContained())) {
-      respawnLeft -= dt;
-      if (respawnLeft <= 0) {
-        respawn();
-        respawnLeft = CONFIG.enemy.respawnSeconds;
-        invulnerableLeft = Math.max(invulnerableLeft, 0.4);
-      }
-    } else {
-      respawnLeft = CONFIG.enemy.respawnSeconds;
     }
   }
 
@@ -149,13 +175,15 @@ export function createEnemyManager({
         ctx.restore();
         continue;
       }
+      // Parpadeo de invulnerabilidad del jugador tras un golpe.
       if (player && invulnerableLeft > 0 && Math.floor(invulnerableLeft * 12) % 2 === 0) continue;
       enemy.render(ctx, alpha);
     }
+    for (const bulo of bullets) bulo.render(ctx);
   }
 
   return {
-    enemies, update, render, launchBall,
+    enemies, bullets, update, render, launchBall,
     get lives() { return lives; },
     get hits() { return hits; },
     get invulnerableLeft() { return invulnerableLeft; },
