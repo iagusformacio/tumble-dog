@@ -6,8 +6,9 @@ import { test, expect } from '@playwright/test';
 
 const RUN_MS = 5000;
 const FIRST_CHECK_MS = 500;
+const SCREENSHOT_MS = 3000;
 
-test('index.html arranca y juega 5 s sin errores de JS en consola', async ({ page }) => {
+test('index.html arranca y juega 5 s sin errores de JS en consola', async ({ page }, testInfo) => {
   const errors = [];
   page.on('pageerror', (err) => errors.push(`pageerror: ${err.message}`));
   page.on('console', (msg) => {
@@ -15,13 +16,18 @@ test('index.html arranca y juega 5 s sin errores de JS en consola', async ({ pag
   });
 
   await page.goto('/');
+  const start = performance.now();
+  const waitUntil = async (ms) => {
+    const remaining = start + ms - performance.now();
+    if (remaining > 0) await page.waitForTimeout(remaining);
+  };
 
   // 1) El canvas del juego existe y es visible.
   const canvas = page.locator('#game');
   await expect(canvas).toBeVisible();
 
   // 2) Tras unos frames, el canvas está pintando algo (no es un color uniforme).
-  await page.waitForTimeout(FIRST_CHECK_MS);
+  await waitUntil(FIRST_CHECK_MS);
   const painted = await page.evaluate(() => {
     const c = document.getElementById('game');
     if (!c || c.width === 0 || c.height === 0) return false;
@@ -35,13 +41,21 @@ test('index.html arranca y juega 5 s sin errores de JS en consola', async ({ pag
   });
   expect(painted, 'el canvas no está pintando (frame uniforme o vacío)').toBe(true);
 
-  // 3) «Jugar» el resto de los 5 s: pulsaciones repartidas (andar, saltar, aspirar, lanzar).
+  // 3) Pulsaciones repartidas durante los 5 s, con captura del canvas a los 3 s.
   const keys = ['ArrowLeft', 'ArrowRight', 'Space', 'ArrowUp', 'KeyZ', 'KeyX', 'Escape'];
   const slice = (RUN_MS - FIRST_CHECK_MS) / keys.length;
-  for (const key of keys) {
-    await page.keyboard.press(key);
-    await page.waitForTimeout(slice);
+  const events = keys.map((key, index) => ({ time: FIRST_CHECK_MS + index * slice, key }));
+  events.push({ time: SCREENSHOT_MS, screenshot: true });
+  events.sort((a, b) => a.time - b.time);
+  for (const event of events) {
+    await waitUntil(event.time);
+    if (event.screenshot) {
+      await canvas.screenshot({ path: testInfo.outputPath('canvas.png') });
+    } else {
+      await page.keyboard.press(event.key);
+    }
   }
+  await waitUntil(RUN_MS);
 
   // 4) Veredicto: ningún error de JS.
   expect(errors, `errores de JS detectados:\n${errors.join('\n')}`).toEqual([]);
