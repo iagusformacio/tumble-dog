@@ -1,6 +1,7 @@
 # PROGRESS
 
-**Última actualización:** 2026-11-01 (AGB) · ART-1 Don Presi: diez poses en PNG optimizados, hoja 5×2 y prompts añadidos; falta integrarlos desde `src/assets.js`.
+**Última actualización:** 2026-11-01 (FETS) — ART-2 (#21): 10 imágenes de enemigos 1-4 en assets/enemigos (poses + derrotado + 2 extras), todo ≤200 KB, prompts en assets/PROMPTS.md. Cupo de la sesión agotado.
+- ART-1 Don Presi (AGB, fusionado): diez poses en PNG optimizados, hoja 5×2 y prompts añadidos; falta integrarlos desde `src/assets.js`.
 
 - Estructura base creada: ORDERS, AGENTS, TASKS, CI, página provisional.
 - T01: bucle fijo de 60 Hz, render interpolado, canvas responsive y pausa por pérdida de foco/visibilidad; pruebas automatizadas verdes.
