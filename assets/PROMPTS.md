@@ -41,3 +41,16 @@ El Tertuliano en pleno berrinche de tertuliano: en pie de lado, gafas deformadas
 
 ## assets/enemigos/influencer-ringlight.png
 El Influencer Bulero haciendo un selfie: sostiene smartphone extendido, posando con sonrisa presumida, pelo frondoso, camiseta con estrellas, pendientes grandes, halo de luz tipo ring light. Vista lateral a la derecha, tebeo estilo Bruguera, trazo negro grueso, colores planos y vivos, fondo plano verde #00FF00, sin sombras, sin texto. · Herramienta: generate_image.
+
+## ART-4 · Escenario, bola y UI (Arena-GPT, 2026-11-01)
+Recorte del verde chroma #00FF00 a alfa y ajuste de tamaño con Python/Pillow después de generar. Todas las figuras son inventadas.
+
+- `assets/escenario/bola-enemigo.png` | Un político inventado enrollado en bola: traje azul marino apretado en círculo, zapatos y puño asomando, cara aplastada arriba con ojos en espiral y corbata roja rodeándolo como banda. Vista lateral, un solo objeto centrado, tebeo Bruguera (trazo negro grueso, colores planos), fondo #00FF00 liso. · generate_image.
+- `assets/escenario/aspirado.png` | Efecto de succión de tebeo: embudo de tres arremolinados de viento azul claro y blanco que converge a la derecha en una boquilla redonda, dos flechas de succión y un par de papeles volando en espiral. Sin personajes, sin símbolos políticos. Fondo #00FF00 liso. · generate_image (2 intentos: el primero metía un emblema rayado y se descartó).
+- `assets/escenario/bonus.png` | Hoja de tres bonus alineados, mismo tamaño: micrófono dorado con destello, periódico doblado con lacre de cinta roja y moneda dorada con estrella grabada. Trazo negro grueso, colores planos, siluetas legibles, fondo #00FF00 liso. · generate_image.
+- `assets/escenario/plataforma.png` | Losa de plataforma de piedra y mármol en vista lateral plana: bloques crema y arena con juntas, moldura ornamentada de edificio oficial en el frente, grietas y matojos de hierba en las esquinas. Recortada la losa central para que se vea un bloque limpio. Fondo #00FF00 liso. · generate_image + recorte con Pillow.
+- `assets/ui/onomatopeya-paf.png` | «¡PAF!» en mayúsculas de tebeo, letras amarillas con sombra roja, contorno negro grueso y picos de impacto blancos alrededor. Fondo #00FF00 liso. · generate_image.
+- `assets/ui/onomatopeya-zas.png` | «¡ZAS!» en mayúsculas de tebeo, letras blancas con sombra azul, rayos amarillos detrás, contorno negro grueso. Fondo #00FF00 liso. · generate_image.
+- `assets/ui/onomatopeya-pum.png` | «¡PUM!» en mayúsculas de tebeo, letras naranjas con sombra roja oscura, estallido dentado y nubes de polvo grises detrás. Fondo #00FF00 liso. · generate_image.
+- `assets/ui/titulo.png` | Logotipo «TUMBLE DOG» en dos líneas, mayúsculas de tebeo crema y amarillo con contorno negro y sombra roja, estrellas de impacto y huella de perro. Fondo #00FF00 liso. · generate_image.
+- `assets/ui/game-over.png` | PENDIENTE: la generación salió con el texto cortado («SE ACABÓ» partido); se regenera en el siguiente turno con el cupo de la sesión. · generate_image.
