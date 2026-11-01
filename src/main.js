@@ -6,10 +6,12 @@ import { createPlayer } from './player.js';
 import { createMoncloaBackground } from './background.js';
 import { createEnemyManager } from './enemies.js';
 import { createComicEffects, getSharedAssets } from './assets.js';
+import { createAudio } from './audio.js';
 
 const canvas = document.getElementById('game');
 const assets = getSharedAssets();
 const comicEffects = createComicEffects();
+const audio = createAudio();
 const input = createInput();
 const player = createPlayer({ assets });
 const background = createMoncloaBackground();
@@ -25,12 +27,18 @@ function update(deltaSeconds) {
   previousTick = currentTick;
   currentTick += 1;
   inputState = input.getState();
+  const vyBefore = player.body.vy;
+  const groundedBefore = player.body.grounded;
   player.update(deltaSeconds, inputState);
+  const jumped = player.body.vy < -CONFIG.physics.jumpSpeed * 0.5 && (groundedBefore || vyBefore >= 0);
+
   // Lanzar es por flanco: una pulsación = una bola.
   const throwPressed = Boolean(inputState.throw) && !throwWasDown;
   throwWasDown = Boolean(inputState.throw);
+  let launched = false;
   if (throwPressed && (!ball || !ball.alive)) {
     ball = enemyManager.launchBall(player);
+    launched = Boolean(ball);
   }
   if (ball) {
     ball.update(deltaSeconds);
@@ -38,6 +46,7 @@ function update(deltaSeconds) {
   }
   enemyManager.update(deltaSeconds, player, inputState, ball);
   comicEffects.update(deltaSeconds);
+  audio.update(deltaSeconds, { player, enemyManager, ball, inputState, jumped, launched });
 }
 
 function render(alpha, isPaused = false) {
@@ -62,18 +71,26 @@ function render(alpha, isPaused = false) {
   if (ball) ball.render(ctx, alpha);
   player.render(ctx, alpha);
   comicEffects.render(ctx);
-  // HUD mínimo mientras no existe T09: vidas y puntos en texto.
+  // HUD mínimo mientras no existe T09: vidas, puntos y estado de sonido.
   ctx.fillStyle = '#fff';
   ctx.font = 'bold 8px monospace';
   ctx.textAlign = 'left';
-  ctx.fillText(`VIDAS ${enemyManager.lives} · PUNTOS ${enemyManager.score}`, 6, 12);
+  ctx.fillText(
+    `VIDAS ${enemyManager.lives} · PUNTOS ${enemyManager.score}${audio.muted ? ' · MUDO' : ''}`,
+    6,
+    12,
+  );
   ctx.textAlign = 'center';
   ctx.font = '16px monospace';
   ctx.fillText('TUMBLE DOG', screenCenterX, 40 + Math.sin(interpolatedTick / 20) * 4);
   ctx.font = '10px monospace';
   ctx.fillText('en construcción', screenCenterX, 60);
   ctx.font = '7px monospace';
-  ctx.fillText('A/D MOVER · ESPACIO SALTAR · X ASPIRAR · Z LANZAR', screenCenterX, CONFIG.screen.height - 8);
+  ctx.fillText(
+    'A/D MOVER · ESPACIO SALTAR · X ASPIRAR · Z LANZAR · M SONIDO',
+    screenCenterX,
+    CONFIG.screen.height - 8,
+  );
   const activeActions = [
     inputState.left && 'IZQUIERDA',
     inputState.right && 'DERECHA',
@@ -104,5 +121,11 @@ createGameLoop({
   width: CONFIG.screen.width,
   height: CONFIG.screen.height,
   stepMs: CONFIG.step * 1000,
-  onPause: () => render(0, true),
+  onPause: () => {
+    audio.setPaused(true);
+    render(0, true);
+  },
+  onResume: () => {
+    audio.setPaused(false);
+  },
 });
