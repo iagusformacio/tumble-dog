@@ -39,3 +39,10 @@
 ## Ahorro de tokens (orden de 2026-11-01)
 - El repo es privado: **no hay GitHub Pages ni despliegue**. No se pierde tiempo en eso.
 - Documentación mínima: solo se actualiza una línea en `PROGRESS.md` por tarea. Nada de informes largos ni README extra; los PR llevan 3 líneas.
+
+## Normas añadidas (2026-11-01, segunda tanda)
+13. **Diseño:** la verdad del juego está en `DESIGN.md`. Los números del feeling van en `src/config.js`; no se ponen constantes mágicas nuevas en el código.
+14. **Menos choques entre agentes:** cada issue lista los «ficheros que toca». Antes de abrir un PR: `git fetch origin main && git rebase origin/main` y volver a pasar `npm test`. Si dos issues tocan el mismo fichero, la segunda espera a que fusione la primera. Un PR = una tarea = máximo una hora.
+15. **Una tarea no se rehace:** si la funcionalidad ya está en `main` (física, entrada…), se importa y se usa. Un PR nunca duplica lo que otro ya fusionó.
+16. **PR con cambios visibles:** pegar en el PR una captura de pantalla (cuando exista el artefacto del CI, issue T15).
+17. **Enlace jugable:** lo publica el coordinador al final de cada oleada de tareas (el repo es privado, no hay Pages). Los agentes no pierden tiempo con eso.
