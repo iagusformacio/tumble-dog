@@ -44,7 +44,12 @@ function render(alpha, isPaused = false) {
   const ctx = canvas.getContext('2d');
   const interpolatedTick = previousTick + (currentTick - previousTick) * alpha;
 
-  background.render(ctx);
+  const moncloaSprite = assets.getSprite('escenario', 'moncloa');
+  if (moncloaSprite && typeof ctx.drawImage === 'function') {
+    ctx.drawImage(moncloaSprite.image, 0, 0, CONFIG.screen.width, CONFIG.screen.height);
+  } else {
+    background.render(ctx);
+  }
   for (const platform of DEFAULT_PLATFORMS) {
     ctx.fillStyle = '#111';
     ctx.fillRect(platform.x, platform.y, platform.width, platform.height);

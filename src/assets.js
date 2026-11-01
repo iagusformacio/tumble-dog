@@ -87,6 +87,77 @@ export const ASSET_MANIFEST = Object.freeze([
     rows: 1,
     poses: Object.freeze(['special']),
   }),
+  Object.freeze({
+    group: 'escenario',
+    src: './assets/escenario/moncloa-fondo.png',
+    cols: 1,
+    rows: 1,
+    chromaKey: false,
+    poses: Object.freeze(['moncloa']),
+  }),
+  Object.freeze({
+    group: 'fx',
+    src: './assets/ui/onomatopeya-crac.png',
+    cols: 1,
+    rows: 1,
+    poses: Object.freeze(['crac']),
+  }),
+  Object.freeze({
+    group: 'fx',
+    src: './assets/ui/efecto-polvo-aplastado.png',
+    cols: 1,
+    rows: 1,
+    poses: Object.freeze(['dust']),
+  }),
+  Object.freeze({
+    group: 'fx',
+    src: './assets/ui/efecto-estrellas-aturdido.png',
+    cols: 1,
+    rows: 1,
+    poses: Object.freeze(['stars']),
+  }),
+  Object.freeze({
+    group: 'ui',
+    src: './assets/ui/flecha-tutorial.png',
+    cols: 1,
+    rows: 1,
+    poses: Object.freeze(['arrow']),
+  }),
+  Object.freeze({
+    group: 'portraits',
+    src: './assets/ui/retrato-don-presi.png',
+    cols: 1,
+    rows: 1,
+    poses: Object.freeze(['donPresi']),
+  }),
+  Object.freeze({
+    group: 'portraits',
+    src: './assets/ui/retrato-portavoz-airada.png',
+    cols: 1,
+    rows: 1,
+    poses: Object.freeze(['portavoz']),
+  }),
+  Object.freeze({
+    group: 'portraits',
+    src: './assets/ui/retrato-tertuliano.png',
+    cols: 1,
+    rows: 1,
+    poses: Object.freeze(['tertuliano']),
+  }),
+  Object.freeze({
+    group: 'portraits',
+    src: './assets/ui/retrato-asesor-misterioso.png',
+    cols: 1,
+    rows: 1,
+    poses: Object.freeze(['asesor']),
+  }),
+  Object.freeze({
+    group: 'portraits',
+    src: './assets/ui/retrato-influencer-bulero.png',
+    cols: 1,
+    rows: 1,
+    poses: Object.freeze(['influencer']),
+  }),
 ]);
 
 export function isChromaGreen(r, g, b) {
@@ -318,13 +389,25 @@ export function createAssetStore({
 
     return new Promise((resolve) => {
       img.onload = () => {
+        const target = ensureGroup(entry.group);
+        if (entry.chromaKey === false) {
+          const imgW = img.naturalWidth || img.width || 0;
+          const imgH = img.naturalHeight || img.height || 0;
+          const poseName = entry.poses?.[0] ?? 'default';
+          if (imgW > 0 && imgH > 0) {
+            target.set(poseName, Object.freeze({ image: img, width: imgW, height: imgH }));
+            loadedCount += 1;
+          }
+          pending = Math.max(0, pending - 1);
+          resolve(imgW > 0 && imgH > 0);
+          return;
+        }
         const sliced = sliceSpriteSheet(img, {
           cols: entry.cols,
           rows: entry.rows,
           poses: entry.poses,
           surfaceFactory,
         });
-        const target = ensureGroup(entry.group);
         for (const [pose, sprite] of sliced) {
           target.set(pose, sprite);
         }
