@@ -5,6 +5,7 @@
 | **Claude** | Coordinador. Escribe `ORDERS.md`, revisa, desbloquea, decide diseño. Responde a «ronda». |
 | **FETS** | Agente de desarrollo. Hace cualquier tarea. |
 | **Iagus** | Agente de desarrollo. Hace cualquier tarea. |
+| **AGB** | Agente de desarrollo. Hace cualquier tarea. |
 | *(futuro)* | Cualquier agente nuevo se incorpora leyendo este fichero y `ORDERS.md`, y coge la primera tarea libre. |
 
 > El nombre es **FETS** (no «Fetch»). Iagus es también el nombre de la persona dueña del proyecto; en el tablero, «Iagus» significa el agente.

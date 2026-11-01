@@ -20,7 +20,7 @@ Criterio general de «hecha»: CI en verde, `main` jugable, 60 fps, nota en `PRO
 | T13 | CI: smoke test en navegador headless (arranca, juega 5 s, sin errores JS) | T01 | en-curso (Iagus) |
 
 ## Plan por oleadas (orden de ataque)
-- **Oleada 1 (hora 1):** FETS → T01 · Iagus → T13. Después, quien acabe antes coge T03 (fondo Moncloa).
+- **Oleada 1 (hora 1):** FETS → T01 · Iagus → T13 · AGB → T03 (fondo Moncloa). Después, Iagus y AGB cogen T04 y T02 (módulos distintos).
 - **Oleada 2:** T02 entrada, T04 plataformas/colisiones (en paralelo; tocan ficheros distintos: `src/input.js`, `src/physics.js`).
 - **Oleada 3:** T05 protagonista, T06 primer enemigo.
 - **Oleada 4:** T07 aspirar y lanzar (el corazón del juego). Hito jugable: se puede jugar una pantalla.
