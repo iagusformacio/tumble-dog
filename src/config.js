@@ -12,7 +12,18 @@ export const CONFIG = Object.freeze({
     lives: 3,
     invulnerableSeconds: 2,
   },
-  suck: { range: 56, escapeSeconds: 3 },
+  suck: {
+    range: 56,
+    verticalRange: 24,     // altura a la que la boquilla aún engancha
+    pullSeconds: 0.3,      // lo que tarda el enemigo en entrar en la boquilla
+    escapeSeconds: 3,      // si no lo lanzas, se te escapa
+    escapeStunSeconds: 0.9, // queda mareado al escaparse
+  },
+  enemy: {
+    // Cada enemigo inventado tiene su velocidad de patrulla y su pausa al girar.
+    portavoz: { width: 16, height: 22, speed: 46, turnPauseSeconds: 0.35 },
+    respawnSeconds: 1.2,
+  },
   ball: { speed: 260 },
   combo: [100, 200, 400, 800],
 });

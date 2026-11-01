@@ -1,3 +1,4 @@
+import { CONFIG } from './config.js';
 import { DEFAULT_PLATFORMS, stepBody } from './physics.js';
 
 /** Don Presi es un personaje ficticio; la aspiración es visual hasta T07. */
@@ -9,16 +10,27 @@ export function createPlayer({ x = 152, y = 184, platforms = DEFAULT_PLATFORMS, 
   let facing = 1;
   let sucking = false;
   let walkTime = 0;
+  const suckZone = { x: 0, y: 0, width: CONFIG.suck.range, height: CONFIG.suck.verticalRange };
 
   function update(dt, input = {}) {
     previousX = body.x;
     previousY = body.y;
     const direction = Math.max(-1, Math.min(1, input.horizontal ?? 0));
-    body.vx = direction * 105;
+    body.vx = direction * CONFIG.player.walkSpeed;
     if (direction) facing = Math.sign(direction);
     sucking = Boolean(input.suck);
+    // Zona de aspiración delante de la boquilla (coordenadas de pantalla).
+    const mouthX = facing >= 0 ? body.x + body.width : body.x - CONFIG.suck.range;
+    suckZone.x = mouthX;
+    suckZone.y = body.y + 4;
+    suckZone.width = CONFIG.suck.range;
+    suckZone.height = CONFIG.suck.verticalRange;
     const jumping = Boolean(input.jump);
-    stepBody(body, platforms, dt, { jump: jumping && !jumpWasDown });
+    stepBody(body, platforms, dt, {
+      gravity: CONFIG.physics.gravity,
+      jumpSpeed: CONFIG.physics.jumpSpeed,
+      jump: jumping && !jumpWasDown,
+    });
     jumpWasDown = jumping;
     if (body.x < 0) { body.x = 0; body.vx = 0; }
     if (body.x + body.width > worldWidth) { body.x = worldWidth - body.width; body.vx = 0; }
@@ -64,5 +76,12 @@ export function createPlayer({ x = 152, y = 184, platforms = DEFAULT_PLATFORMS, 
     ctx.restore();
   }
 
-  return { body, update, render, get facing() { return facing; }, get sucking() { return sucking; } };
+  return {
+    body, update, render,
+    /** Rectángulo donde la boquilla puede enganchar a un enemigo libre. */
+    suckZone,
+    /** Ya tiene a alguien dentro: no puede tragar otro a la vez. */
+    get facing() { return facing; },
+    get sucking() { return sucking; },
+  };
 }
