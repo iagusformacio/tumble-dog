@@ -56,31 +56,34 @@ test('al limpiar la oleada viene pausa y luego la siguiente, con más enemigos y
 });
 
 test('la puntuación se conserva entre oleadas', () => {
-  const manager = managerSoloUnEnemigo();
   const player = createPlayer();
   player.body.x = 280;
   player.body.y = 184;
-  const enemy = manager.enemies[0];
-  enemy.crush();
-  // simula un aplastón puntuado
-  manager.update(dt, player, {});
+
+  // Puntuación vía bola real (T07): la bola tritura a un enemigo libre.
+  const manager = createEnemyManager({
+    spawns: [
+      { type: 'portavoz', x: 40, platform: 1 },
+      { type: 'influencer', x: 100, platform: 0 },
+    ],
+  });
+  const carrier = manager.enemies[0];
+  carrier.suck();
+  const ball = manager.launchBall(player);
+  const victim = manager.enemies[1];
+  ball.body.x = victim.body.x;
+  ball.body.y = victim.body.y;
+  manager.update(dt, player, {}, ball);
+  assert.equal(manager.score, CONFIG.combo[0], 'la bola tritura al enemigo libre');
+  assert.equal(carrier.isContained(), true, 'el portador sigue encerrado en la bola');
+
+  // Liberado el portador, se puede limpiar la oleada con todos aplastados.
+  carrier.release();
   allDefeated(manager);
   manager.update(dt, player, {});
-  const { createBall } = { createBall: null };
-  // puntuación vía bola real:
-  const manager2 = managerSoloUnEnemigo();
-  const e2 = manager2.enemies[0];
-  e2.suck();
-  const ball = manager2.launchBall(player);
-  ball.body.x = e2.body.x - 1;
-  ball.body.y = e2.body.y;
-  manager2.update(dt, player, {}, ball);
-  assert.equal(manager2.score, CONFIG.combo[0]);
-  allDefeated(manager2);
-  manager2.update(dt, player, {});
-  for (let i = 0; i < Math.ceil(CONFIG.wave.interWaveSeconds * 60) + 2; i += 1) manager2.update(dt, player, {});
-  assert.equal(manager2.wave, 2);
-  assert.equal(manager2.score, CONFIG.combo[0], 'la oleada nueva no borra los puntos');
+  for (let i = 0; i < Math.ceil(CONFIG.wave.interWaveSeconds * 60) + 2; i += 1) manager.update(dt, player, {});
+  assert.equal(manager.wave, 2);
+  assert.equal(manager.score, CONFIG.combo[0], 'la oleada nueva no borra los puntos');
 });
 
 test('tras limpiar la oleada winWave la partida es victoria', () => {

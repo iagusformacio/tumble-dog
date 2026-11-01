@@ -62,20 +62,26 @@ export function createBall({
     ctx.save();
     ctx.translate(x + r, y + r);
     ctx.rotate(spin);
-    // Enemigo enrollado: bola oscura con ojitos (provisional por código).
-    ctx.fillStyle = '#3a3f4a';
-    ctx.beginPath();
-    ctx.arc(0, 0, r, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.strokeStyle = '#111';
-    ctx.lineWidth = 1;
-    ctx.stroke();
-    ctx.fillStyle = '#fff';
-    ctx.fillRect(-3, -2, 2, 2);
-    ctx.fillRect(1, -2, 2, 2);
-    ctx.fillStyle = '#111';
-    ctx.fillRect(-2.5, -1.5, 1, 1);
-    ctx.fillRect(1.5, -1.5, 1, 1);
+    if (carrier && typeof carrier.isContained === 'function' && carrier.isContained()) {
+      // El enemigo enrollado dentro de la bola (T07): dibujo propio del enemigo.
+      ctx.scale(0.55, 0.55);
+      carrier.drawBody(ctx, 1, { atOrigin: true });
+    } else {
+      // Bola oscura con ojitos (dibujo provisional por código).
+      ctx.fillStyle = '#3a3f4a';
+      ctx.beginPath();
+      ctx.arc(0, 0, r, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = '#111';
+      ctx.lineWidth = 1;
+      ctx.stroke();
+      ctx.fillStyle = '#fff';
+      ctx.fillRect(-3, -2, 2, 2);
+      ctx.fillRect(1, -2, 2, 2);
+      ctx.fillStyle = '#111';
+      ctx.fillRect(-2.5, -1.5, 1, 1);
+      ctx.fillRect(1.5, -1.5, 1, 1);
+    }
     ctx.restore();
   }
 

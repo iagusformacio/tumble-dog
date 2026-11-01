@@ -129,7 +129,8 @@ export function createEnemyManager({
   function launchBall(player) {
     const carried = enemies.find((enemy) => enemy.isContained());
     if (!carried) return null;
-    carried.release();
+    // T07: el enemigo se queda encerrado dentro de la bola hasta que muera.
+    carried.lockInBall();
     comboChain = 0;
     lastCombo = 0;
     const p = player.body;
@@ -152,6 +153,8 @@ export function createEnemyManager({
   function hitByBall(ball) {
     if (!ball || !ball.alive) return;
     for (const enemy of enemies) {
+      // El portador va enrollado dentro de la bola: la bola no le aplasta a él.
+      if (enemy === ball.carrier) continue;
       const aplastable = enemy.isDangerous() || enemy.state === 'stunned' || enemy.isHidden();
       if (!aplastable || !overlaps(ball.body, enemy.body)) continue;
       if (enemy.crush()) {
@@ -234,9 +237,11 @@ export function createEnemyManager({
     }
   }
 
-  function render(ctx, alpha = 1, player = null) {
+  function render(ctx, alpha = 1, player = null, ball = null) {
     for (const enemy of enemies) {
-      // Lo que Don Presi lleva dentro se ve encogido en la punta de la boquilla.
+      // Lo que Don Presi lleva dentro se ve encogido en la punta de la boquilla;
+      // si la bola está en vuelo con ese enemigo dentro, la bola lo dibuja.
+      if (enemy.isContained() && ball && ball.alive && ball.carrier === enemy) continue;
       if (enemy.isContained() && player) {
         const p = player.body;
         const cx = p.x + p.width / 2 + player.facing * 9;

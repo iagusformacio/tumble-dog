@@ -229,7 +229,9 @@ test('onomatopeyas estilo tebeo saltan al aspirar, lanzar y aplastar, y caducan 
   assert.ok(ball);
   assert.ok(effects.bursts.some((b) => b.text.includes('ZAS')));
 
-  const killerBall = createBall({ x: enemy.body.x - 1, y: enemy.body.y, direction: 1 });
+  // La bola tritura a un enemigo libre: el portador va encerrado dentro (T07).
+  const freeEnemy = manager.enemies[1];
+  const killerBall = createBall({ x: freeEnemy.body.x - 1, y: freeEnemy.body.y, direction: 1 });
   manager.update(1 / 60, player, {}, killerBall);
   assert.ok(effects.bursts.some((b) => b.text.includes('PAF')));
 

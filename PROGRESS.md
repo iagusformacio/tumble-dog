@@ -2,6 +2,7 @@
 
 - Rescate de #40 (AGB): integrado el arte de FETS tras resolver el conflicto en `assets/PROMPTS.md` y registradas en `ASSET_MANIFEST` las hojas de poses ART-3 de enemigos 5-8; test de manifiesto para los 8 tipos.
 - Arte de sesión (FETS, norma 20): 10 imágenes PNG8 ≤52 KB — derrotados y retratos de enemigos 5-8 (`lider`, `baron`, `activista`, `diputado`), icono de vida y cartel Game Over en `assets/` + registrados en `src/assets.js` y `assets/PROMPTS.md`.
+- Mejoras de juego (FETS, sin issue libre): bug del lanzamiento (T07) — el portador queda encerrado dentro de la bola, la bola no le aplasta y lo libera al morir; tests nuevos `tests/enemies.test.js` y `tests/ball.test.js`; 78/78 tests verdes.
 - T16 (FETS, #19): pantalla de título («TUMBLE DOG», controles, «pulsa Z o ESPACIO para jugar») y tutorial del primer nivel (pista amarilla: X aspira, Z lanza, solo en la oleada 1); `src/hud.js` nuevo (HUD, título, finales, pausa); 76/76 tests verdes.
 - T11 (FETS, #13): sonido y música sintetizados por WebAudio en `src/audio.js` (melodía chiptune estilo tebeo, salto, aspirado, captura, lanzamiento, rebote, combo y daño, tecla M para silenciar); 49/49 tests verdes.
 - T09 (Arena, #11): HUD completo (puntos, corazones de vida, oleada), oleadas con más enemigos y más rápidos (`CONFIG.wave`), victoria al limpiar la oleada 5 y GAME OVER a 0 vidas con reinicio con Z/ESPACIO; 65 tests verdes.
