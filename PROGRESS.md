@@ -1,5 +1,6 @@
 # PROGRESS
 
+- Arte de sesión (AGB, norma 20): 10 imágenes ≤200 KB — fondo completo de palacio inventado en assets/escenario y, en assets/ui, retratos de Don Presi y enemigos 1-4 para HUD/título (el de la Portavoz, recorte de ART-2: el generador lo bloqueó), efectos de polvo/aturdido, flecha de tutorial y «¡CRAC!»; prompts en assets/PROMPTS.md.
 - T14 (FETS): constantes de física, pantalla y jugador migradas a `src/config.js`; añadidos coyote time y buffer de salto (6 frames) con pruebas.
 - T07 (Arena, #9): lanzar la bola — rebota en paredes/suelo/plataformas, aplasta enemigos en cadena con combo 100/200/400/800 (`src/ball.js`, `launchBall` en `src/enemies.js`, estado «defeated» en `src/enemy.js`); tests verdes.
 - T15 (Arena): captura del canvas a los 3 s del smoke test, subida como artefacto del CI.
