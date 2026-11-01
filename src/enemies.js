@@ -3,30 +3,39 @@ import { DEFAULT_PLATFORMS, overlaps } from './physics.js';
 import { createEnemy } from './enemy.js';
 import { createBall } from './ball.js';
 
+const CRUSH_ONOMATOPEYAS = Object.freeze(['¡PAF!', '¡PUM!', '¡PLAF!', '¡TOMA!']);
+
 /**
  * T06: un solo enemigo (La Portavoz Airada) sobre la plataforma izquierda.
  * T07 añade lanzar la bola: aplastar enemigos, rebotes y combos.
- * T08/T09 ampliarán esto a oleadas; aquí basta con patrulla, aspiración,
- * escape a los 3 s y, si te toca estando libre, una vida menos.
+ * T10 añade integración de sprites y onomatopeyas de tebeo al aspirar/lanzar/aplastar.
  */
-export function createEnemyManager({ platforms = DEFAULT_PLATFORMS, spawn = { x: 40, y: 136 } } = {}) {
-  const enemies = [createEnemy({ platforms, x: spawn.x, y: spawn.y })];
+export function createEnemyManager({
+  platforms = DEFAULT_PLATFORMS,
+  spawn = { x: 40, y: 136 },
+  assets,
+  effects = null,
+} = {}) {
+  const enemies = [createEnemy({ platforms, x: spawn.x, y: spawn.y, assets })];
   let respawnLeft = 0;
   let lives = CONFIG.player.lives;
   let invulnerableLeft = 0;
   let hits = 0;
   let score = 0;
-  let comboChain = 0; // enemigos aplastados con la bola en vuelo ahora mismo
-  let lastCombo = 0;  // cadena del último lanzamiento (para el HUD)
+  let comboChain = 0;
+  let lastCombo = 0;
 
   function hitPlayer(player) {
     if (invulnerableLeft > 0) return false;
     lives = Math.max(0, lives - 1);
     invulnerableLeft = CONFIG.player.invulnerableSeconds;
     hits += 1;
-    // Reaparición limpia en el centro del suelo, como manda DESIGN.md.
+    effects?.spawn(player.body.x + player.body.width / 2, player.body.y - 2, '¡AY!', {
+      fill: '#ff8787',
+      accent: '#111',
+    });
     player.body.x = (CONFIG.screen.width - player.body.width) / 2;
-    player.body.y = 184;
+    player.body.y = CONFIG.player.spawnY;
     player.body.vx = 0;
     player.body.vy = 0;
     return true;
@@ -34,7 +43,7 @@ export function createEnemyManager({ platforms = DEFAULT_PLATFORMS, spawn = { x:
 
   function respawn() {
     const free = enemies[0];
-    enemies[0] = createEnemy({ platforms, x: spawn.x, y: spawn.y, direction: -1 });
+    enemies[0] = createEnemy({ platforms, x: spawn.x, y: spawn.y, direction: -1, assets });
     return free;
   }
 
@@ -51,6 +60,10 @@ export function createEnemyManager({ platforms = DEFAULT_PLATFORMS, spawn = { x:
     const p = player.body;
     const size = CONFIG.ball.size;
     const facing = player.facing >= 0 ? 1 : -1;
+    effects?.spawn(p.x + p.width / 2 + facing * 12, p.y + 8, '¡ZAS!', {
+      fill: '#ffe44d',
+      accent: '#c92a2a',
+    });
     return createBall({
       x: facing > 0 ? p.x + p.width : p.x - size,
       y: p.y + p.height / 2 - size / 2,
@@ -67,9 +80,17 @@ export function createEnemyManager({ platforms = DEFAULT_PLATFORMS, spawn = { x:
       const aplastable = enemy.isDangerous() || enemy.state === 'stunned';
       if (!aplastable || !overlaps(ball.body, enemy.body)) continue;
       if (enemy.crush()) {
-        score += CONFIG.combo[Math.min(comboChain, CONFIG.combo.length - 1)];
+        const points = CONFIG.combo[Math.min(comboChain, CONFIG.combo.length - 1)];
+        score += points;
         comboChain += 1;
         lastCombo = comboChain;
+        const word = CRUSH_ONOMATOPEYAS[Math.min(comboChain - 1, CRUSH_ONOMATOPEYAS.length - 1)];
+        effects?.spawn(
+          enemy.body.x + enemy.body.width / 2,
+          enemy.body.y,
+          comboChain > 1 ? `${word} +${points}` : word,
+          { fill: '#ffe44d', accent: '#b81d13', duration: 0.65 },
+        );
       }
     }
   }
@@ -90,8 +111,13 @@ export function createEnemyManager({ platforms = DEFAULT_PLATFORMS, spawn = { x:
     if (wantsSuck) {
       for (const enemy of enemies) {
         if (!enemy.canBeSucked()) continue;
-        if (overlaps(enemy.body, player.suckZone)) enemy.suck();
-        break;
+        if (overlaps(enemy.body, player.suckZone) && enemy.suck()) {
+          effects?.spawn(enemy.body.x + enemy.body.width / 2, enemy.body.y + 4, '¡GLUP!', {
+            fill: '#b8f2ff',
+            accent: '#124e78',
+          });
+          break;
+        }
       }
     }
 
@@ -101,7 +127,6 @@ export function createEnemyManager({ platforms = DEFAULT_PLATFORMS, spawn = { x:
       if (respawnLeft <= 0) {
         respawn();
         respawnLeft = CONFIG.enemy.respawnSeconds;
-        // Al reaparecer da un respiro: invulnerable un momento.
         invulnerableLeft = Math.max(invulnerableLeft, 0.4);
       }
     } else {
@@ -111,20 +136,19 @@ export function createEnemyManager({ platforms = DEFAULT_PLATFORMS, spawn = { x:
 
   function render(ctx, alpha = 1, player = null) {
     for (const enemy of enemies) {
-      // Lo que Don Presi lleva dentro se ve encoquito en la boquilla.
+      // Lo que Don Presi lleva dentro se ve encogido en la punta de la boquilla.
       if (enemy.isContained() && player) {
         const p = player.body;
-        const cx = p.x + p.width / 2 + player.facing * 8;
-        const cy = p.y + 12;
-        const shrink = Math.max(0.25, Math.min(1, enemy.containedSeconds / CONFIG.suck.escapeSeconds));
+        const cx = p.x + p.width / 2 + player.facing * 9;
+        const cy = p.y + 13;
+        const shrink = Math.max(0.28, Math.min(1, enemy.containedSeconds / CONFIG.suck.escapeSeconds));
         ctx.save();
         ctx.translate(cx, cy + Math.sin(enemy.containedSeconds * 20) * 1);
-        ctx.scale(0.5 * shrink * (player.facing >= 0 ? 1 : -1), 0.5 * shrink);
-        enemy.drawBody(ctx, 1);
+        ctx.scale(0.55 * shrink * (player.facing >= 0 ? 1 : -1), 0.55 * shrink);
+        enemy.drawBody(ctx, 1, { atOrigin: true });
         ctx.restore();
         continue;
       }
-      // Parpadeo de invulnerabilidad del jugador tras un golpe.
       if (player && invulnerableLeft > 0 && Math.floor(invulnerableLeft * 12) % 2 === 0) continue;
       enemy.render(ctx, alpha);
     }
@@ -138,7 +162,7 @@ export function createEnemyManager({ platforms = DEFAULT_PLATFORMS, spawn = { x:
     get score() { return score; },
     get comboChain() { return comboChain; },
     get lastCombo() { return lastCombo; },
-    /** Lo que lleva dentro Don Presi, o null. T07 lo lanzará. */
+    /** Lo que lleva dentro Don Presi, o null. */
     get carried() { return enemies.find((enemy) => enemy.isContained()) ?? null; },
   };
 }
