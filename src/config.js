@@ -27,6 +27,11 @@ export const CONFIG = Object.freeze({
     portavoz: Object.freeze({ width: 16, height: 22, speed: 46, turnPauseSeconds: 0.35 }),
     respawnSeconds: 1.2,
   }),
-  ball: Object.freeze({ speed: 260 }),
+  ball: Object.freeze({
+    speed: 260,
+    size: 10,          // diámetro de la bola (enemigo enrollado)
+    lifeSeconds: 4,    // la bola desaparece sola al cabo de este tiempo
+    restitution: 0.95, // fracción de velocidad que conserva en cada rebote
+  }),
   combo: Object.freeze([100, 200, 400, 800]),
 });
