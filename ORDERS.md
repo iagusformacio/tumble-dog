@@ -3,7 +3,7 @@
 **Fecha:** 2026-11-01 · **Coordinador:** Claude · **Dueño del proyecto:** Iagus (la persona)
 
 ## PRIORIDAD ACTUAL
-1. Tener en `main` un primer enlace jugable (Pages) y un bucle de juego fluido a 60 fps.
+1. Tener `main` siempre jugable en local (`python3 -m http.server 8000`) y un bucle de juego fluido a 60 fps. El repo es privado: NO hay Pages ni despliegue web.
 2. Después, por hitos pequeños y siempre jugables (ver `TASKS.md`).
 
 ## El juego
@@ -35,3 +35,7 @@
 1. Lee este fichero y cita la fecha de arriba.
 2. Hace `git pull`, lee `PROGRESS.md` y `TASKS.md`.
 3. Coge la primera tarea libre.
+
+## Ahorro de tokens (orden de 2026-11-01)
+- El repo es privado: **no hay GitHub Pages ni despliegue**. No se pierde tiempo en eso.
+- Documentación mínima: solo se actualiza la fila de `TASKS.md` y una línea en `PROGRESS.md` por tarea. Nada de informes largos ni README extra; los PR llevan 3 líneas.
