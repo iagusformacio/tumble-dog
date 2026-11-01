@@ -1,5 +1,7 @@
 // Entrada unificada: teclado, mando (Gamepad API) y táctil.
 // update() una vez por frame; held = mantenido, pressed = pulsado en este frame.
+import { W } from './config.js';
+
 const KEYS = {
   ArrowLeft: 'left', KeyA: 'left', ArrowRight: 'right', KeyD: 'right',
   ArrowUp: 'up', KeyW: 'up', ArrowDown: 'down', KeyS: 'down',
@@ -9,6 +11,45 @@ const KEYS = {
   Enter: 'start', Escape: 'pause', KeyP: 'pause', KeyM: 'mute',
 };
 const ACTIONS = ['left', 'right', 'up', 'down', 'jump', 'suck', 'shoot', 'start', 'pause', 'mute'];
+
+// Posiciones "casa" de los botones táctiles (px sobre un canvas de 1280×720).
+// Se escalan y reposicionan sobre el canvas real en placeTouchpad().
+const HOMES = {
+  l1: { hx: 'left', x: 18, hy: 'bottom', y: 24, w: 78, h: 78 },
+  l2: { hx: 'left', x: 108, hy: 'bottom', y: 24, w: 78, h: 78 },
+  l3: { hx: 'left', x: 63, hy: 'bottom', y: 110, w: 62, h: 62 },
+  r1: { hx: 'right', x: 18, hy: 'bottom', y: 24, w: 92, h: 92 },
+  r2: { hx: 'right', x: 124, hy: 'bottom', y: 24, w: 78, h: 78 },
+  r3: { hx: 'right', x: 60, hy: 'bottom', y: 128, w: 78, h: 78 },
+};
+
+/**
+ * Recoloca y escala los botones táctiles sobre el caja CSS del canvas,
+ * para que queden bajo el juego en cualquier tamaño de ventana (móvil incluido).
+ */
+export function placeTouchpad(doc = globalThis.document) {
+  const tp = doc && doc.getElementById('touchpad');
+  const c = doc && doc.getElementById('game');
+  if (!tp || !c) return;
+  const r = c.getBoundingClientRect();
+  const s = r.width / W;
+  tp.style.position = 'fixed';
+  tp.style.left = Math.round(r.left) + 'px';
+  tp.style.top = Math.round(r.top) + 'px';
+  tp.style.width = Math.round(r.width) + 'px';
+  tp.style.height = Math.round(r.height) + 'px';
+  tp.style.pointerEvents = 'none';
+  for (const b of tp.querySelectorAll('.tbtn')) {
+    const home = HOMES[b.dataset.home];
+    if (!home) continue;
+    const lx = home.hx === 'left' ? home.x : r.width - home.x - home.w;
+    const ty = home.hy === 'bottom' ? r.height - home.y - home.h : home.y;
+    b.style.left = Math.round(r.left + lx * s) + 'px';
+    b.style.top = Math.round(r.top + ty * s) + 'px';
+    b.style.width = Math.round(home.w * s) + 'px';
+    b.style.height = Math.round(home.h * s) + 'px';
+  }
+}
 
 export function createInput(win = globalThis.window) {
   const keys = new Set();
@@ -42,6 +83,7 @@ export function createInput(win = globalThis.window) {
     const mk = (action, label, cls) => {
       const b = doc.createElement('button');
       b.className = 'tbtn ' + cls; b.textContent = label; b.setAttribute('aria-label', action);
+      b.dataset.home = cls;
       const on = (e) => { e.preventDefault(); touch.add(action); latched.add(action); b.classList.add('on'); };
       const off = (e) => { e.preventDefault(); touch.delete(action); b.classList.remove('on'); };
       b.addEventListener('pointerdown', on); b.addEventListener('pointerup', off);
@@ -51,6 +93,7 @@ export function createInput(win = globalThis.window) {
     mk('left', '◀', 'l1'); mk('right', '▶', 'l2'); mk('down', '▼', 'l3');
     mk('jump', 'SALTO', 'r1'); mk('suck', 'ASPIRA', 'r2'); mk('shoot', 'LANZA', 'r3');
     doc.body.appendChild(root);
+    placeTouchpad(doc);
   }
 
   function readPad() {
