@@ -59,6 +59,12 @@ export const CONFIG = Object.freeze({
     interWaveSeconds: 2,     // pausa con aviso entre oleada y oleada
     winWave: 5,              // limpiar esta oleada = victoria
   }),
+  title: Object.freeze({
+    blinkSeconds: 0.45, // parpadeo del «pulsa Z o ESPACIO para empezar»
+  }),
+  tutorial: Object.freeze({
+    wave: 1, // solo se enseña en la primera oleada
+  }),
   ball: Object.freeze({
     speed: 260,
     size: 10,          // diámetro de la bola (enemigo enrollado)
