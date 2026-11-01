@@ -8,8 +8,7 @@
 - T05 (AGB): protagonista provisional con movimiento, salto y aspiración visual; captura pendiente de T07.
 - T04 (AGB): físicas AABB, gravedad y salto implementados y probados; integración del personaje pendiente de T05.
 - T03 en curso (FETS): fondo de La Moncloa dibujado por código.
-- T13 (Iagus): smoke test en CI con Playwright (Chromium headless): arranca, juega 5 s con pulsaciones y falla si hay errores JS en consola; servidor local `npm run serve`, smoke en local `npm run test:smoke`.
-- T05 reservada (Iagus): módulo `src/player.js` contra la interfaz de T04; se integrará al fusionarse T04 (AGB).
+- T13 (Iagus): smoke test en CI con Playwright (Chromium headless): arranca, juega 5 s con pulsaciones y falla si hay errores JS en consola; servidor local `npm run serve`, smoke en local `npm run test:smoke`. Siguiente de Iagus: T06 (issue #8).
 - Jugar: en local con `python3 -m http.server 8000` o `npm run serve`. Sin Pages (repo privado).
 
 | Hito | Estado |
