@@ -1,5 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { CONFIG } from '../src/config.js';
 import { overlaps, stepBody, DEFAULT_PLATFORMS } from '../src/physics.js';
 
 const body = (changes = {}) => ({ x: 0, y: 0, width: 10, height: 10, vx: 0, vy: 0, grounded: false, ...changes });
@@ -11,6 +12,16 @@ test('AABB: solapa con área, no al tocar bordes o esquinas', () => {
   assert.equal(overlaps(a, box(10, 0, 10, 10)), false);
   assert.equal(overlaps(a, box(10, 10, 10, 10)), false);
   assert.equal(overlaps(a, box(-20, 0, 10, 10)), false);
+});
+
+test('stepBody usa gravity y jumpSpeed de CONFIG por defecto y admite canJump', () => {
+  const falling = body();
+  stepBody(falling, [], CONFIG.step);
+  assert.equal(falling.vy, CONFIG.physics.gravity * CONFIG.step);
+
+  const coyote = body({ grounded: false, vy: 45 });
+  stepBody(coyote, [], CONFIG.step, { jump: true, canJump: true });
+  assert.equal(coyote.vy, -CONFIG.physics.jumpSpeed + CONFIG.physics.gravity * CONFIG.step);
 });
 
 test('gravedad, aterrizaje barrido y reposo sobre suelo', () => {
@@ -89,10 +100,9 @@ test('dt inválido se rechaza y el escenario provisional cabe en la pantalla', (
   assert.throws(() => stepBody(body(), [], NaN), RangeError);
   assert.throws(() => stepBody(body(), [], 1, { gravity: Infinity }), RangeError);
   for (const p of DEFAULT_PLATFORMS) {
-    assert.ok(p.x >= 0 && p.y >= 0 && p.x + p.width <= 320 && p.y + p.height <= 224);
+    assert.ok(p.x >= 0 && p.y >= 0 && p.x + p.width <= CONFIG.screen.width && p.y + p.height <= CONFIG.screen.height);
   }
 });
-
 
 test('contacto exacto con pared detiene la velocidad inmediatamente', () => {
   const player = body({ vx: 100 });

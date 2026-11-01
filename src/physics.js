@@ -1,3 +1,5 @@
+import { CONFIG } from './config.js';
+
 /**
  * Física en coordenadas de pantalla: x crece a la derecha, y hacia abajo.
  * Un rectángulo tiene {x, y, width, height}; un cuerpo añade vx, vy y grounded.
@@ -16,15 +18,26 @@ export function overlaps(a, b) {
  * Un paso de física; modifica el cuerpo y lo devuelve. Resolver por ejes y
  * barrer hasta el obstáculo más cercano evita atravesar plataformas finas.
  * jump es una pulsación, no el estado mantenido: quien llama detecta el flanco.
- * Se espera un paso fijo, por ejemplo el dt de createGameLoop (1/60 s).
+ * canJump permite habilitar coyote time desde el jugador sin romper el salto normal.
+ * Se espera un paso fijo, por ejemplo el dt de createGameLoop (CONFIG.step).
  */
-export function stepBody(body, platforms, dt, { gravity = 900, jumpSpeed = 330, jump = false } = {}) {
+export function stepBody(
+  body,
+  platforms,
+  dt,
+  {
+    gravity = CONFIG.physics.gravity,
+    jumpSpeed = CONFIG.physics.jumpSpeed,
+    jump = false,
+    canJump = body.grounded,
+  } = {},
+) {
   if (!Number.isFinite(dt) || dt < 0 || !Number.isFinite(gravity) || gravity < 0 ||
       !Number.isFinite(jumpSpeed) || jumpSpeed < 0) {
     throw new RangeError('dt, gravity y jumpSpeed deben ser números finitos no negativos');
   }
 
-  if (jump && body.grounded) {
+  if (jump && canJump) {
     body.vy = -jumpSpeed;
     body.grounded = false;
   }
@@ -70,7 +83,7 @@ export function stepBody(body, platforms, dt, { gravity = 900, jumpSpeed = 330, 
 
 /** Nivel provisional de 320 × 224: suelo sólido y plataformas atravesables. */
 export const DEFAULT_PLATFORMS = Object.freeze([
-  Object.freeze({ x: 0, y: 208, width: 320, height: 16 }),
+  Object.freeze({ x: 0, y: 208, width: CONFIG.screen.width, height: 16 }),
   Object.freeze({ x: 24, y: 158, width: 92, height: 8, oneWay: true }),
   Object.freeze({ x: 204, y: 158, width: 92, height: 8, oneWay: true }),
   Object.freeze({ x: 114, y: 108, width: 92, height: 8, oneWay: true }),

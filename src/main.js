@@ -1,3 +1,4 @@
+import { CONFIG } from './config.js';
 import { createGameLoop } from './loop.js';
 import { createInput } from './input.js';
 import { DEFAULT_PLATFORMS } from './physics.js';
@@ -10,6 +11,7 @@ const input = createInput();
 const player = createPlayer();
 const background = createMoncloaBackground();
 const enemyManager = createEnemyManager();
+const screenCenterX = CONFIG.screen.width / 2;
 let previousTick = 0;
 let currentTick = 0;
 let inputState = input.getState();
@@ -41,14 +43,12 @@ function render(alpha, isPaused = false) {
   ctx.textAlign = 'left';
   ctx.fillText(`VIDAS ${enemyManager.lives}`, 6, 12);
   ctx.textAlign = 'center';
-  ctx.fillStyle = '#fff';
   ctx.font = '16px monospace';
-  ctx.textAlign = 'center';
-  ctx.fillText('TUMBLE DOG', 160, 40 + Math.sin(interpolatedTick / 20) * 4);
+  ctx.fillText('TUMBLE DOG', screenCenterX, 40 + Math.sin(interpolatedTick / 20) * 4);
   ctx.font = '10px monospace';
-  ctx.fillText('en construcción', 160, 60);
+  ctx.fillText('en construcción', screenCenterX, 60);
   ctx.font = '7px monospace';
-  ctx.fillText('A/D MOVER · ESPACIO SALTAR · X ASPIRAR · Z LANZAR', 160, 216);
+  ctx.fillText('A/D MOVER · ESPACIO SALTAR · X ASPIRAR · Z LANZAR', screenCenterX, CONFIG.screen.height - 8);
   const activeActions = [
     inputState.left && 'IZQUIERDA',
     inputState.right && 'DERECHA',
@@ -58,26 +58,26 @@ function render(alpha, isPaused = false) {
   ].filter(Boolean);
   if (activeActions.length) {
     ctx.font = 'bold 8px monospace';
-    ctx.fillText(activeActions.join(' + '), 160, 75);
+    ctx.fillText(activeActions.join(' + '), screenCenterX, 75);
   }
 
   if (isPaused) {
     ctx.fillStyle = 'rgba(0, 0, 0, 0.58)';
-    ctx.fillRect(0, 0, 320, 224);
+    ctx.fillRect(0, 0, CONFIG.screen.width, CONFIG.screen.height);
     ctx.fillStyle = '#fff';
     ctx.font = 'bold 16px monospace';
-    ctx.fillText('PAUSA', 160, 112);
+    ctx.fillText('PAUSA', screenCenterX, CONFIG.screen.height / 2);
     ctx.font = '10px monospace';
-    ctx.fillText('vuelve a la ventana para seguir', 160, 132);
+    ctx.fillText('vuelve a la ventana para seguir', screenCenterX, CONFIG.screen.height / 2 + 20);
   }
-
 }
 
 createGameLoop({
   canvas,
   update,
   render,
-  width: 320,
-  height: 224,
+  width: CONFIG.screen.width,
+  height: CONFIG.screen.height,
+  stepMs: CONFIG.step * 1000,
   onPause: () => render(0, true),
 });
