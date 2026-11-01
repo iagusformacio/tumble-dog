@@ -199,6 +199,16 @@ export function createEnemy({
     return true;
   }
 
+  /**
+   * La deja encerrada en la bola lanzada (T07): no se escapa mientras la
+   * bola siga viva; se libera cuando la bola desaparece.
+   */
+  function lockInBall() {
+    if (state !== 'sucked') return false;
+    containLeft = Number.POSITIVE_INFINITY;
+    return true;
+  }
+
   /** La aplasta la bola lanzada (T07). Vale desde 'patrol', 'stunned' e 'hidden'. */
   function crush() {
     if (state !== 'patrol' && state !== 'stunned' && state !== 'hidden') return false;
@@ -289,7 +299,7 @@ export function createEnemy({
   }
 
   return {
-    type, body, update, render, drawBody, suck, release, crush, respawn,
+    type, body, update, render, drawBody, suck, release, lockInBall, crush, respawn,
     canBeSucked, isContained, isDangerous, isDefeated, isHidden,
     get state() { return state; },
     get pose() { return currentPose(); },

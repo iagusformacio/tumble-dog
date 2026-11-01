@@ -94,7 +94,11 @@ function update(deltaSeconds) {
   }
   if (ball) {
     ball.update(deltaSeconds);
-    if (!ball.alive) ball = null;
+    // T07: al morir la bola, el enemigo que llevaba dentro queda libre.
+    if (!ball.alive) {
+      ball.carrier?.release?.();
+      ball = null;
+    }
   }
   enemyManager.update(deltaSeconds, player, inputState, ball);
   comicEffects.update(deltaSeconds);
@@ -105,6 +109,7 @@ function update(deltaSeconds) {
 
   // T09: en derrota o victoria, Z o ESPACIO reinician la partida.
   if (enemyManager.phase !== 'playing' && (throwPressed || jumpPressed)) {
+    ball = null; // no dejamos una bola fantasma tras el reinicio.
     enemyManager.restart();
     resetTutorial();
   }
@@ -140,7 +145,7 @@ function render(alpha, isPaused = false) {
     return;
   }
 
-  enemyManager.render(ctx, alpha, player);
+  enemyManager.render(ctx, alpha, player, ball);
   if (ball) ball.render(ctx, alpha);
   player.render(ctx, alpha);
   comicEffects.render(ctx);
