@@ -2,10 +2,12 @@ import { createGameLoop } from './loop.js';
 import { createInput } from './input.js';
 import { DEFAULT_PLATFORMS } from './physics.js';
 import { createPlayer } from './player.js';
+import { createMoncloaBackground } from './background.js';
 
 const canvas = document.getElementById('game');
 const input = createInput();
 const player = createPlayer();
+const background = createMoncloaBackground();
 let previousTick = 0;
 let currentTick = 0;
 let inputState = input.getState();
@@ -21,10 +23,7 @@ function render(alpha, isPaused = false) {
   const ctx = canvas.getContext('2d');
   const interpolatedTick = previousTick + (currentTick - previousTick) * alpha;
 
-  ctx.fillStyle = '#7ec8ff';
-  ctx.fillRect(0, 0, 320, 224);
-  ctx.fillStyle = '#2d6a2d';
-  ctx.fillRect(0, 190, 320, 34);
+  background.render(ctx);
   for (const platform of DEFAULT_PLATFORMS) {
     ctx.fillStyle = '#765b42';
     ctx.fillRect(platform.x, platform.y, platform.width, platform.height);
