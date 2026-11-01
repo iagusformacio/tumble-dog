@@ -1,26 +1,48 @@
 import { createGameLoop } from './loop.js';
 import { createInput } from './input.js';
+import { createMoncloaBackground } from './background.js';
+import { createBody, DEFAULT_PLATFORMS, stepPhysics } from './physics.js';
 
 const canvas = document.getElementById('game');
 const input = createInput();
+const background = createMoncloaBackground();
+const player = createBody({ x: 46, y: 121, width: 16, height: 24 });
 let previousTick = 0;
 let currentTick = 0;
 let inputState = input.getState();
+let jumpWasDown = false;
 
-function update() {
+function update(deltaSeconds) {
   previousTick = currentTick;
   currentTick += 1;
   inputState = input.getState();
+  stepPhysics(player, {
+    horizontal: inputState.horizontal,
+    jumpPressed: inputState.jump && !jumpWasDown,
+  }, deltaSeconds);
+  jumpWasDown = inputState.jump;
 }
 
 function render(alpha, isPaused = false) {
   const ctx = canvas.getContext('2d');
   const interpolatedTick = previousTick + (currentTick - previousTick) * alpha;
 
-  ctx.fillStyle = '#7ec8ff';
-  ctx.fillRect(0, 0, 320, 224);
-  ctx.fillStyle = '#2d6a2d';
-  ctx.fillRect(0, 190, 320, 34);
+  background.render(ctx);
+  for (const platform of DEFAULT_PLATFORMS) {
+    ctx.fillStyle = '#765b42';
+    ctx.fillRect(platform.x, platform.y, platform.width, platform.height);
+    ctx.fillStyle = '#d3bc8c';
+    ctx.fillRect(platform.x, platform.y, platform.width, 2);
+  }
+  // Marcador de jugador geométrico y deliberadamente genérico; el personaje final va en T05.
+  ctx.fillStyle = '#263447';
+  ctx.fillRect(player.x + 1, player.y + 8, 14, 16);
+  ctx.fillStyle = '#e6bf91';
+  ctx.beginPath();
+  ctx.arc(player.x + 8, player.y + 5, 6, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = '#b94d3e';
+  ctx.fillRect(player.x + 6, player.y + 9, 4, 9);
   ctx.fillStyle = '#fff';
   ctx.font = '16px monospace';
   ctx.textAlign = 'center';
