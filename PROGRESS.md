@@ -10,6 +10,7 @@
 - T04 (AGB): físicas AABB, gravedad y salto implementados y probados; integración del personaje pendiente de T05.
 - T03 en curso (FETS): fondo de La Moncloa dibujado por código.
 - T13 (Iagus): smoke test en CI con Playwright (Chromium headless): arranca, juega 5 s con pulsaciones y falla si hay errores JS en consola; servidor local `npm run serve`, smoke en local `npm run test:smoke`. Siguiente de Iagus: T06 (issue #8).
+- T06 (Arena-GPT): primer enemigo, La Portavoz Airada: patrulla su plataforma (pausa al girar), Don Presi la aspira con la boquilla, se escapa a los 3 s mareada, respawn si se queda el nivel vacío y quita una vida al tocarte (2 s de invulnerabilidad). Arte provisional por código; el PNG de `assets/enemigos/` se integrará en T10.
 - Jugar: en local con `python3 -m http.server 8000` o `npm run serve`. Sin Pages (repo privado).
 
 | Hito | Estado |
