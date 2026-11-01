@@ -22,6 +22,35 @@ let currentTick = 0;
 let inputState = input.getState();
 let ball = null; // bola en vuelo (T07); solo una a la vez
 let throwWasDown = false;
+let jumpWasDown = false;
+
+/** Corazón de vida del HUD (T09). */
+function drawHeart(ctx, x, y, filled) {
+  ctx.fillStyle = filled ? '#e03131' : 'rgba(255,255,255,0.22)';
+  ctx.beginPath();
+  ctx.arc(x - 2, y - 1, 2.5, 0, Math.PI * 2);
+  ctx.arc(x + 2, y - 1, 2.5, 0, Math.PI * 2);
+  ctx.moveTo(x - 4.2, y + 0.5);
+  ctx.lineTo(x + 4.2, y + 0.5);
+  ctx.lineTo(x, y + 5.5);
+  ctx.closePath();
+  ctx.fill();
+}
+
+/** Pantalla de fin de partida (T09): derrota o victoria. */
+function drawEndScreen(ctx, title, line1, line2) {
+  ctx.fillStyle = 'rgba(0, 0, 0, 0.62)';
+  ctx.fillRect(0, 0, CONFIG.screen.width, CONFIG.screen.height);
+  ctx.textAlign = 'center';
+  ctx.fillStyle = '#ffe44d';
+  ctx.font = 'bold 16px monospace';
+  ctx.fillText(title, screenCenterX, 100);
+  ctx.fillStyle = '#fff';
+  ctx.font = '10px monospace';
+  ctx.fillText(line1, screenCenterX, 120);
+  ctx.font = '8px monospace';
+  ctx.fillText(line2, screenCenterX, 136);
+}
 
 function update(deltaSeconds) {
   previousTick = currentTick;
@@ -35,6 +64,8 @@ function update(deltaSeconds) {
   // Lanzar es por flanco: una pulsación = una bola.
   const throwPressed = Boolean(inputState.throw) && !throwWasDown;
   throwWasDown = Boolean(inputState.throw);
+  const jumpPressed = Boolean(inputState.jump) && !jumpWasDown;
+  jumpWasDown = Boolean(inputState.jump);
   let launched = false;
   if (throwPressed && (!ball || !ball.alive)) {
     ball = enemyManager.launchBall(player);
@@ -47,6 +78,10 @@ function update(deltaSeconds) {
   enemyManager.update(deltaSeconds, player, inputState, ball);
   comicEffects.update(deltaSeconds);
   audio.update(deltaSeconds, { player, enemyManager, ball, inputState, jumped, launched });
+  // T09: en derrota o victoria, Z o ESPACIO reinician la partida.
+  if (enemyManager.phase !== 'playing' && (throwPressed || jumpPressed)) {
+    enemyManager.restart();
+  }
 }
 
 function render(alpha, isPaused = false) {
@@ -71,20 +106,19 @@ function render(alpha, isPaused = false) {
   if (ball) ball.render(ctx, alpha);
   player.render(ctx, alpha);
   comicEffects.render(ctx);
-  // HUD mínimo mientras no existe T09: vidas, puntos y estado de sonido.
-  ctx.fillStyle = '#fff';
+  // HUD (T09): puntos a la izquierda, oleada a la derecha y vidas como corazones (+ T11: estado del sonido).
   ctx.font = 'bold 8px monospace';
   ctx.textAlign = 'left';
-  ctx.fillText(
-    `VIDAS ${enemyManager.lives} · PUNTOS ${enemyManager.score}${audio.muted ? ' · MUDO' : ''}`,
-    6,
-    12,
-  );
+  ctx.fillStyle = '#fff';
+  ctx.fillText(`PUNTOS ${enemyManager.score}`, 6, 12);
+  ctx.textAlign = 'right';
+  ctx.fillText(`OLEADA ${enemyManager.wave}${audio.muted ? ' · MUDO' : ''}`, CONFIG.screen.width - 6, 12);
+  for (let i = 0; i < CONFIG.player.lives; i += 1) {
+    drawHeart(ctx, 10 + i * 11, 20, i < enemyManager.lives);
+  }
   ctx.textAlign = 'center';
   ctx.font = '16px monospace';
   ctx.fillText('TUMBLE DOG', screenCenterX, 40 + Math.sin(interpolatedTick / 20) * 4);
-  ctx.font = '10px monospace';
-  ctx.fillText('en construcción', screenCenterX, 60);
   ctx.font = '7px monospace';
   ctx.fillText(
     'A/D MOVER · ESPACIO SALTAR · X ASPIRAR · Z LANZAR · M SONIDO',
@@ -101,6 +135,23 @@ function render(alpha, isPaused = false) {
   if (activeActions.length) {
     ctx.font = 'bold 8px monospace';
     ctx.fillText(activeActions.join(' + '), screenCenterX, 75);
+  }
+
+  // T09: pantallas de derrota y victoria.
+  if (enemyManager.phase === 'gameover') {
+    drawEndScreen(
+      ctx,
+      'GAME OVER',
+      `PUNTOS ${enemyManager.score} · OLEADA ${enemyManager.wave}`,
+      'pulsa Z o ESPACIO para reintentar',
+    );
+  } else if (enemyManager.phase === 'victory') {
+    drawEndScreen(
+      ctx,
+      '¡VICTORIA!',
+      `PUNTOS ${enemyManager.score} · ${CONFIG.wave.winWave} oleadas limpias`,
+      'pulsa Z o ESPACIO para jugar otra vez',
+    );
   }
 
   if (isPaused) {

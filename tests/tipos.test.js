@@ -146,7 +146,7 @@ test('La Activista Municipal patrulla errática sin salirse de su plataforma', (
   }
 });
 
-test('un enemigo aplastado reaparece solo en su punto de partida (T08)', () => {
+test('un enemigo aplastado NO reaparece dentro de la oleada (T09: llegan oleadas nuevas)', () => {
   const manager = createEnemyManager();
   manager.enemies.length = 0;
   const enemy = createEnemy({ type: 'portavoz', x: 40, y: 136 });
@@ -155,12 +155,12 @@ test('un enemigo aplastado reaparece solo en su punto de partida (T08)', () => {
   player.body.x = 280;
   player.body.y = 184;
   assert.equal(enemy.crush(), true);
-  for (let i = 0; i < Math.ceil(CONFIG.enemy.respawnSeconds * 60) + 2; i += 1) {
+  for (let i = 0; i < Math.ceil(CONFIG.enemy.respawnSeconds * 60) + 5; i += 1) {
     manager.update(dt, player, {});
   }
-  assert.equal(enemy.state, 'patrol');
-  assert.ok(enemy.body.x >= 40 && enemy.body.x < 45, `vuelve a su punto de partida (x=${enemy.body.x})`);
-  assert.equal(enemy.body.y, 136);
+  assert.equal(enemy.state, 'defeated', 'dentro de la oleada no hay respawn individual');
+  // Al quedar la pantalla vacía, T09 pasa a la siguiente oleada.
+  assert.ok(manager.phase === 'interwave' || manager.phase === 'playing');
 });
 
 test('la bola también aplasta al enemigo escondido', () => {

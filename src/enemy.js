@@ -294,6 +294,7 @@ export function createEnemy({
     get state() { return state; },
     get pose() { return currentPose(); },
     get direction() { return dir; },
+    get speed() { return speed; },
     get containedSeconds() { return state === 'sucked' ? containLeft : 0; },
   };
 }
