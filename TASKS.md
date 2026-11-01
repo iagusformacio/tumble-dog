@@ -8,7 +8,7 @@ Criterio general de «hecha»: CI en verde, `main` jugable, 60 fps, nota en `PRO
 | T01 | Bucle de juego a paso fijo (60 Hz) con render interpolado, escalado de canvas responsive, pausa al perder foco | — | hecha |
 | T02 | Entrada unificada: teclado, mando (Gamepad API) y táctil con botones en pantalla | T01 | hecha |
 | T03 | Fondo de **La Moncloa** dibujado por código (cielo, palacio, jardines, columnas) en capa cacheada | T01 | en-curso (FETS) |
-| T04 | Plataformas y colisiones (AABB), gravedad, salto | T01 | bloqueada (T01) |
+| T04 | Plataformas y colisiones (AABB), gravedad, salto | T01 | en-curso (AGB) |
 | T05 | Protagonista *Don Presi* con sprite provisional, andar/saltar/aspirar | T02, T04 | bloqueada |
 | T06 | Primer enemigo (La Portavoz Airada) con IA simple y estado «aspirado» | T04 | bloqueada |
 | T07 | Aspirar y lanzar bola: aplastar enemigos, rebotes, combos | T05, T06 | bloqueada |
@@ -20,7 +20,7 @@ Criterio general de «hecha»: CI en verde, `main` jugable, 60 fps, nota en `PRO
 | T13 | CI: smoke test en navegador headless (arranca, juega 5 s, sin errores JS) | T01 | en-curso (Iagus) |
 
 ## Plan por oleadas (orden de ataque)
-- **Oleada 1 (hora 1):** FETS → T01 · Iagus → T13 · AGB → T03 (fondo Moncloa). Después, Iagus y AGB cogen T04 y T02 (módulos distintos).
+- **Oleada 1:** FETS → T01 y T02 (hechas), ahora T03 · Iagus → T13 · AGB → T04 (plataformas y colisiones, `src/physics.js`).
 - **Oleada 2:** T02 entrada, T04 plataformas/colisiones (en paralelo; tocan ficheros distintos: `src/input.js`, `src/physics.js`).
 - **Oleada 3:** T05 protagonista, T06 primer enemigo.
 - **Oleada 4:** T07 aspirar y lanzar (el corazón del juego). Hito jugable: se puede jugar una pantalla.
