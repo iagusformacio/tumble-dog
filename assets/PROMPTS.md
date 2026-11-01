@@ -11,3 +11,33 @@ assets/personajes/don-presi-aturdido.png | Using the supplied reference image, p
 assets/personajes/don-presi-victoria.png | Using the supplied reference image, preserve the same completely invented Don Presi design: oversized head, dark swept fringe, broad politician-style smile, charcoal suit, white shirt, vivid red tie, black-and-red vacuum backpack and flexible hose. One full-body side-view game sprite facing right, same scale; triumphant victory pose with one fist raised and a proud grin, both feet fully visible. Original classic Spanish comic-book slapstick, thick black outlines, flat vivid colors. Plain solid chroma green #00FF00 background, no ground shadow, no text, no logos, no watermark, no extra characters. | Arena generate_image
 assets/personajes/don-presi-presentacion.png | Using the supplied reference image, preserve the same completely invented Don Presi design: oversized round head, dark swept fringe, confident friendly smile, charcoal suit, white shirt, vivid red tie, black-and-red vacuum backpack with flexible hose. One full-body side-view pose facing right at the same scale; relaxed character-sheet presentation stance, one palm open as if introducing the game world, other hand beside him, both feet visible. Original classic Spanish comic-book look, thick clean black outlines, flat vivid colors. Plain uniform chroma green #00FF00 background, no ground shadow, no text, no logos, no watermark, no extra characters. | Arena generate_image
 assets/personajes/don-presi-hoja-poses.png | Hoja 5x2 derivada, diez celdas iguales en orden: quieto, andar A, andar B, saltar, caer, aspirar, lanzar, aturdido, victoria y presentación; fondo #00FF00 uniforme, escala y tamaño de celda iguales. Montada a partir de los diez sprites anteriores, sin generar contenido adicional. | Python 3 + Pillow
+
+## assets/enemigos/portavoz-airada-poses.png
+Hoja de poses en cuadrícula de 3 celdas, misma escala: La Portavoz Airada (mujer política inventada, chaqueta oscura, camisa blanca, pelo recogido, gesto airado con micrófono). Celda 1: caminando paso 1; celda 2: caminando paso 2; celda 3: aspirada y encogida, ojos muy abiertos, boca en O. Vista lateral a la derecha, tebeo estilo Bruguera, trazo negro grueso, colores planos y vivos, fondo plano verde #00FF00, sin sombras, sin texto. · Herramienta: generate_image.
+
+## assets/enemigos/portavoz-airada-derrotada.png
+La Portavoz Airada derrotada y aplastada, hecha un guiñapo sobre el suelo de lado, ojos en X, boca torcida, traje desentendido, expresión de aturdimiento, humor físico exagerado estilo Bruguera. Fondo plano verde #00FF00, sin sombras, sin texto. · Herramienta: generate_image.
+
+## assets/enemigos/tertuliano-poses.png
+Hoja de poses en cuadrícula de 3 celdas, misma escala: El Tertuliano (presentador de debate inventado, gafas grandes redondas, pelo revuelto, chaqueta a cuadros, sudor, dedo señalando, boca abierta). Celda 1: caminando paso 1; celda 2: caminando paso 2; celda 3: aspirado y encogida, gafas deformadas, ojos muy abiertos. Vista lateral a la derecha, tebeo estilo Bruguera, trazo negro grueso, colores planos y vivos, fondo plano verde #00FF00, sin sombras, sin texto. · Herramienta: generate_image.
+
+## assets/enemigos/tertuliano-derrotada.png
+El Tertuliano derrotado y aplastado, hecha un guiñapo sobre el suelo de lado, gafas grandes torcidas, pelo revuelto, chaqueta a cuadros deshecha, ojos en X, expresión de aturdimiento, humor físico exagerado. Fondo plano verde #00FF00, sin sombras, sin texto. · Herramienta: generate_image.
+
+## assets/enemigos/asesor-misterioso-poses.png
+Hoja de poses en cuadrícula de 3 celdas, misma escala: El Asesor Misterioso (hombre misterioso inventado, abrigo largo oscuro, gafas de sol, sonrisa aviesa, maletín, postura furtiva). Celda 1: caminando paso 1; celda 2: caminando paso 2; celda 3: aspirado y encogido, abrigo revuelto, gafas torcidas, ojos muy abiertos. Vista lateral a la derecha, tebeo estilo Bruguera, trazo negro grueso, colores planos y vivos, fondo plano verde #00FF00, sin sombras, sin texto. · Herramienta: generate_image.
+
+## assets/enemigos/asesor-misterioso-derrotada.png
+El Asesor Misterioso derrotado y aplastado, hecho un guiñapo sobre el suelo de lado, abrigo largo desenredado, maletín abierto y espachurrado, gafas de sol torcidas, ojos en X, mueca de aturdimiento, humor físico exagerado. Fondo plano verde #00FF00, sin sombras, sin texto. · Herramienta: generate_image.
+
+## assets/enemigos/influencer-bulero-poses.png
+Hoja de poses en cuadrícula de 3 celdas, misma escala: El Influencer Bulero (joven influyente inventado, pelo frondoso, camiseta llamativa con estrellas, pendientes grandes, sonrisa presumida, smartphone extendido). Celda 1: caminando paso 1; celda 2: caminando paso 2; celda 3: aspirado y encogido, pelo aplastado, ojos muy abiertos. Vista lateral a la derecha, tebeo estilo Bruguera, trazo negro grueso, colores planos y vivos, fondo plano verde #00FF00, sin sombras, sin texto. · Herramienta: generate_image.
+
+## assets/enemigos/influencer-bulero-derrotada.png
+El Influencer Bulero derrotado y aplastado, hecho un guiñapo sobre el suelo de lado, pelo aplastado, camiseta deshecha, pendientes caídos, smartphone roto, ojos en X, expresión de aturdimiento, humor físico exagerado. Fondo plano verde #00FF00, sin sombras, sin texto. · Herramienta: generate_image.
+
+## assets/enemigos/tertuliano-bulos.png
+El Tertuliano en pleno berrinche de tertuliano: en pie de lado, gafas deformadas por la rabia, dedo señalando fuera de cuadro, boca abierta en O, chaqueta a cuadros, onomatopeya «¡BUAAA!» en globo negro. Vista lateral a la derecha, tebeo estilo Bruguera, trazo negro grueso, colores planos y vivos, fondo plano verde #00FF00, sin sombras. · Herramienta: generate_image.
+
+## assets/enemigos/influencer-ringlight.png
+El Influencer Bulero haciendo un selfie: sostiene smartphone extendido, posando con sonrisa presumida, pelo frondoso, camiseta con estrellas, pendientes grandes, halo de luz tipo ring light. Vista lateral a la derecha, tebeo estilo Bruguera, trazo negro grueso, colores planos y vivos, fondo plano verde #00FF00, sin sombras, sin texto. · Herramienta: generate_image.
