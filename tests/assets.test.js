@@ -60,6 +60,20 @@ test('todos los PNG declarados en ASSET_MANIFEST existen en el repositorio', () 
   }
 });
 
+test('ASSET_MANIFEST registra andar, aspirado y derrotado para los ocho enemigos', () => {
+  const posesByGroup = new Map();
+  for (const entry of ASSET_MANIFEST) {
+    if (!posesByGroup.has(entry.group)) posesByGroup.set(entry.group, new Set());
+    for (const pose of entry.poses) posesByGroup.get(entry.group).add(pose);
+  }
+  for (const group of ['portavoz', 'tertuliano', 'asesor', 'influencer', 'lider', 'baron', 'activista', 'diputado']) {
+    const poses = posesByGroup.get(group) ?? new Set();
+    for (const pose of ['walkA', 'walkB', 'sucked', 'defeated']) {
+      assert.ok(poses.has(pose), `falta ${group}/${pose} en ASSET_MANIFEST`);
+    }
+  }
+});
+
 test('findPanelInterior y extractCleanSpriteData recortan marco de viñeta, chroma #00FF00 y despill', () => {
   const w = 40;
   const h = 40;
