@@ -1,5 +1,7 @@
 # PROGRESS
 
+- T15 (Arena): captura del canvas a los 3 s del smoke test, subida como artefacto del CI.
+
 **Última actualización:** 2026-11-01 (FETS) — ART-2 (#21): 10 imágenes de enemigos 1-4 en assets/enemigos (poses + derrotado + 2 extras), todo ≤200 KB, prompts en assets/PROMPTS.md. Cupo de la sesión agotado.
 - ART-1 Don Presi (AGB, fusionado): diez poses en PNG optimizados, hoja 5×2 y prompts añadidos; falta integrarlos desde `src/assets.js`.
 
