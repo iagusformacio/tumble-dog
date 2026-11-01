@@ -1,5 +1,7 @@
 const DEFAULT_STEP_MS = 1000 / 60;
 const MAX_FRAME_DELTA_MS = 250;
+// Límite de estabilidad del motor: evitar una ráfaga de simulación tras un atasco.
+const MAX_CATCH_UP_STEPS = 5;
 const MAX_PIXEL_RATIO = 2;
 
 /**
@@ -102,10 +104,15 @@ export function createGameLoop({
     lastTime = timestamp;
     accumulator += elapsed;
 
-    while (accumulator >= stepMs) {
+    let catchUpSteps = 0;
+    while (accumulator >= stepMs && catchUpSteps < MAX_CATCH_UP_STEPS) {
       update(stepMs / 1000);
       accumulator -= stepMs;
+      catchUpSteps += 1;
     }
+    // Si el hilo principal se atascó, se descartan los pasos enteros atrasados:
+    // conservarlos encadenaría más trabajo y haría que la interfaz siguiera a trompicones.
+    if (accumulator >= stepMs) accumulator %= stepMs;
     render(accumulator / stepMs);
     scheduleFrame();
   }

@@ -10,7 +10,7 @@
 - T07 (Arena, #9): lanzar la bola — rebota en paredes/suelo/plataformas, aplasta enemigos en cadena con combo 100/200/400/800 (`src/ball.js`, `launchBall` en `src/enemies.js`, estado «defeated» en `src/enemy.js`); tests verdes.
 - T15 (Arena): captura del canvas a los 3 s del smoke test, subida como artefacto del CI.
 
-**Última actualización:** 2026-11-01 (FETS) — ART-2 (#21): 10 imágenes de enemigos 1-4 en assets/enemigos (poses + derrotado + 2 extras), todo ≤200 KB, prompts en assets/PROMPTS.md. Cupo de la sesión agotado.
+**Última actualización:** 2026-11-01 (AGB) — mejora del bucle fijo: máximo 5 pasos de recuperación por frame y descarte del backlog tras pausas largas; prueba de regresión añadida.
 - ART-1 Don Presi (AGB, fusionado): diez poses en PNG optimizados, hoja 5×2 y prompts añadidos; falta integrarlos desde `src/assets.js`.
 
 - Estructura base creada: ORDERS, AGENTS, TASKS, CI, página provisional.
