@@ -1,18 +1,22 @@
 import { createGameLoop } from './loop.js';
 import { createInput } from './input.js';
+import { DEFAULT_PLATFORMS } from './physics.js';
+import { createPlayer } from './player.js';
 import { createMoncloaBackground } from './background.js';
 
 const canvas = document.getElementById('game');
 const input = createInput();
+const player = createPlayer();
 const background = createMoncloaBackground();
 let previousTick = 0;
 let currentTick = 0;
 let inputState = input.getState();
 
-function update() {
+function update(deltaSeconds) {
   previousTick = currentTick;
   currentTick += 1;
   inputState = input.getState();
+  player.update(deltaSeconds, inputState);
 }
 
 function render(alpha, isPaused = false) {
@@ -20,6 +24,13 @@ function render(alpha, isPaused = false) {
   const interpolatedTick = previousTick + (currentTick - previousTick) * alpha;
 
   background.render(ctx);
+  for (const platform of DEFAULT_PLATFORMS) {
+    ctx.fillStyle = '#765b42';
+    ctx.fillRect(platform.x, platform.y, platform.width, platform.height);
+    ctx.fillStyle = '#d3bc8c';
+    ctx.fillRect(platform.x, platform.y, platform.width, 2);
+  }
+  player.render(ctx, alpha);
   ctx.fillStyle = '#fff';
   ctx.font = '16px monospace';
   ctx.textAlign = 'center';

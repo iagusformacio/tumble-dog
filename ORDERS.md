@@ -4,7 +4,7 @@
 
 ## PRIORIDAD ACTUAL
 1. Tener `main` siempre jugable en local (`python3 -m http.server 8000`) y un bucle de juego fluido a 60 fps. El repo es privado: NO hay Pages ni despliegue web.
-2. Después, por hitos pequeños y siempre jugables (ver `TASKS.md`).
+2. Después, por hitos pequeños y siempre jugables (ver las issues del repo).
 
 ## El juego
 **Tumble Dog** — homenaje a los arcades de pantalla fija tipo *Tumblepop*: una sola pantalla, plataformas, el protagonista **aspira** a los enemigos, los convierte en bola y los **lanza** para aplastar a los demás.
@@ -20,8 +20,8 @@
 ## Reglas de trabajo
 1. **Un «continua» = 1 hora de trabajo seguida.** Al acabar una tarea se coge la siguiente sin escribir a la persona ni esperar aprobación.
 2. **No preguntar «¿qué autorizas?».** Ante la duda: elegir lo razonable, anotarlo en el PR, seguir.
-3. **Cualquier agente hace cualquier tarea.** Se coge la primera de `TASKS.md` con estado `libre` cuyo bloqueo esté resuelto. Esto vale para un agente nuevo que se incorpore.
-4. **Reservar** antes de empezar: poner `en-curso (agente)` en `TASKS.md` en un commit pequeño a `main` (o asignarse la issue).
+3. **Cualquier agente hace cualquier tarea.** Se coge la primera **issue** con etiqueta `libre` cuyas dependencias estén `hecha`s. Vale también para un agente nuevo.
+4. **Reservar = asignarse la issue y cambiar su etiqueta de `libre` a `en-curso` + comentar «Reservada por <agente>»**, ANTES de empezar. Si ya está `en-curso`, se salta. Al abrir el PR, escribir `Closes #N`; al fusionar, la issue se cierra y se pone `hecha`. **Las issues son la única fuente de verdad del tablero; `TASKS.md` es solo el plan por oleadas y no se usa para reservar.**
 5. **Ramas cortas** `agente/ID` → **PR pequeño** (1 tarea ≈ 1 hora). Si el CI pasa, se fusiona sin esperar revisión, salvo cambios de diseño.
 6. **Integrar al menos cada hora.** Si quien integra tarda más de 2 h, integra cualquiera.
 7. **`main` siempre jugable.** Una sola rama principal, un solo `PROGRESS.md`.
@@ -33,9 +33,16 @@
 
 ## Al empezar cada turno, el agente
 1. Lee este fichero y cita la fecha de arriba.
-2. Hace `git pull`, lee `PROGRESS.md` y `TASKS.md`.
+2. Hace `git pull`, lee `PROGRESS.md` y mira las issues abiertas con `gh api repos/iagusformacio/tumble-dog/issues` (`gh issue list` no funciona: GraphQL bloqueado).
 3. Coge la primera tarea libre.
 
 ## Ahorro de tokens (orden de 2026-11-01)
 - El repo es privado: **no hay GitHub Pages ni despliegue**. No se pierde tiempo en eso.
-- Documentación mínima: solo se actualiza la fila de `TASKS.md` y una línea en `PROGRESS.md` por tarea. Nada de informes largos ni README extra; los PR llevan 3 líneas.
+- Documentación mínima: solo se actualiza una línea en `PROGRESS.md` por tarea. Nada de informes largos ni README extra; los PR llevan 3 líneas.
+
+## Normas añadidas (2026-11-01, segunda tanda)
+13. **Diseño:** la verdad del juego está en `DESIGN.md`. Los números del feeling van en `src/config.js`; no se ponen constantes mágicas nuevas en el código.
+14. **Menos choques entre agentes:** cada issue lista los «ficheros que toca». Antes de abrir un PR: `git fetch origin main && git rebase origin/main` y volver a pasar `npm test`. Si dos issues tocan el mismo fichero, la segunda espera a que fusione la primera. Un PR = una tarea = máximo una hora.
+15. **Una tarea no se rehace:** si la funcionalidad ya está en `main` (física, entrada…), se importa y se usa. Un PR nunca duplica lo que otro ya fusionó.
+16. **PR con cambios visibles:** pegar en el PR una captura de pantalla (cuando exista el artefacto del CI, issue T15).
+17. **Enlace jugable:** lo publica el coordinador al final de cada oleada de tareas (el repo es privado, no hay Pages). Los agentes no pierden tiempo con eso.
