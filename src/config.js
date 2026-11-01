@@ -25,6 +25,7 @@ export const CONFIG = {
   },
   enemy: { w: 48, h: 86, scale: 0.47, stunAfterBeam: 0.7 },
   stage: { hurryAt: 32, chaserAt: 42, clearDelay: 1.6, introTime: 1.8 },
+  bossHp: { tertuliano: 10, lider: 14 },
   letters: { word: 'TUMBLEDOG', dropChance: 0.3, bubbleSpeed: 70 },
   bonus: { time: 12, rain: 0.09 },
   fx: { maxParticles: 900 },

@@ -1,6 +1,6 @@
 // Arranque: canvas HiDPI, carga de fuentes y sprites, bucle de paso fijo.
 import { W, H, CONFIG } from './config.js';
-import { createInput } from './input.js';
+import { createInput, placeTouchpad } from './input.js';
 import { createAudio } from './audio.js';
 import { loadSprites } from './sprites.js';
 import { createGame } from './game.js';
@@ -18,9 +18,11 @@ function resize() {
   const dpr = Math.min(window.devicePixelRatio || 1, 2);
   scale = Math.min((cw * dpr) / W, 2);
   canvas.width = Math.round(W * scale); canvas.height = Math.round(H * scale);
+  placeTouchpad();
 }
 window.addEventListener('resize', resize);
 resize();
+placeTouchpad();
 
 function loading(k) {
   ctx.setTransform(scale, 0, 0, scale, 0, 0);

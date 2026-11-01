@@ -7,7 +7,7 @@ const P = (x, y, w) => ({ x, y, w, h: T });
 
 const RAW = [
   { name: 'LOS JARDINES', theme: 'manana', plats: [[80, 520, 340], [860, 520, 340], [380, 400, 520], [80, 280, 380], [820, 280, 380], [480, 160, 320]],
-    foes: [['portavoz', 200, 520], ['portavoz', 1000, 520], ['tertuliano', 640, 400], ['portavoz', 250, 280]] },
+    foes: [['portavoz', 340, 520], ['portavoz', 1000, 520], ['tertuliano', 700, 400]] },
   { name: 'LA ESCALINATA', theme: 'manana', plats: [[0, 520, 300], [980, 520, 300], [240, 400, 300], [740, 400, 300], [470, 280, 340], [60, 190, 300], [920, 190, 300]],
     foes: [['portavoz', 120, 520], ['tertuliano', 1100, 520], ['influencer', 380, 400], ['portavoz', 880, 400], ['tertuliano', 620, 280]] },
   { name: 'EL PÓRTICO', theme: 'mediodia', plats: [[160, 520, 960], [0, 400, 360], [920, 400, 360], [300, 280, 680], [120, 160, 260], [900, 160, 260]],

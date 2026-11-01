@@ -71,6 +71,11 @@ test('enemigos: ocho tipos, todos con sprites', () => {
   assert.equal(e.state, 'dead');
 });
 
+test('los jefes leen sus puntos de vida de src/config.js', () => {
+  assert.equal(CONFIG.bossHp.tertuliano, 10);
+  assert.equal(CONFIG.bossHp.lider, 14);
+});
+
 test('premios conocidos y palabra de nueve letras', () => {
   for (let i = 0; i < 200; i++) assert.ok(ITEM_KINDS[randomItemKind(i % 4)]);
   assert.equal(CONFIG.letters.word.length, 9);

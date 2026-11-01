@@ -1,17 +1,17 @@
 // Jefes (versiones gigantes) y el perseguidor invencible: el Inspector de Hacienda.
-import { FLOOR_Y, W } from './config.js';
+import { FLOOR_Y, W, CONFIG } from './config.js';
 import { rand, pick } from './util.js';
 import { drawSprite } from './sprites.js';
 import { makeShot } from './enemies.js';
 
 const BOSS = {
-  tertuliano: { name: 'EL GRAN TERTULIANO', hp: 10, shot: 'bulo', minions: ['portavoz', 'influencer', 'tertuliano'] },
-  lider: { name: 'EL LÍDER ETERNO', hp: 14, shot: 'shout', minions: ['diputado', 'baron', 'asesor', 'activista'] },
+  tertuliano: { name: 'EL GRAN TERTULIANO', shot: 'bulo', minions: ['portavoz', 'influencer', 'tertuliano'] },
+  lider: { name: 'EL LÍDER ETERNO', shot: 'shout', minions: ['diputado', 'baron', 'asesor', 'activista'] },
 };
 
 export function createBoss(type) {
   const d = BOSS[type] || BOSS.tertuliano;
-  return { type, ...d, maxHp: d.hp, x: 1040, y: FLOOR_Y, vy: 0, t: 0, flash: 0, throwT: 2.5, shotT: 1.6, hopT: 4, dying: 0, dead: false, hitT: 0, s: 1.25 };
+  return { type, ...d, maxHp: CONFIG.bossHp[type], hp: CONFIG.bossHp[type], x: 1040, y: FLOOR_Y, vy: 0, t: 0, flash: 0, throwT: 2.5, shotT: 1.6, hopT: 4, dying: 0, dead: false, hitT: 0, s: 1.25 };
 }
 
 export function bossBox(b) { return { x: b.x - 85, y: b.y - 240, w: 170, h: 240 }; }
