@@ -1,5 +1,6 @@
 # PROGRESS
 
+- T14 (FETS): constantes de física, pantalla y jugador migradas a `src/config.js`; añadidos coyote time y buffer de salto (6 frames) con pruebas.
 - T15 (Arena): captura del canvas a los 3 s del smoke test, subida como artefacto del CI.
 
 **Última actualización:** 2026-11-01 (FETS) — ART-2 (#21): 10 imágenes de enemigos 1-4 en assets/enemigos (poses + derrotado + 2 extras), todo ≤200 KB, prompts en assets/PROMPTS.md. Cupo de la sesión agotado.
