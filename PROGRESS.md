@@ -1,5 +1,6 @@
 # PROGRESS
 
+- T12 (Arena, #14): PWA offline en local — `manifest.webmanifest` + `sw.js` cache-first + iconos 192/512 derivados por código del retrato de Don Presi; meta móvil anti pull-to-refresh/doble-tap; smoke test nuevo con prueba de ≥55 fps (rAF 3 s) y verificación de SW y manifiesto; 71 tests verdes.
 - T11 (FETS, #13): sonido y música sintetizados por WebAudio en `src/audio.js` (melodía chiptune estilo tebeo, salto, aspirado, captura, lanzamiento, rebote, combo y daño, tecla M para silenciar); 49/49 tests verdes.
 - T09 (Arena, #11): HUD completo (puntos, corazones de vida, oleada), oleadas con más enemigos y más rápidos (`CONFIG.wave`), victoria al limpiar la oleada 5 y GAME OVER a 0 vidas con reinicio con Z/ESPACIO; 65 tests verdes.
 - T10 (FETS, #12): `src/assets.js` integra hojas de sprites estilo tebeo (recorte de viñeta, chroma #00FF00 con despill y caché), fondo de Moncloa, retratos/UI y onomatopeyas («¡GLUP!», «¡ZAS!», «¡PAF!») con fallback por código; 46/46 tests verdes.

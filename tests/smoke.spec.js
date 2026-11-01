@@ -60,3 +60,49 @@ test('index.html arranca y juega 5 s sin errores de JS en consola', async ({ pag
   // 4) Veredicto: ningún error de JS.
   expect(errors, `errores de JS detectados:\n${errors.join('\n')}`).toEqual([]);
 });
+
+// T12 — PWA offline y rendimiento: manifiesto servido, service worker registrado
+// y bucle a ~60 fps (rAF medidos durante 3 s; se exige ≥ 55 para CI con margen).
+test('PWA offline y 60 fps estables', async ({ page }) => {
+  await page.goto('/');
+
+  // 1) El manifiesto está enlazado y se sirve con nombre e iconos.
+  const manifestOk = await page.evaluate(async () => {
+    const link = document.querySelector('link[rel="manifest"]');
+    if (!link) return false;
+    try {
+      const res = await fetch(link.href);
+      const data = await res.json();
+      return data.name === 'Tumble Dog' && Array.isArray(data.icons) && data.icons.length >= 2;
+    } catch {
+      return false;
+    }
+  });
+  expect(manifestOk, 'manifest.webmanifest no se sirve o está mal').toBe(true);
+
+  // 2) El service worker queda registrado (127.0.0.1 es contexto seguro).
+  await page.waitForFunction(async () => {
+    if (!('serviceWorker' in navigator)) return false;
+    const reg = await navigator.serviceWorker.getRegistration();
+    return Boolean(reg && (reg.active || reg.installing || reg.waiting));
+  }, null, { timeout: 10_000 });
+  const swState = await page.evaluate(async () => {
+    const reg = await navigator.serviceWorker.getRegistration();
+    return reg?.active?.state ?? 'registrado';
+  });
+  expect(['active', 'activating', 'registered']).toContain(swState);
+
+  // 3) Prueba de 60 fps: frames pintados por rAF durante 3 s.
+  const fps = await page.evaluate(() => new Promise((resolve) => {
+    let frames = 0;
+    const t0 = performance.now();
+    const tick = () => {
+      frames += 1;
+      const elapsed = performance.now() - t0;
+      if (elapsed >= 3000) resolve(frames / (elapsed / 1000));
+      else requestAnimationFrame(tick);
+    };
+    requestAnimationFrame(tick);
+  }));
+  expect(fps, `fps medidos en headless: ${fps.toFixed(1)}`).toBeGreaterThanOrEqual(55);
+});
