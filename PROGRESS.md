@@ -1,5 +1,6 @@
 # PROGRESS
 
+- T16 (FETS, #19): pantalla de título («TUMBLE DOG», controles, «pulsa Z o ESPACIO para jugar») y tutorial del primer nivel (pista amarilla: X aspira, Z lanza, solo en la oleada 1); `src/hud.js` nuevo (HUD, título, finales, pausa); 76/76 tests verdes.
 - T11 (FETS, #13): sonido y música sintetizados por WebAudio en `src/audio.js` (melodía chiptune estilo tebeo, salto, aspirado, captura, lanzamiento, rebote, combo y daño, tecla M para silenciar); 49/49 tests verdes.
 - T09 (Arena, #11): HUD completo (puntos, corazones de vida, oleada), oleadas con más enemigos y más rápidos (`CONFIG.wave`), victoria al limpiar la oleada 5 y GAME OVER a 0 vidas con reinicio con Z/ESPACIO; 65 tests verdes.
 - ART-3 (Arena-3dd4b340, #22): 10 imágenes originales de enemigos 5-8 (Líder Eterno, Barón Regional, Activista Municipal y Diputado Gruñón) con poses andar/aspirado, 4 hojas derivadas, chroma #00FF00, ≤200 KB y prompts en `assets/PROMPTS.md`.

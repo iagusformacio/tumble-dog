@@ -7,6 +7,7 @@ import { createMoncloaBackground } from './background.js';
 import { createEnemyManager } from './enemies.js';
 import { createComicEffects, getSharedAssets } from './assets.js';
 import { createAudio } from './audio.js';
+import { createHud } from './hud.js';
 
 const canvas = document.getElementById('game');
 const assets = getSharedAssets();
@@ -16,6 +17,7 @@ const input = createInput();
 const player = createPlayer({ assets });
 const background = createMoncloaBackground();
 const enemyManager = createEnemyManager({ assets, effects: comicEffects });
+const hud = createHud({ config: CONFIG });
 const screenCenterX = CONFIG.screen.width / 2;
 let previousTick = 0;
 let currentTick = 0;
@@ -23,49 +25,68 @@ let inputState = input.getState();
 let ball = null; // bola en vuelo (T07); solo una a la vez
 let throwWasDown = false;
 let jumpWasDown = false;
+// T16: sesión y tutorial del primer nivel (pantalla de título + pista).
+let session = 'title'; // 'title' | 'playing'
+let tutorialSucked = false;
+let tutorialThrown = false;
+let tutorialCrushed = false;
 
-/** Corazón de vida del HUD (T09). */
-function drawHeart(ctx, x, y, filled) {
-  ctx.fillStyle = filled ? '#e03131' : 'rgba(255,255,255,0.22)';
-  ctx.beginPath();
-  ctx.arc(x - 2, y - 1, 2.5, 0, Math.PI * 2);
-  ctx.arc(x + 2, y - 1, 2.5, 0, Math.PI * 2);
-  ctx.moveTo(x - 4.2, y + 0.5);
-  ctx.lineTo(x + 4.2, y + 0.5);
-  ctx.lineTo(x, y + 5.5);
-  ctx.closePath();
-  ctx.fill();
+/** T16: empezar la partida desde la pantalla de título. */
+function startGame() {
+  session = 'playing';
+  resetTutorial();
+  enemyManager.restart();
+  ball = null;
+  throwWasDown = Boolean(inputState.throw);
+  jumpWasDown = Boolean(inputState.jump);
 }
 
-/** Pantalla de fin de partida (T09): derrota o victoria. */
-function drawEndScreen(ctx, title, line1, line2) {
-  ctx.fillStyle = 'rgba(0, 0, 0, 0.62)';
-  ctx.fillRect(0, 0, CONFIG.screen.width, CONFIG.screen.height);
-  ctx.textAlign = 'center';
-  ctx.fillStyle = '#ffe44d';
-  ctx.font = 'bold 16px monospace';
-  ctx.fillText(title, screenCenterX, 100);
-  ctx.fillStyle = '#fff';
-  ctx.font = '10px monospace';
-  ctx.fillText(line1, screenCenterX, 120);
-  ctx.font = '8px monospace';
-  ctx.fillText(line2, screenCenterX, 136);
+/** T16: tutorial del primer nivel (solo en la oleada de CONFIG.tutorial.wave). */
+function resetTutorial() {
+  tutorialSucked = false;
+  tutorialThrown = false;
+  tutorialCrushed = false;
+}
+
+function updateTutorial(launched) {
+  if (enemyManager.wave !== CONFIG.tutorial.wave) return;
+  if (enemyManager.carried && !tutorialSucked) tutorialSucked = true;
+  if (launched) tutorialThrown = true;
+  if (enemyManager.score > 0) tutorialCrushed = true;
+}
+
+function tutorialMessage() {
+  if (enemyManager.wave !== CONFIG.tutorial.wave) return null;
+  if (!tutorialSucked) return 'X: ¡ASPIRAR a los enemigos!';
+  if (!tutorialThrown) return 'Z: ¡LANZAR la bola y aplasta a los demás!';
+  if (!tutorialCrushed) return '¡MUY BIEN! ¡Sigue aplastando!';
+  return null;
 }
 
 function update(deltaSeconds) {
   previousTick = currentTick;
   currentTick += 1;
   inputState = input.getState();
+
+  const throwPressed = Boolean(inputState.throw) && !throwWasDown;
+  throwWasDown = Boolean(inputState.throw);
+  const jumpPressed = Boolean(inputState.jump) && !jumpWasDown;
+  jumpWasDown = Boolean(inputState.jump);
+
+  // T16: en el título el juego está pausado; Z o ESPACIO empieza la partida.
+  if (session === 'title') {
+    comicEffects.update(deltaSeconds);
+    audio.update(deltaSeconds, { player, enemyManager, ball: null, inputState, jumped: false, launched: false });
+    if (throwPressed || jumpPressed) startGame();
+    return;
+  }
+
   const vyBefore = player.body.vy;
   const groundedBefore = player.body.grounded;
   player.update(deltaSeconds, inputState);
   const jumped = player.body.vy < -CONFIG.physics.jumpSpeed * 0.5 && (groundedBefore || vyBefore >= 0);
 
   // Lanzar es por flanco: una pulsación = una bola.
-  const throwPressed = Boolean(inputState.throw) && !throwWasDown;
-  throwWasDown = Boolean(inputState.throw);
-  const jumpPressed = Boolean(inputState.jump) && !jumpWasDown;
-  jumpWasDown = Boolean(inputState.jump);
   let launched = false;
   if (throwPressed && (!ball || !ball.alive)) {
     ball = enemyManager.launchBall(player);
@@ -78,9 +99,14 @@ function update(deltaSeconds) {
   enemyManager.update(deltaSeconds, player, inputState, ball);
   comicEffects.update(deltaSeconds);
   audio.update(deltaSeconds, { player, enemyManager, ball, inputState, jumped, launched });
+
+  // T16: tutorial del primer nivel.
+  updateTutorial(launched);
+
   // T09: en derrota o victoria, Z o ESPACIO reinician la partida.
   if (enemyManager.phase !== 'playing' && (throwPressed || jumpPressed)) {
     enemyManager.restart();
+    resetTutorial();
   }
 }
 
@@ -102,67 +128,57 @@ function render(alpha, isPaused = false) {
     ctx.fillStyle = '#d3bc8c';
     ctx.fillRect(platform.x + 1, platform.y + 1, platform.width - 2, 2);
   }
+
+  // T16: en el título solo se muestra el logo (sin enemigos ni jugador).
+  if (session === 'title') {
+    hud.render(ctx, {
+      width: CONFIG.screen.width,
+      height: CONFIG.screen.height,
+      tick: interpolatedTick,
+      phase: 'title',
+    });
+    return;
+  }
+
   enemyManager.render(ctx, alpha, player);
   if (ball) ball.render(ctx, alpha);
   player.render(ctx, alpha);
   comicEffects.render(ctx);
-  // HUD (T09): puntos a la izquierda, oleada a la derecha y vidas como corazones (+ T11: estado del sonido).
-  ctx.font = 'bold 8px monospace';
-  ctx.textAlign = 'left';
-  ctx.fillStyle = '#fff';
-  ctx.fillText(`PUNTOS ${enemyManager.score}`, 6, 12);
-  ctx.textAlign = 'right';
-  ctx.fillText(`OLEADA ${enemyManager.wave}${audio.muted ? ' · MUDO' : ''}`, CONFIG.screen.width - 6, 12);
-  for (let i = 0; i < CONFIG.player.lives; i += 1) {
-    drawHeart(ctx, 10 + i * 11, 20, i < enemyManager.lives);
-  }
-  ctx.textAlign = 'center';
-  ctx.font = '16px monospace';
-  ctx.fillText('TUMBLE DOG', screenCenterX, 40 + Math.sin(interpolatedTick / 20) * 4);
-  ctx.font = '7px monospace';
-  ctx.fillText(
-    'A/D MOVER · ESPACIO SALTAR · X ASPIRAR · Z LANZAR · M SONIDO',
-    screenCenterX,
-    CONFIG.screen.height - 8,
-  );
-  const activeActions = [
-    inputState.left && 'IZQUIERDA',
-    inputState.right && 'DERECHA',
-    inputState.jump && 'SALTO',
-    inputState.suck && 'ASPIRAR',
-    inputState.throw && 'LANZAR',
-  ].filter(Boolean);
-  if (activeActions.length) {
-    ctx.font = 'bold 8px monospace';
-    ctx.fillText(activeActions.join(' + '), screenCenterX, 75);
-  }
 
-  // T09: pantallas de derrota y victoria.
-  if (enemyManager.phase === 'gameover') {
-    drawEndScreen(
-      ctx,
-      'GAME OVER',
-      `PUNTOS ${enemyManager.score} · OLEADA ${enemyManager.wave}`,
-      'pulsa Z o ESPACIO para reintentar',
-    );
-  } else if (enemyManager.phase === 'victory') {
-    drawEndScreen(
-      ctx,
-      '¡VICTORIA!',
-      `PUNTOS ${enemyManager.score} · ${CONFIG.wave.winWave} oleadas limpias`,
-      'pulsa Z o ESPACIO para jugar otra vez',
-    );
-  }
-
-  if (isPaused) {
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.58)';
-    ctx.fillRect(0, 0, CONFIG.screen.width, CONFIG.screen.height);
-    ctx.fillStyle = '#fff';
-    ctx.font = 'bold 16px monospace';
-    ctx.fillText('PAUSA', screenCenterX, CONFIG.screen.height / 2);
-    ctx.font = '10px monospace';
-    ctx.fillText('vuelve a la ventana para seguir', screenCenterX, CONFIG.screen.height / 2 + 20);
-  }
+  // T16: todo el HUD (incl. tutorial, título y finales) vive en src/hud.js.
+  hud.render(ctx, {
+    width: CONFIG.screen.width,
+    height: CONFIG.screen.height,
+    tick: interpolatedTick,
+    phase: enemyManager.phase,
+    score: enemyManager.score,
+    wave: enemyManager.wave,
+    lives: enemyManager.lives,
+    maxLives: CONFIG.player.lives,
+    muted: audio.muted,
+    actions: [
+      inputState.left && 'IZQUIERDA',
+      inputState.right && 'DERECHA',
+      inputState.jump && 'SALTO',
+      inputState.suck && 'ASPIRAR',
+      inputState.throw && 'LANZAR',
+    ].filter(Boolean),
+    tutorial: { message: tutorialMessage() },
+    paused: isPaused,
+    end: enemyManager.phase === 'gameover'
+      ? {
+        title: 'GAME OVER',
+        line1: `PUNTOS ${enemyManager.score} · OLEADA ${enemyManager.wave}`,
+        line2: 'pulsa Z o ESPACIO para reintentar',
+      }
+      : enemyManager.phase === 'victory'
+        ? {
+          title: '¡VICTORIA!',
+          line1: `PUNTOS ${enemyManager.score} · ${CONFIG.wave.winWave} oleadas limpias`,
+          line2: 'pulsa Z o ESPACIO para jugar otra vez',
+        }
+        : null,
+  });
 }
 
 createGameLoop({
