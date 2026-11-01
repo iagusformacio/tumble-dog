@@ -1,18 +1,23 @@
 import { CONFIG } from './config.js';
-import { overlaps } from './physics.js';
+import { DEFAULT_PLATFORMS, overlaps } from './physics.js';
 import { createEnemy } from './enemy.js';
+import { createBall } from './ball.js';
 
 /**
  * T06: un solo enemigo (La Portavoz Airada) sobre la plataforma izquierda.
- * T07/T08 ampliarán esto a oleadas; aquí basta con patrulla, aspiración,
+ * T07 añade lanzar la bola: aplastar enemigos, rebotes y combos.
+ * T08/T09 ampliarán esto a oleadas; aquí basta con patrulla, aspiración,
  * escape a los 3 s y, si te toca estando libre, una vida menos.
  */
-export function createEnemyManager({ platforms, spawn = { x: 40, y: 136 } } = {}) {
+export function createEnemyManager({ platforms = DEFAULT_PLATFORMS, spawn = { x: 40, y: 136 } } = {}) {
   const enemies = [createEnemy({ platforms, x: spawn.x, y: spawn.y })];
   let respawnLeft = 0;
   let lives = CONFIG.player.lives;
   let invulnerableLeft = 0;
   let hits = 0;
+  let score = 0;
+  let comboChain = 0; // enemigos aplastados con la bola en vuelo ahora mismo
+  let lastCombo = 0;  // cadena del último lanzamiento (para el HUD)
 
   function hitPlayer(player) {
     if (invulnerableLeft > 0) return false;
@@ -33,13 +38,51 @@ export function createEnemyManager({ platforms, spawn = { x: 40, y: 136 } } = {}
     return free;
   }
 
-  function update(dt, player, input = {}) {
+  /**
+   * Lanza al enemigo que Don Presi lleva dentro como bola (T07).
+   * Devuelve la bola, o null si no lleva a nadie.
+   */
+  function launchBall(player) {
+    const carried = enemies.find((enemy) => enemy.isContained());
+    if (!carried) return null;
+    carried.release();
+    comboChain = 0;
+    lastCombo = 0;
+    const p = player.body;
+    const size = CONFIG.ball.size;
+    const facing = player.facing >= 0 ? 1 : -1;
+    return createBall({
+      x: facing > 0 ? p.x + p.width : p.x - size,
+      y: p.y + p.height / 2 - size / 2,
+      direction: facing,
+      carrier: carried,
+      platforms,
+    });
+  }
+
+  /** La bola aplasta a los enemigos libres o mareados que toca; cada uno sube el combo. */
+  function hitByBall(ball) {
+    if (!ball || !ball.alive) return;
+    for (const enemy of enemies) {
+      const aplastable = enemy.isDangerous() || enemy.state === 'stunned';
+      if (!aplastable || !overlaps(ball.body, enemy.body)) continue;
+      if (enemy.crush()) {
+        score += CONFIG.combo[Math.min(comboChain, CONFIG.combo.length - 1)];
+        comboChain += 1;
+        lastCombo = comboChain;
+      }
+    }
+  }
+
+  function update(dt, player, input = {}, ball = null) {
     if (invulnerableLeft > 0) invulnerableLeft -= dt;
 
     for (const enemy of enemies) {
       enemy.update(dt, { player });
       if (enemy.isDangerous() && overlaps(enemy.body, player.body)) hitPlayer(player);
     }
+
+    hitByBall(ball);
 
     // Aspirar: solo si Don Presi mantiene la acción y no lleva ya a alguien dentro.
     const carriesOne = enemies.some((enemy) => enemy.isContained());
@@ -88,10 +131,13 @@ export function createEnemyManager({ platforms, spawn = { x: 40, y: 136 } } = {}
   }
 
   return {
-    enemies, update, render,
+    enemies, update, render, launchBall,
     get lives() { return lives; },
     get hits() { return hits; },
     get invulnerableLeft() { return invulnerableLeft; },
+    get score() { return score; },
+    get comboChain() { return comboChain; },
+    get lastCombo() { return lastCombo; },
     /** Lo que lleva dentro Don Presi, o null. T07 lo lanzará. */
     get carried() { return enemies.find((enemy) => enemy.isContained()) ?? null; },
   };

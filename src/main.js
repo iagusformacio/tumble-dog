@@ -15,13 +15,25 @@ const screenCenterX = CONFIG.screen.width / 2;
 let previousTick = 0;
 let currentTick = 0;
 let inputState = input.getState();
+let ball = null; // bola en vuelo (T07); solo una a la vez
+let throwWasDown = false;
 
 function update(deltaSeconds) {
   previousTick = currentTick;
   currentTick += 1;
   inputState = input.getState();
   player.update(deltaSeconds, inputState);
-  enemyManager.update(deltaSeconds, player, inputState);
+  // Lanzar es por flanco: una pulsación = una bola.
+  const throwPressed = Boolean(inputState.throw) && !throwWasDown;
+  throwWasDown = Boolean(inputState.throw);
+  if (throwPressed && (!ball || !ball.alive)) {
+    ball = enemyManager.launchBall(player);
+  }
+  if (ball) {
+    ball.update(deltaSeconds);
+    if (!ball.alive) ball = null;
+  }
+  enemyManager.update(deltaSeconds, player, inputState, ball);
 }
 
 function render(alpha, isPaused = false) {
@@ -36,12 +48,13 @@ function render(alpha, isPaused = false) {
     ctx.fillRect(platform.x, platform.y, platform.width, 2);
   }
   enemyManager.render(ctx, alpha, player);
+  if (ball) ball.render(ctx, alpha);
   player.render(ctx, alpha);
-  // HUD mínimo mientras no existe T09: vidas en texto.
+  // HUD mínimo mientras no existe T09: vidas y puntos en texto.
   ctx.fillStyle = '#fff';
   ctx.font = 'bold 8px monospace';
   ctx.textAlign = 'left';
-  ctx.fillText(`VIDAS ${enemyManager.lives}`, 6, 12);
+  ctx.fillText(`VIDAS ${enemyManager.lives} · PUNTOS ${enemyManager.score}`, 6, 12);
   ctx.textAlign = 'center';
   ctx.font = '16px monospace';
   ctx.fillText('TUMBLE DOG', screenCenterX, 40 + Math.sin(interpolatedTick / 20) * 4);

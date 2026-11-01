@@ -5,7 +5,8 @@ import { DEFAULT_PLATFORMS, overlaps } from './physics.js';
  * Enemigos inventados de Tumble Dog. T06 trae a La Portavoz Airada:
  * patrulla la plataforma de un lado a otro, se para al girar y, si Don Presi
  * la aspira, se encoge y entra en la boquilla. Estados:
- * 'patrol' (libre), 'sucked' (dentro de Don Presi) y 'stunned' (se ha escapado).
+ * 'patrol' (libre), 'sucked' (dentro de Don Presi), 'stunned' (se ha escapado)
+ * y 'defeated' (aplastada por la bola lanzada, T07).
  */
 const TIPO = 'portavoz';
 
@@ -105,9 +106,17 @@ export function createEnemy({
     return true;
   }
 
+  /** La aplasta la bola lanzada (T07). Vale desde 'patrol' y 'stunned'. */
+  function crush() {
+    if (state !== 'patrol' && state !== 'stunned') return false;
+    state = 'defeated';
+    return true;
+  }
+
   function canBeSucked() { return state === 'patrol'; }
   function isContained() { return state === 'sucked'; }
   function isDangerous() { return state === 'patrol'; }
+  function isDefeated() { return state === 'defeated'; }
 
   function drawBody(ctx, alpha = 1) {
     const x = previousX + (body.x - previousX) * alpha;
@@ -124,12 +133,24 @@ export function createEnemy({
 
   function render(ctx, alpha = 1) {
     if (state === 'sucked') return; // se dibuja encoquita en la boquilla (enemies.js)
+    if (state === 'defeated') {
+      // Aplastada: mancha plana sobre el suelo (humor físico de tebeo).
+      const x = previousX + (body.x - previousX) * alpha;
+      const y = previousY + (body.y - previousY) * alpha;
+      ctx.save();
+      ctx.translate(x + body.width / 2, y + body.height);
+      ctx.scale(1.35, 0.22);
+      ctx.translate(0, -body.height / 2);
+      drawPortavoz(ctx, body.width, body.height);
+      ctx.restore();
+      return;
+    }
     drawBody(ctx, alpha);
   }
 
   return {
-    type, body, update, render, drawBody, suck, release,
-    canBeSucked, isContained, isDangerous,
+    type, body, update, render, drawBody, suck, release, crush,
+    canBeSucked, isContained, isDangerous, isDefeated,
     get state() { return state; },
     get direction() { return dir; },
     get containedSeconds() { return state === 'sucked' ? containLeft : 0; },
