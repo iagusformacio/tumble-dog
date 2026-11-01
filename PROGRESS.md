@@ -1,5 +1,6 @@
 # PROGRESS
 
+- T11 (FETS, #13): sonido y música sintetizados por WebAudio en `src/audio.js` (melodía chiptune estilo tebeo, salto, aspirado, captura, lanzamiento, rebote, combo y daño, tecla M para silenciar); 49/49 tests verdes.
 - T10 (FETS, #12): `src/assets.js` integra hojas de sprites estilo tebeo (recorte de viñeta, chroma #00FF00 con despill y caché), fondo de Moncloa, retratos/UI y onomatopeyas («¡GLUP!», «¡ZAS!», «¡PAF!») con fallback por código; 46/46 tests verdes.
 - Arte de sesión (AGB, norma 20): 10 imágenes ≤200 KB — fondo completo de palacio inventado en assets/escenario y, en assets/ui, retratos de Don Presi y enemigos 1-4 para HUD/título (el de la Portavoz, recorte de ART-2: el generador lo bloqueó), efectos de polvo/aturdido, flecha de tutorial y «¡CRAC!»; prompts en assets/PROMPTS.md.
 - T14 (FETS): constantes de física, pantalla y jugador migradas a `src/config.js`; añadidos coyote time y buffer de salto (6 frames) con pruebas.
