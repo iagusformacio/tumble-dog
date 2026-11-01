@@ -2,6 +2,7 @@
 
 - T10 (FETS, #12): `src/assets.js` integra hojas de sprites estilo tebeo (recorte de viñeta, chroma #00FF00 con despill y caché), fondo de Moncloa, retratos/UI y onomatopeyas («¡GLUP!», «¡ZAS!», «¡PAF!») con fallback por código; 46/46 tests verdes.
 - Arte de sesión (AGB, norma 20): 10 imágenes ≤200 KB — fondo completo de palacio inventado en assets/escenario y, en assets/ui, retratos de Don Presi y enemigos 1-4 para HUD/título (el de la Portavoz, recorte de ART-2: el generador lo bloqueó), efectos de polvo/aturdido, flecha de tutorial y «¡CRAC!»; prompts en assets/PROMPTS.md.
+- T08 (Arena, #10): los 8 enemigos inventados en pantalla, cada uno con comportamiento propio (Tertuliano dispara bulos, Asesor se esconde, Influencer corre sin pausa, Líder salta alto, Barón es lento y grande, Activista patrulla errática y salta, Diputado da ráfagas); los aplastados reaparecen solos; 53 tests verdes.
 - T14 (FETS): constantes de física, pantalla y jugador migradas a `src/config.js`; añadidos coyote time y buffer de salto (6 frames) con pruebas.
 - T07 (Arena, #9): lanzar la bola — rebota en paredes/suelo/plataformas, aplasta enemigos en cadena con combo 100/200/400/800 (`src/ball.js`, `launchBall` en `src/enemies.js`, estado «defeated» en `src/enemy.js`); tests verdes.
 - T15 (Arena): captura del canvas a los 3 s del smoke test, subida como artefacto del CI.
