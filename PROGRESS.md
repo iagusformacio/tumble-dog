@@ -6,7 +6,9 @@
 - T01: bucle fijo de 60 Hz, render interpolado, canvas responsive y pausa por pérdida de foco/visibilidad; pruebas automatizadas verdes.
 - T02: entrada unificada por teclado, mando (Gamepad API) y controles táctiles; integración básica en `main.js` y pruebas automatizadas.
 - T03 en curso (FETS): fondo de La Moncloa dibujado por código.
-- Jugar: en local con `python3 -m http.server 8000`. Sin Pages (repo privado).
+- T13 (Iagus): smoke test en CI con Playwright (Chromium headless): arranca, juega 5 s con pulsaciones y falla si hay errores JS en consola; servidor local `npm run serve`, smoke en local `npm run test:smoke`.
+- T05 reservada (Iagus): módulo `src/player.js` contra la interfaz de T04; se integrará al fusionarse T04 (AGB).
+- Jugar: en local con `python3 -m http.server 8000` o `npm run serve`. Sin Pages (repo privado).
 
 | Hito | Estado |
 |---|---|
@@ -14,3 +16,4 @@
 | T01 bucle de juego | hecho (validado localmente; pendiente de CI/merge) |
 | T02 entrada unificada | hecho (validado localmente; pendiente de CI/merge) |
 | T03 fondo Moncloa | en curso |
+| T13 smoke test CI | hecho |
