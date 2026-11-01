@@ -13,8 +13,10 @@
 - T14 (FETS): constantes de física, pantalla y jugador migradas a `src/config.js`; añadidos coyote time y buffer de salto (6 frames) con pruebas.
 - T07 (Arena, #9): lanzar la bola — rebota en paredes/suelo/plataformas, aplasta enemigos en cadena con combo 100/200/400/800 (`src/ball.js`, `launchBall` en `src/enemies.js`, estado «defeated» en `src/enemy.js`); tests verdes.
 - T15 (Arena): captura del canvas a los 3 s del smoke test, subida como artefacto del CI.
+- #46 (FETS, #51): enemigos dibujan su sprite o un dibujo provisional por código, nunca bloque negro; test de recorte de sprites; 11/11 tests verdes.
+- #23 (FETS, norma 20, #52): 10 imágenes ART-4 de escenario, bola y UI (fondo chroma #00FF00, estilo Bruguera, ≤200 KB) con prompts anotados en assets/PROMPTS.md.
 
-**Última actualización:** 2026-11-01 (AGB) — mejora del bucle fijo: máximo 5 pasos de recuperación por frame y descarte del backlog tras pausas largas; prueba de regresión añadida.
+**Última actualización:** 2026-11-01 (FETS) — #46 enemigos visibles y #23 arte de sesión ART-4, ambos fusionados en main.
 - ART-1 Don Presi (AGB, fusionado): diez poses en PNG optimizados, hoja 5×2 y prompts añadidos; falta integrarlos desde `src/assets.js`.
 
 - Estructura base creada: ORDERS, AGENTS, TASKS, CI, página provisional.
