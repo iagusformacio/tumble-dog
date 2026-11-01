@@ -1,0 +1,13 @@
+export const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
+export const lerp = (a, b, t) => a + (b - a) * t;
+export const rand = (a = 0, b = 1) => a + Math.random() * (b - a);
+export const randInt = (a, b) => Math.floor(rand(a, b + 1));
+export const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
+export const sign = (v) => (v < 0 ? -1 : v > 0 ? 1 : 0);
+export const approach = (v, target, delta) => (v < target ? Math.min(v + delta, target) : Math.max(v - delta, target));
+export const easeOutBack = (t) => { const c = 1.70158; return 1 + (c + 1) * (t - 1) ** 3 + c * (t - 1) ** 2; };
+export const easeOutCubic = (t) => 1 - (1 - t) ** 3;
+export const easeInOut = (t) => (t < 0.5 ? 2 * t * t : 1 - (-2 * t + 2) ** 2 / 2);
+export const overlap = (a, b) => a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y;
+export const dist2 = (ax, ay, bx, by) => (ax - bx) ** 2 + (ay - by) ** 2;
+export const hsl = (h, s = 90, l = 60, a = 1) => `hsla(${h % 360},${s}%,${l}%,${a})`;

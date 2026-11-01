@@ -1,75 +1,31 @@
-// Números del «feeling» del juego. Cambiar el juego = cambiar aquí.
-// Unidades: píxeles lógicos (pantalla 320×224), segundos, 60 Hz.
-export const CONFIG = Object.freeze({
-  screen: Object.freeze({ width: 320, height: 224 }),
-  step: 1 / 60,
-  physics: Object.freeze({ gravity: 900, jumpSpeed: 330 }),
-  player: Object.freeze({
-    width: 16,
-    height: 24,
-    spawnX: 152,
-    spawnY: 184,
-    walkSpeed: 105,
-    coyoteFrames: 6,       // margen para saltar tras dejar una plataforma
-    jumpBufferFrames: 6,   // margen para saltar un poco antes de aterrizar
-    lives: 3,
-    invulnerableSeconds: 2,
-  }),
-  suck: Object.freeze({
-    range: 56,
-    verticalRange: 24,     // altura a la que la boquilla aún engancha
-    pullSeconds: 0.3,      // lo que tarda el enemigo en entrar en la boquilla
-    escapeSeconds: 3,      // si no lo lanzas, se te escapa
-    escapeStunSeconds: 0.9, // queda mareado al escaparse
-  }),
-  enemy: Object.freeze({
-    // Cada enemigo inventado tiene su tamaño, velocidad de patrulla y su
-    // comportamiento propio (T08): bulos, escondite, correr, saltar, ráfagas…
-    portavoz: Object.freeze({ width: 16, height: 22, speed: 46, turnPauseSeconds: 0.35 }),
-    tertuliano: Object.freeze({
-      width: 16, height: 22, speed: 38, turnPauseSeconds: 0.3,
-      shootEverySeconds: 2.5, bulletSpeed: 95, bulletRange: 130, // dispara bulos
-    }),
-    asesor: Object.freeze({
-      width: 15, height: 22, speed: 30, turnPauseSeconds: 0.2,
-      hideEverySeconds: 5, hiddenSeconds: 2.2, // se esconde
-    }),
-    influencer: Object.freeze({ width: 14, height: 20, speed: 88, turnPauseSeconds: 0 }), // corre
-    lider: Object.freeze({
-      width: 16, height: 22, speed: 40, turnPauseSeconds: 0.25,
-      jumpEverySeconds: 1.8, jumpSpeed: 300, // salta alto
-    }),
-    baron: Object.freeze({ width: 20, height: 26, speed: 26, turnPauseSeconds: 0 }), // pesado
-    activista: Object.freeze({
-      width: 14, height: 20, speed: 56, turnPauseSeconds: 0.1,
-      jumpEverySeconds: 2.4, jumpSpeed: 230, erratic: true, // salta y cambia al azar
-    }),
-    diputado: Object.freeze({
-      width: 16, height: 22, speed: 40, turnPauseSeconds: 0.8,
-      burstEverySeconds: 3.5, burstSeconds: 0.7, burstSpeed: 115, // ráfagas
-    }),
-    respawnSeconds: 1.2,
-    bulletSize: 6,
-  }),
-  wave: Object.freeze({
-    extraPerWave: 2,         // enemigos extra por cada oleada nueva
-    maxCount: 14,            // tope de enemigos simultáneos
-    speedBonusPerWave: 0.15, // cada oleada va un 15% más rápida
-    maxSpeedBonus: 0.6,
-    interWaveSeconds: 2,     // pausa con aviso entre oleada y oleada
-    winWave: 5,              // limpiar esta oleada = victoria
-  }),
-  title: Object.freeze({
-    blinkSeconds: 0.45, // parpadeo del «pulsa Z o ESPACIO para empezar»
-  }),
-  tutorial: Object.freeze({
-    wave: 1, // solo se enseña en la primera oleada
-  }),
-  ball: Object.freeze({
-    speed: 260,
-    size: 10,          // diámetro de la bola (enemigo enrollado)
-    lifeSeconds: 4,    // la bola desaparece sola al cabo de este tiempo
-    restitution: 0.95, // fracción de velocidad que conserva en cada rebote
-  }),
-  combo: Object.freeze([100, 200, 400, 800]),
-});
+// Todos los números del «feeling». Cambiar el juego = cambiar aquí.
+// Unidades: píxeles lógicos (1280×720), segundos.
+export const W = 1280;
+export const H = 720;
+export const FLOOR_Y = 640;
+
+export const CONFIG = {
+  step: 1 / 120,
+  physics: { gravity: 2700, maxFall: 1350 },
+  player: {
+    w: 46, h: 92, scale: 0.5,
+    runSpeed: 360, accelGround: 4200, accelAir: 2600, friction: 5200,
+    jumpSpeed: 1080, jumpCut: 0.45, coyote: 0.1, buffer: 0.12,
+    lives: 3, invulnerable: 2.4, respawnDelay: 1.1,
+    extraLifeEvery: 40000,
+  },
+  vacuum: {
+    range: 250, rangePow: 340, halfStart: 34, halfEnd: 92,
+    pullTime: 0.32, captureFly: 0.16, maxHeld: 4,
+    warnAt: 3.0, burstAt: 4.6,
+  },
+  ball: {
+    speed: 700, baseRadius: 38, perEnemy: 9, maxWallHits: 4, life: 7,
+    chain: [100, 200, 400, 800, 1600, 3200, 6400],
+  },
+  enemy: { w: 48, h: 86, scale: 0.47, stunAfterBeam: 0.7 },
+  stage: { hurryAt: 32, chaserAt: 42, clearDelay: 1.6, introTime: 1.8 },
+  letters: { word: 'TUMBLEDOG', dropChance: 0.3, bubbleSpeed: 70 },
+  bonus: { time: 12, rain: 0.09 },
+  fx: { maxParticles: 900 },
+};

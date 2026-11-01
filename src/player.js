@@ -1,183 +1,109 @@
-import { CONFIG } from './config.js';
-import { DEFAULT_PLATFORMS, stepBody } from './physics.js';
-import { drawAnchoredSprite, getSharedAssets } from './assets.js';
+// Don Presi: corre, salta, atraviesa plataformas, aspira enemigos y los lanza en bola.
+import { CONFIG, W, FLOOR_Y } from './config.js';
+import { stepBody } from './physics.js';
+import { approach, clamp } from './util.js';
+import { drawSprite } from './sprites.js';
 
-/** Don Presi es un personaje ficticio; usa sprites de ART-1 o dibujo provisional por código. */
-export function createPlayer({
-  config = CONFIG,
-  x = config.player.spawnX,
-  y = config.player.spawnY,
-  width = config.player.width,
-  height = config.player.height,
-  platforms = DEFAULT_PLATFORMS,
-  worldWidth = config.screen.width,
-  assets = getSharedAssets(),
-} = {}) {
-  const body = { x, y, width, height, vx: 0, vy: 0, grounded: false };
-  let previousX = x;
-  let previousY = y;
-  let jumpWasDown = false;
-  let throwWasDown = false;
-  let coyoteLeft = 0;
-  let jumpBufferLeft = 0;
-  let throwAnimLeft = 0;
-  let facing = 1;
-  let sucking = false;
-  let walkTime = 0;
-  const suckZone = { x: 0, y: 0, width: config.suck.range, height: config.suck.verticalRange };
+const C = CONFIG.player;
 
-  function currentPose() {
-    if (throwAnimLeft > 0) return 'throw';
-    if (sucking) return 'suck';
-    if (!body.grounded) return body.vy < 0 ? 'jump' : 'fall';
-    if (Math.abs(body.vx) > 1) return Math.floor(walkTime * 10) % 2 === 0 ? 'walkA' : 'walkB';
-    return 'idle';
-  }
-
-  function update(dt, input = {}) {
-    previousX = body.x;
-    previousY = body.y;
-    const elapsedFrames = dt > 0 ? Math.max(1, Math.round(dt / config.step)) : 0;
-    const direction = Math.max(-1, Math.min(1, input.horizontal ?? 0));
-    body.vx = direction * config.player.walkSpeed;
-    if (direction) facing = Math.sign(direction);
-    sucking = Boolean(input.suck);
-
-    const throwing = Boolean(input.throw);
-    if (throwing && !throwWasDown) {
-      throwAnimLeft = 0.18;
-    } else if (throwAnimLeft > 0) {
-      throwAnimLeft = Math.max(0, throwAnimLeft - dt);
-    }
-    throwWasDown = throwing;
-
-    const jumping = Boolean(input.jump);
-    const jumpPressed = jumping && !jumpWasDown;
-    jumpWasDown = jumping;
-
-    const wasGrounded = body.grounded;
-    const canJumpNow = wasGrounded || coyoteLeft > 0;
-    const jumpedBeforeStep = (jumpPressed || jumpBufferLeft > 0) && canJumpNow;
-
-    if (jumpPressed && !jumpedBeforeStep) {
-      jumpBufferLeft = config.player.jumpBufferFrames;
-    }
-
-    stepBody(body, platforms, dt, {
-      gravity: config.physics.gravity,
-      jumpSpeed: config.physics.jumpSpeed,
-      jump: jumpedBeforeStep,
-      canJump: canJumpNow,
-    });
-
-    if (jumpedBeforeStep) {
-      coyoteLeft = 0;
-      jumpBufferLeft = 0;
-    } else if (body.grounded && jumpBufferLeft > 0) {
-      body.vy = -config.physics.jumpSpeed;
-      body.grounded = false;
-      coyoteLeft = 0;
-      jumpBufferLeft = 0;
-    } else {
-      if (body.grounded || wasGrounded) {
-        coyoteLeft = config.player.coyoteFrames;
-      } else {
-        coyoteLeft = Math.max(0, coyoteLeft - elapsedFrames);
-      }
-      if (!jumpPressed) {
-        jumpBufferLeft = Math.max(0, jumpBufferLeft - elapsedFrames);
-      }
-    }
-
-    if (body.x < 0) { body.x = 0; body.vx = 0; }
-    if (body.x + body.width > worldWidth) { body.x = worldWidth - body.width; body.vx = 0; }
-
-    // Zona de aspiración delante de la boquilla (coordenadas de pantalla).
-    const mouthX = facing >= 0 ? body.x + body.width : body.x - config.suck.range;
-    suckZone.x = mouthX;
-    suckZone.y = body.y + 4;
-    suckZone.width = config.suck.range;
-    suckZone.height = config.suck.verticalRange;
-    if (direction && body.grounded) walkTime += dt;
-  }
-
-  function drawSuctionLines(ctx, x, y) {
-    ctx.save();
-    ctx.translate(x + body.width / 2, y);
-    ctx.scale(facing, 1);
-    ctx.strokeStyle = '#eafaff';
-    ctx.lineWidth = 1;
-    ctx.beginPath();
-    ctx.moveTo(13, 11); ctx.lineTo(19, 9);
-    ctx.moveTo(14, 14); ctx.lineTo(22, 14);
-    ctx.moveTo(13, 17); ctx.lineTo(19, 19);
-    ctx.stroke();
-    ctx.restore();
-  }
-
-  function render(ctx, alpha = 1) {
-    const x = previousX + (body.x - previousX) * alpha;
-    const y = previousY + (body.y - previousY) * alpha;
-    const pose = currentPose();
-    const sprite = assets?.getSprite('donPresi', pose) ?? assets?.getSprite('donPresi', 'idle') ?? null;
-
-    if (drawAnchoredSprite(ctx, sprite, {
-      x,
-      y,
-      bodyWidth: body.width,
-      bodyHeight: body.height,
-      targetHeight: body.height + 3,
-      facing,
-    })) {
-      if (sucking) drawSuctionLines(ctx, x, y);
-      return;
-    }
-
-    const stride = body.grounded && body.vx ? Math.sin(walkTime * 14) * 2 : 0;
-    ctx.save();
-    ctx.translate(x + body.width / 2, y);
-    ctx.scale(facing, 1);
-    // Dibujo estilo tebeo por código (con contorno negro grueso) mientras cargan los PNG.
-    ctx.fillStyle = '#111';
-    ctx.fillRect(-7, -1, 14, 13);
-    ctx.fillRect(-7, 9, 14, 12);
-    ctx.fillRect(-6, 19, 6, 6 + stride);
-    ctx.fillRect(0, 19, 6, 6 - stride);
-    ctx.fillStyle = '#202e48';
-    ctx.fillRect(-6, 10, 12, 10);
-    ctx.fillRect(-5, 19, 4, 5 + stride);
-    ctx.fillRect(1, 19, 4, 5 - stride);
-    ctx.fillStyle = '#fff';
-    ctx.fillRect(-2, 10, 4, 7);
-    ctx.fillStyle = '#bd3b3b';
-    ctx.fillRect(0, 10, 2, 6);
-    ctx.fillStyle = '#efc59a';
-    ctx.fillRect(-6, 1, 12, 10);
-    ctx.fillStyle = '#36291f';
-    ctx.fillRect(-6, 0, 12, 3);
-    ctx.fillRect(2, 3, 4, 2);
-    ctx.fillStyle = '#222';
-    ctx.fillRect(3, 5, 1, 1);
-    ctx.fillRect(2, 8, 3, 1);
-    ctx.fillStyle = '#111';
-    ctx.fillRect(4, 12, 8, 5);
-    ctx.fillStyle = '#6c7881';
-    ctx.fillRect(5, 13, 6, 3);
-    ctx.restore();
-
-    if (sucking) drawSuctionLines(ctx, x, y);
-  }
-
+export function createPlayer() {
   return {
-    body,
-    update,
-    render,
-    /** Rectángulo donde la boquilla puede enganchar a un enemigo libre. */
-    suckZone,
-    get facing() { return facing; },
-    get sucking() { return sucking; },
-    get pose() { return currentPose(); },
-    get coyoteFramesLeft() { return coyoteLeft; },
-    get jumpBufferFramesLeft() { return jumpBufferLeft; },
+    x: W / 2 - C.w / 2, y: FLOOR_Y - C.h, w: C.w, h: C.h, vx: 0, vy: 0, facing: 1,
+    onGround: true, coyote: 0, buffer: 0, drop: 0, alive: true, respawn: 0, invul: 0, hurtT: 0,
+    sucking: false, suckT: 0, held: [], heldT: 0, throwT: 0, anim: 0, sx: 1, sy: 1,
+    speedUp: 0, pow: 0, landT: 0,
   };
+}
+
+export function respawnPlayer(p) {
+  Object.assign(p, { x: W / 2 - C.w / 2, y: -C.h, vx: 0, vy: 0, alive: true, invul: C.invulnerable, held: [], heldT: 0, sucking: false, onGround: false, hurtT: 0, speedUp: 0, pow: 0 });
+}
+
+export function nozzle(p) {
+  return { x: p.x + p.w / 2 + p.facing * 56, y: p.y + p.h - 46 };
+}
+
+/** Devuelve eventos: { jumped, landed, shoot } */
+export function updatePlayer(p, dt, inp, plats, fx) {
+  const ev = { jumped: false, landed: false, shoot: false };
+  p.anim += dt;
+  p.invul = Math.max(0, p.invul - dt);
+  p.throwT = Math.max(0, p.throwT - dt);
+  p.speedUp = Math.max(0, p.speedUp - dt);
+  p.sx += (1 - p.sx) * Math.min(1, dt * 14); p.sy += (1 - p.sy) * Math.min(1, dt * 14);
+  if (!p.alive) {
+    p.hurtT += dt; p.vy += 2000 * dt; p.y += p.vy * dt; p.x += p.vx * dt;
+    return ev;
+  }
+  const h = inp.held, pr = inp.pressed;
+  const dir = (h.right ? 1 : 0) - (h.left ? 1 : 0);
+  p.sucking = h.suck;
+  const max = C.runSpeed * (p.speedUp > 0 ? 1.35 : 1) * (p.sucking ? 0.45 : 1);
+  if (dir) {
+    if (!p.sucking) p.facing = dir;
+    p.vx = approach(p.vx, dir * max, (p.onGround ? C.accelGround : C.accelAir) * dt);
+  } else {
+    p.vx = approach(p.vx, 0, (p.onGround ? C.friction : C.accelAir * 0.6) * dt);
+  }
+  if (pr.jump) p.buffer = C.buffer; else p.buffer = Math.max(0, p.buffer - dt);
+  p.coyote = p.onGround ? C.coyote : Math.max(0, p.coyote - dt);
+  if (p.buffer > 0 && p.coyote > 0) {
+    if (h.down && p.y + p.h < FLOOR_Y - 4) { p.drop = 0.22; p.vy = 120; }
+    else { p.vy = -C.jumpSpeed; ev.jumped = true; p.sx = 0.78; p.sy = 1.25; fx.dust(p.x + p.w / 2, p.y + p.h, 5); }
+    p.buffer = 0; p.coyote = 0; p.onGround = false;
+  }
+  if (!h.jump && p.vy < -300) p.vy *= Math.pow(C.jumpCut, dt * 20);
+  p.drop = Math.max(0, p.drop - dt);
+  const wasGround = p.onGround;
+  const prevVy = p.vy;
+  const r = stepBody(p, plats, dt, { drop: p.drop > 0 });
+  p.onGround = r.landed;
+  if (r.landed && !wasGround) {
+    ev.landed = true;
+    const k = clamp(prevVy / 1300, 0.2, 1);
+    p.sx = 1 + 0.3 * k; p.sy = 1 - 0.28 * k;
+    if (prevVy > 500) fx.dust(p.x + p.w / 2, p.y + p.h, 6);
+  }
+  if (pr.shoot && p.held.length) { ev.shoot = true; p.throwT = 0.28; }
+  if (p.held.length) p.heldT += dt; else p.heldT = 0;
+  return ev;
+}
+
+export function drawPlayer(ctx, p, time) {
+  if (p.invul > 0 && p.alive && Math.floor(time * 20) % 2 === 0) return;
+  const cx = p.x + p.w / 2, by = p.y + p.h;
+  let f = 'presi-idle';
+  if (!p.alive) f = 'presi-hurt';
+  else if (p.throwT > 0) f = 'presi-throw';
+  else if (p.sucking) f = 'presi-suck';
+  else if (!p.onGround) f = p.vy < 0 ? 'presi-jump' : 'presi-fall';
+  else if (Math.abs(p.vx) > 30) f = Math.floor(p.anim * 9) % 2 ? 'presi-walkA' : 'presi-walkB';
+  const breathe = f === 'presi-idle' ? 1 + Math.sin(time * 3) * 0.015 : 1;
+  const shake = p.held.length && p.heldT > CONFIG.vacuum.warnAt ? Math.sin(time * 80) * 3 : 0;
+  drawSprite(ctx, f, cx + shake, by, {
+    s: C.scale, flip: p.facing < 0, sx: p.sx, sy: p.sy * breathe,
+    rot: !p.alive ? p.hurtT * 6 : (p.onGround && Math.abs(p.vx) > 30 ? Math.sin(p.anim * 18) * 0.04 : 0),
+    tint: p.speedUp > 0 ? '#4dd2ff' : null, tintA: p.speedUp > 0 ? 0.18 : 0,
+  });
+}
+
+/** Burbujas con los enemigos cazados sobre la mochila. */
+export function drawHeld(ctx, p, time) {
+  if (!p.held.length || !p.alive) return;
+  const warn = p.heldT > CONFIG.vacuum.warnAt;
+  const k = clamp(p.heldT / CONFIG.vacuum.burstAt, 0, 1);
+  p.held.forEach((type, i) => {
+    const a = time * 3 + i * (Math.PI * 2 / p.held.length);
+    const bx = p.x + p.w / 2 - p.facing * 18 + Math.cos(a) * 26;
+    const by = p.y - 22 - i * 4 + Math.sin(a) * 8 + (warn ? Math.sin(time * 60 + i) * 3 : 0);
+    const r = 20 + k * 8;
+    ctx.save();
+    const g = ctx.createRadialGradient(bx - 6, by - 6, 2, bx, by, r);
+    g.addColorStop(0, 'rgba(255,255,255,0.95)'); g.addColorStop(0.6, warn ? 'rgba(255,120,120,0.55)' : 'rgba(170,220,255,0.5)'); g.addColorStop(1, warn ? 'rgba(255,40,40,0.8)' : 'rgba(120,160,255,0.75)');
+    ctx.fillStyle = g; ctx.beginPath(); ctx.arc(bx, by, r, 0, Math.PI * 2); ctx.fill();
+    ctx.lineWidth = 3; ctx.strokeStyle = '#1a1030'; ctx.stroke();
+    ctx.beginPath(); ctx.arc(bx, by, r - 1, 0, Math.PI * 2); ctx.clip();
+    drawSprite(ctx, type + '-stun', bx, by + r * 1.1, { s: 0.2 });
+    ctx.restore();
+  });
 }

@@ -1,125 +1,85 @@
-const KEY_ACTIONS = new Map([
-  ['ArrowLeft', 'left'], ['KeyA', 'left'],
-  ['ArrowRight', 'right'], ['KeyD', 'right'],
-  ['ArrowUp', 'jump'], ['KeyW', 'jump'], ['Space', 'jump'],
-  ['KeyX', 'suck'], ['KeyJ', 'suck'],
-  ['KeyZ', 'throw'], ['KeyK', 'throw'],
-]);
+// Entrada unificada: teclado, mando (Gamepad API) y táctil.
+// update() una vez por frame; held = mantenido, pressed = pulsado en este frame.
+const KEYS = {
+  ArrowLeft: 'left', KeyA: 'left', ArrowRight: 'right', KeyD: 'right',
+  ArrowUp: 'up', KeyW: 'up', ArrowDown: 'down', KeyS: 'down',
+  Space: 'jump', KeyC: 'jump',
+  KeyX: 'suck', KeyJ: 'suck', ShiftLeft: 'suck',
+  KeyZ: 'shoot', KeyK: 'shoot', ControlLeft: 'shoot',
+  Enter: 'start', Escape: 'pause', KeyP: 'pause', KeyM: 'mute',
+};
+const ACTIONS = ['left', 'right', 'up', 'down', 'jump', 'suck', 'shoot', 'start', 'pause', 'mute'];
 
-const TOUCH_BUTTONS = [
-  ['left', '◀', 'Izquierda'],
-  ['right', '▶', 'Derecha'],
-  ['jump', 'SALTO', 'Saltar'],
-  ['suck', 'ASPIRAR', 'Aspirar'],
-  ['throw', 'LANZAR', 'Lanzar'],
-];
+export function createInput(win = globalThis.window) {
+  const keys = new Set();
+  const latched = new Set();
+  const touch = new Set();
+  const held = {};
+  const pressed = {};
+  let anyPressed = false;
+  let usingTouch = false;
+  let pad = null;
+  for (const a of ACTIONS) { held[a] = false; pressed[a] = false; }
 
-/**
- * Combines keyboard, standard Gamepad API controls, and optional on-screen buttons.
- * Call getState() once per simulation update to receive the current held actions.
- */
-export function createInput({
-  target = globalThis.window,
-  documentObject = globalThis.document,
-  navigatorObject = target?.navigator ?? globalThis.navigator,
-  createTouchControls = true,
-} = {}) {
-  const pressedKeys = new Set();
-  const activePointers = new Map();
-  const touchButtons = new Map();
-  let controlsElement = null;
-
-  function onKeyDown(event) {
-    if (!KEY_ACTIONS.has(event.code)) return;
-    pressedKeys.add(event.code);
-    event.preventDefault();
+  if (win && win.addEventListener) {
+    win.addEventListener('keydown', (e) => {
+      const a = KEYS[e.code];
+      if (a) { keys.add(a); latched.add(a); e.preventDefault(); }
+      anyPressed = true;
+    });
+    win.addEventListener('keyup', (e) => { const a = KEYS[e.code]; if (a) { keys.delete(a); e.preventDefault(); } });
+    win.addEventListener('blur', () => { keys.clear(); touch.clear(); });
+    win.addEventListener('pointerdown', (e) => {
+      anyPressed = true;
+      if (e.pointerType === 'touch' && !usingTouch) { usingTouch = true; buildTouch(win.document); }
+    });
   }
 
-  function onKeyUp(event) {
-    if (!KEY_ACTIONS.has(event.code)) return;
-    pressedKeys.delete(event.code);
-    event.preventDefault();
+  function buildTouch(doc) {
+    if (!doc || doc.getElementById('touchpad')) return;
+    const root = doc.createElement('div');
+    root.id = 'touchpad';
+    const mk = (action, label, cls) => {
+      const b = doc.createElement('button');
+      b.className = 'tbtn ' + cls; b.textContent = label; b.setAttribute('aria-label', action);
+      const on = (e) => { e.preventDefault(); touch.add(action); latched.add(action); b.classList.add('on'); };
+      const off = (e) => { e.preventDefault(); touch.delete(action); b.classList.remove('on'); };
+      b.addEventListener('pointerdown', on); b.addEventListener('pointerup', off);
+      b.addEventListener('pointercancel', off); b.addEventListener('pointerleave', off);
+      root.appendChild(b);
+    };
+    mk('left', '◀', 'l1'); mk('right', '▶', 'l2'); mk('down', '▼', 'l3');
+    mk('jump', 'SALTO', 'r1'); mk('suck', 'ASPIRA', 'r2'); mk('shoot', 'LANZA', 'r3');
+    doc.body.appendChild(root);
   }
 
-  function clearKeys() {
-    pressedKeys.clear();
+  function readPad() {
+    const nav = win && win.navigator;
+    const list = nav && nav.getGamepads ? nav.getGamepads() : [];
+    pad = null;
+    for (const p of list || []) if (p && p.connected) { pad = p; break; }
+    if (!pad) return {};
+    const b = (i) => !!(pad.buttons[i] && pad.buttons[i].pressed);
+    const ax = pad.axes[0] || 0; const ay = pad.axes[1] || 0;
+    return {
+      left: ax < -0.4 || b(14), right: ax > 0.4 || b(15), up: ay < -0.5 || b(12), down: ay > 0.5 || b(13),
+      jump: b(0), suck: b(2) || b(7), shoot: b(1) || b(6), start: b(9), pause: b(8),
+    };
   }
 
-  function setPointerAction(event, action) {
-    event.preventDefault();
-    activePointers.set(event.pointerId, action);
-    try {
-      event.currentTarget.setPointerCapture(event.pointerId);
-    } catch {
-      // Algunos navegadores no ofrecen captura para este tipo de puntero.
+  function update() {
+    const p = readPad();
+    for (const a of ACTIONS) {
+      const now = keys.has(a) || latched.has(a) || touch.has(a) || !!p[a];
+      pressed[a] = now && !held[a];
+      held[a] = now;
     }
-  }
-
-  function releasePointer(event) {
-    activePointers.delete(event.pointerId);
-  }
-
-  function createButtons() {
-    if (!documentObject?.createElement || !documentObject.body) return;
-    controlsElement = documentObject.createElement('nav');
-    controlsElement.className = 'touch-controls';
-    controlsElement.setAttribute('aria-label', 'Controles táctiles del juego');
-
-    for (const [action, label, accessibleName] of TOUCH_BUTTONS) {
-      const button = documentObject.createElement('button');
-      button.type = 'button';
-      button.className = `touch-control touch-control-${action}`;
-      button.textContent = label;
-      button.setAttribute('aria-label', accessibleName);
-      button.addEventListener('pointerdown', (event) => setPointerAction(event, action));
-      button.addEventListener('pointerup', releasePointer);
-      button.addEventListener('pointercancel', releasePointer);
-      button.addEventListener('lostpointercapture', releasePointer);
-      button.addEventListener('contextmenu', (event) => event.preventDefault());
-      controlsElement.append(button);
-      touchButtons.set(action, button);
-    }
-    documentObject.body.append(controlsElement);
-  }
-
-  target?.addEventListener('keydown', onKeyDown);
-  target?.addEventListener('keyup', onKeyUp);
-  target?.addEventListener('blur', clearKeys);
-  if (createTouchControls) createButtons();
-
-  function getState() {
-    const state = { left: false, right: false, jump: false, suck: false, throw: false };
-
-    for (const code of pressedKeys) state[KEY_ACTIONS.get(code)] = true;
-    for (const action of activePointers.values()) state[action] = true;
-
-    const pads = navigatorObject?.getGamepads?.() ?? [];
-    for (const pad of pads) {
-      if (!pad?.connected) continue;
-      const axes = pad.axes ?? [];
-      const buttons = pad.buttons ?? [];
-      if ((axes[0] ?? 0) < -0.25 || buttons[14]?.pressed) state.left = true;
-      if ((axes[0] ?? 0) > 0.25 || buttons[15]?.pressed) state.right = true;
-      if (buttons[0]?.pressed) state.jump = true;
-      if (buttons[2]?.pressed) state.suck = true;
-      if (buttons[1]?.pressed) state.throw = true;
-    }
-
-    state.horizontal = Number(state.right) - Number(state.left);
-    return state;
+    latched.clear();
   }
 
   return {
-    getState,
-    destroy() {
-      target?.removeEventListener('keydown', onKeyDown);
-      target?.removeEventListener('keyup', onKeyUp);
-      target?.removeEventListener('blur', clearKeys);
-      controlsElement?.remove();
-      controlsElement = null;
-      touchButtons.clear();
-      activePointers.clear();
-      pressedKeys.clear();
-    },
+    held, pressed, update,
+    takeAny() { const v = anyPressed; anyPressed = false; return v; },
+    get touch() { return usingTouch; },
   };
 }

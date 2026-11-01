@@ -1,0 +1,202 @@
+{
+ "activista-down": [
+  322,
+  120
+ ],
+ "activista-stun": [
+  82,
+  154
+ ],
+ "activista-walkA": [
+  147,
+  200
+ ],
+ "activista-walkB": [
+  147,
+  200
+ ],
+ "asesor-down": [
+  279,
+  120
+ ],
+ "asesor-stun": [
+  104,
+  143
+ ],
+ "asesor-walkA": [
+  141,
+  200
+ ],
+ "asesor-walkB": [
+  146,
+  195
+ ],
+ "baron-down": [
+  272,
+  120
+ ],
+ "baron-stun": [
+  128,
+  191
+ ],
+ "baron-walkA": [
+  153,
+  200
+ ],
+ "baron-walkB": [
+  139,
+  200
+ ],
+ "diputado-down": [
+  262,
+  120
+ ],
+ "diputado-stun": [
+  118,
+  162
+ ],
+ "diputado-walkA": [
+  143,
+  200
+ ],
+ "diputado-walkB": [
+  142,
+  200
+ ],
+ "influencer-down": [
+  305,
+  120
+ ],
+ "influencer-selfie": [
+  335,
+  260
+ ],
+ "influencer-stun": [
+  75,
+  105
+ ],
+ "influencer-walkA": [
+  112,
+  200
+ ],
+ "influencer-walkB": [
+  117,
+  198
+ ],
+ "lider-down": [
+  298,
+  120
+ ],
+ "lider-stun": [
+  138,
+  199
+ ],
+ "lider-walkA": [
+  155,
+  200
+ ],
+ "lider-walkB": [
+  155,
+  199
+ ],
+ "portavoz-down": [
+  333,
+  120
+ ],
+ "portavoz-stun": [
+  89,
+  160
+ ],
+ "portavoz-walkA": [
+  134,
+  200
+ ],
+ "portavoz-walkB": [
+  130,
+  198
+ ],
+ "portrait-presi": [
+  271,
+  360
+ ],
+ "presi-fall": [
+  220,
+  227
+ ],
+ "presi-hurt": [
+  134,
+  220
+ ],
+ "presi-idle": [
+  105,
+  220
+ ],
+ "presi-intro": [
+  109,
+  220
+ ],
+ "presi-jump": [
+  141,
+  218
+ ],
+ "presi-suck": [
+  169,
+  220
+ ],
+ "presi-throw": [
+  192,
+  218
+ ],
+ "presi-walkA": [
+  127,
+  220
+ ],
+ "presi-walkB": [
+  150,
+  219
+ ],
+ "presi-win": [
+  135,
+  221
+ ],
+ "tertuliano-down": [
+  260,
+  120
+ ],
+ "tertuliano-shout": [
+  377,
+  260
+ ],
+ "tertuliano-stun": [
+  83,
+  146
+ ],
+ "tertuliano-walkA": [
+  118,
+  200
+ ],
+ "tertuliano-walkB": [
+  127,
+  198
+ ],
+ "ui-crac": [
+  289,
+  200
+ ],
+ "ui-dust": [
+  187,
+  120
+ ],
+ "ui-gameover": [
+  417,
+  300
+ ],
+ "ui-life": [
+  95,
+  96
+ ],
+ "ui-stars": [
+  212,
+  90
+ ]
+}

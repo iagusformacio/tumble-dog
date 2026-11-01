@@ -1,150 +1,67 @@
-import { CONFIG } from './config.js';
+import { W, H, FLOOR_Y, CONFIG } from './config.js';
+import { FONT, outlinedText } from './fx.js';
+import { drawSprite } from './sprites.js';
+import { hsl, clamp } from './util.js';
 
-/**
- * HUD de Tumble Dog (T16): puntaje, oleada, vidas, pista del tutorial,
- * pantalla de título, pantallas finales y overlay de pausa.
- * Todo el texto es estilo tebeo: monospace negrita, color plano y trazo negro.
- * El módulo solo dibuja: main.js le pasa el estado de cada frame.
- */
-
-/** Corazón de vida del jugador. */
-function drawHeart(ctx, x, y, filled) {
-  ctx.fillStyle = filled ? '#e03131' : 'rgba(255,255,255,0.22)';
-  ctx.beginPath();
-  ctx.arc(x - 2, y - 1, 2.5, 0, Math.PI * 2);
-  ctx.arc(x + 2, y - 1, 2.5, 0, Math.PI * 2);
-  ctx.moveTo(x - 4.2, y + 0.5);
-  ctx.lineTo(x + 4.2, y + 0.5);
-  ctx.lineTo(x, y + 5.5);
-  ctx.closePath();
-  ctx.fill();
-}
-
-/** Pantalla de fin de partida: derrota o victoria. */
-function drawEndScreen(ctx, width, height, title, line1, line2) {
-  ctx.fillStyle = 'rgba(0, 0, 0, 0.62)';
-  ctx.fillRect(0, 0, width, height);
-  ctx.textAlign = 'center';
-  ctx.fillStyle = '#ffe44d';
-  ctx.font = 'bold 16px monospace';
-  ctx.fillText(title, width / 2, 100);
-  ctx.fillStyle = '#fff';
-  ctx.font = '10px monospace';
-  ctx.fillText(line1, width / 2, 120);
-  ctx.font = '8px monospace';
-  ctx.fillText(line2, width / 2, 136);
-}
-
-/** Pantalla de título (T16): logo, controls y aviso parpadeante. */
-function drawTitleScreen(ctx, width, height, tick, blinkVisible, blinkSeconds) {
-  const cx = width / 2;
-  ctx.textAlign = 'center';
-
-  // Logo «TUMBLE DOG» con pulsación suave (trazo negro + relleno amarillo).
-  ctx.font = 'bold 20px monospace';
-  const pulse = Math.sin(tick / 12) * 2;
-  ctx.fillStyle = '#111';
-  ctx.fillText('TUMBLE DOG', cx + 2, 78 + pulse + 2);
-  ctx.fillStyle = '#ffe44d';
-  ctx.fillText('TUMBLE DOG', cx, 78 + pulse);
-
-  ctx.font = '10px monospace';
-  ctx.fillStyle = '#fff';
-  ctx.fillText('el presidente ficticio que aspira a la oposición', cx, 96);
-
-  ctx.font = 'bold 8px monospace';
-  ctx.fillText('A/D MOVER · ESPACIO SALTAR · X ASPIRAR · Z LANZAR · M SONIDO', cx, 138);
-
-  if (blinkVisible) {
-    ctx.font = 'bold 10px monospace';
-    ctx.fillStyle = '#ffe44d';
-    ctx.fillText('PULSA Z O ESPACIO PARA JUGAR', cx, 160);
+export function drawHud(ctx, g, time) {
+  // Barra superior
+  const gr = ctx.createLinearGradient(0, 0, 0, 64);
+  gr.addColorStop(0, 'rgba(20,10,50,0.85)'); gr.addColorStop(1, 'rgba(20,10,50,0)');
+  ctx.fillStyle = gr; ctx.fillRect(0, 0, W, 64);
+  outlinedText(ctx, 'PUNTOS', 24, 16, 18, '#9fd8ff', '#1a1030', 'left');
+  g.shownScore += (g.score - g.shownScore) * Math.min(1, 0.15 + 0.02);
+  if (Math.abs(g.score - g.shownScore) < 1) g.shownScore = g.score;
+  outlinedText(ctx, String(Math.round(g.shownScore)).padStart(7, '0'), 24, 42, 34, '#ffe14d', '#1a1030', 'left');
+  outlinedText(ctx, 'RÉCORD ' + String(Math.max(g.hi, g.score)).padStart(7, '0'), 196, 16, 18, '#ffb3d9', '#1a1030', 'left');
+  for (let i = 0; i < Math.min(g.lives, 6); i++) drawSprite(ctx, 'ui-life', 214 + i * 38, 58, { s: 0.36, rot: Math.sin(time * 3 + i) * 0.08 });
+  // Fase
+  outlinedText(ctx, `FASE ${g.stageIndex + 1}${g.loop ? '·' + (g.loop + 1) : ''}`, W / 2, 20, 26, '#ffffff');
+  outlinedText(ctx, g.stage ? g.stage.name : '', W / 2, 46, 18, '#ffd23f');
+  // Tiempo
+  if (g.state === 'play' && !g.stage.boss) {
+    const k = clamp(g.stageT / CONFIG.stage.chaserAt, 0, 1);
+    const x = W - 250, y = 22, w = 220;
+    ctx.fillStyle = 'rgba(0,0,0,0.45)'; ctx.beginPath(); ctx.roundRect(x, y, w, 16, 8); ctx.fill();
+    const hurry = g.stageT > CONFIG.stage.hurryAt;
+    ctx.fillStyle = hurry ? (Math.floor(time * 8) % 2 ? '#ff3b3b' : '#ffd23f') : hsl(120 - k * 120, 85, 55);
+    ctx.beginPath(); ctx.roundRect(x + 2, y + 2, (w - 4) * (1 - k), 12, 6); ctx.fill();
+    ctx.strokeStyle = '#1a1030'; ctx.lineWidth = 3; ctx.beginPath(); ctx.roundRect(x, y, w, 16, 8); ctx.stroke();
+    outlinedText(ctx, hurry ? '¡DATE PRISA!' : 'TIEMPO', x + w / 2, 50, 18, hurry ? '#ff6b6b' : '#c8f7c5');
   }
-}
-
-/** Pista del tutorial (T16): texto con caja amarilla, sin banda negra extra. */
-function drawTutorialHint(ctx, message, cx, y) {
-  ctx.font = 'bold 8px monospace';
-  ctx.textAlign = 'center';
-  const tw = ctx.measureText(message).width;
-  ctx.fillStyle = 'rgba(0, 0, 0, 0.62)';
-  ctx.fillRect(cx - tw / 2 - 4, y - 7, tw + 8, 12);
-  ctx.strokeStyle = '#ffe44d';
-  ctx.lineWidth = 1;
-  ctx.strokeRect(cx - tw / 2 - 4, y - 7, tw + 8, 12);
-  ctx.fillStyle = '#ffe44d';
-  ctx.fillText(message, cx, y);
-}
-
-export function createHud({ config = CONFIG } = {}) {
-  const blinkSeconds = config.title.blinkSeconds;
-
-  /**
-   * Dibuja el HUD completo según el snapshot de cada frame.
-   * state: { width, height, tick, phase, score, wave, lives, maxLives,
-   *          muted, actions, tutorial: {message}|null, paused, end }
-   */
-  function render(ctx, state) {
-    const width = state.width;
-    const height = state.height;
-    const cx = width / 2;
-    const tick = state.tick ?? 0;
-
-    // HUD superior (puntos, oleada y vidas): en juego, no en título.
-    if (state.phase !== 'title') {
-      ctx.font = 'bold 8px monospace';
-      ctx.textAlign = 'left';
-      ctx.fillStyle = '#fff';
-      ctx.fillText(`PUNTOS ${state.score}`, 6, 12);
-      ctx.textAlign = 'right';
-      ctx.fillText(`OLEADA ${state.wave}${state.muted ? ' · MUDO' : ''}`, width - 6, 12);
-      for (let i = 0; i < state.maxLives; i += 1) {
-        drawHeart(ctx, 10 + i * 11, 20, i < state.lives);
-      }
-    }
-
-    // Pantalla de título.
-    if (state.phase === 'title') {
-      const blinkVisible = Math.floor(tick / (blinkSeconds * 60)) % 2 === 0;
-      drawTitleScreen(ctx, width, height, tick, blinkVisible, blinkSeconds);
-      return;
-    }
-
-    // Pista del tutorial (solo en la oleada de entrenamiento).
-    if (state.tutorial?.message) {
-      drawTutorialHint(ctx, state.tutorial.message, cx, height - 34);
-    }
-
-    // Línea de controles.
-    ctx.font = '7px monospace';
-    ctx.textAlign = 'center';
-    ctx.fillStyle = '#fff';
-    ctx.fillText('A/D MOVER · ESPACIO SALTAR · X ASPIRAR · Z LANZAR · M SONIDO', cx, height - 8);
-
-    // Acciones activas.
-    const activeActions = state.actions ?? [];
-    if (activeActions.length) {
-      ctx.font = 'bold 8px monospace';
-      ctx.fillStyle = '#ffe44d';
-      ctx.fillText(activeActions.join(' + '), cx, 75);
-    }
-
-    // Pantallas finales.
-    if (state.end) {
-      drawEndScreen(ctx, width, height, state.end.title, state.end.line1, state.end.line2);
-    }
-
-    // Pausa.
-    if (state.paused) {
-      ctx.fillStyle = 'rgba(0, 0, 0, 0.58)';
-      ctx.fillRect(0, 0, width, height);
-      ctx.fillStyle = '#fff';
-      ctx.font = 'bold 16px monospace';
-      ctx.fillText('PAUSA', cx, height / 2);
-      ctx.font = '10px monospace';
-      ctx.fillText('vuelve a la ventana para seguir', cx, height / 2 + 20);
-    }
+  // Poderes activos
+  let px = W - 300;
+  const p = g.player;
+  const icon = (label, color, t) => { ctx.fillStyle = color; ctx.beginPath(); ctx.roundRect(px, 70, 74, 24, 12); ctx.fill(); ctx.strokeStyle = '#1a1030'; ctx.lineWidth = 3; ctx.stroke(); outlinedText(ctx, `${label} ${Math.ceil(t)}`, px + 37, 83, 16, '#fff'); px -= 82; };
+  if (p.speedUp > 0) icon('TURBO', '#ff3b3b', p.speedUp);
+  if (p.pow > 0) icon('POW', '#2f6bff', p.pow);
+  if (g.freeze > 0) icon('PAUSA', '#3bceac', g.freeze);
+  // Jefe
+  if (g.boss && !g.boss.dead) {
+    const b = g.boss; const w = 520, x = W / 2 - w / 2, y = 70;
+    outlinedText(ctx, b.name, W / 2, y + 2, 22, '#ff8fa3');
+    ctx.fillStyle = 'rgba(0,0,0,0.55)'; ctx.beginPath(); ctx.roundRect(x, y + 16, w, 18, 9); ctx.fill();
+    const bg = ctx.createLinearGradient(x, 0, x + w, 0); bg.addColorStop(0, '#ff3b5c'); bg.addColorStop(1, '#ffb627');
+    ctx.fillStyle = bg; ctx.beginPath(); ctx.roundRect(x + 2, y + 18, (w - 4) * (b.hp / b.maxHp), 14, 7); ctx.fill();
+    ctx.strokeStyle = '#1a1030'; ctx.lineWidth = 3; ctx.beginPath(); ctx.roundRect(x, y + 16, w, 18, 9); ctx.stroke();
   }
+  // Letras T-U-M-B-L-E-D-O-G sobre la terraza
+  const word = CONFIG.letters.word;
+  const lw = 46, x0 = W / 2 - (word.length * lw) / 2 + lw / 2, ly = FLOOR_Y + 48;
+  ctx.font = `40px ${FONT}`;
+  for (let i = 0; i < word.length; i++) {
+    const got = g.letters.has(i);
+    const pulse = g.letterPop[i] > 0 ? 1 + g.letterPop[i] * 0.8 : 1;
+    const bob = got ? Math.sin(time * 6 + i * 0.7) * 3 : 0;
+    ctx.save(); ctx.translate(x0 + i * lw, ly + bob); ctx.scale(pulse, pulse);
+    if (got) { ctx.shadowColor = hsl(time * 160 + i * 40, 100, 60); ctx.shadowBlur = 16; }
+    outlinedText(ctx, word[i], 0, 0, 40, got ? hsl(time * 160 + i * 40, 95, 62) : 'rgba(255,255,255,0.18)', got ? '#1a1030' : 'rgba(26,16,48,0.6)');
+    ctx.restore();
+  }
+  if (g.letterPop) for (let i = 0; i < g.letterPop.length; i++) g.letterPop[i] = Math.max(0, g.letterPop[i] - 0.03);
+}
 
-  return { render };
+export function drawVignette(ctx) {
+  const v = ctx.createRadialGradient(W / 2, H / 2, H * 0.45, W / 2, H / 2, H * 0.95);
+  v.addColorStop(0, 'rgba(0,0,0,0)'); v.addColorStop(1, 'rgba(10,0,30,0.45)');
+  ctx.fillStyle = v; ctx.fillRect(0, 0, W, H);
 }

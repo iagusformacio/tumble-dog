@@ -1,278 +1,182 @@
-import { CONFIG } from './config.js';
-import { DEFAULT_PLATFORMS, overlaps } from './physics.js';
-import { createEnemy } from './enemy.js';
-import { createBall } from './ball.js';
+// Enemigos: tipos inventados de la política, cada uno con su comportamiento.
+import { CONFIG, W } from './config.js';
+import { stepBody } from './physics.js';
+import { rand, pick, clamp } from './util.js';
+import { drawSprite } from './sprites.js';
+import { FONT } from './fx.js';
 
-const CRUSH_ONOMATOPEYAS = Object.freeze(['¡PAF!', '¡PUM!', '¡PLAF!', '¡TOMA!']);
+export const TYPES = {
+  portavoz: { name: 'La Portavoz Airada', speed: 100, jump: 0.18, drop: 0.45, shoot: 'shout', rate: [3.2, 5], res: 1, score: 200 },
+  tertuliano: { name: 'El Tertuliano', speed: 90, jump: 0.45, drop: 0.3, shoot: 'bulo', rate: [3.5, 5.5], res: 1, score: 200 },
+  asesor: { name: 'El Asesor Misterioso', speed: 165, jump: 0.1, drop: 0.85, shoot: null, res: 1, ghost: true, score: 300 },
+  influencer: { name: 'El Influencer Bulero', speed: 120, jump: 0.9, hop: true, drop: 0.5, shoot: 'flash', rate: [3.8, 6], res: 0.9, score: 300 },
+  activista: { name: 'La Activista Municipal', speed: 190, jump: 0.25, drop: 0.6, shoot: null, res: 1, chase: true, score: 300 },
+  lider: { name: 'El Líder Eterno', speed: 72, jump: 0.15, drop: 0.3, shoot: 'shout', rate: [4, 6], res: 2.1, score: 500 },
+  baron: { name: 'El Barón Regional', speed: 105, jump: 0.5, drop: 0.7, shoot: null, res: 1.3, chase: true, score: 400 },
+  diputado: { name: 'El Diputado Gruñón', speed: 66, jump: 0.35, drop: 0.25, shoot: 'bulo', rate: [4.5, 7], res: 1.5, score: 400 },
+};
+export const TYPE_KEYS = Object.keys(TYPES);
 
-/** Oleada inicial (T08): un enemigo de cada tipo inventado, repartido por plataformas. */
-const DEFAULT_SPAWNS = Object.freeze([
-  { type: 'portavoz', x: 40, platform: 1 },
-  { type: 'activista', x: 80, platform: 1 },
-  { type: 'tertuliano', x: 230, platform: 2 },
-  { type: 'diputado', x: 268, platform: 2 },
-  { type: 'asesor', x: 150, platform: 3 },
-  { type: 'influencer', x: 60, platform: 0 },
-  { type: 'baron', x: 130, platform: 0 },
-  { type: 'lider', x: 230, platform: 0 },
-]);
+let nextId = 1;
 
-/** Tipos de enemigo disponibles (las claves de CONFIG.enemy con tamaño). */
-const ENEMY_TYPES = Object.freeze(
-  Object.keys(CONFIG.enemy).filter((key) => CONFIG.enemy[key]?.width),
-);
-
-/** Oleadas siguientes (T09): más enemigos, tipos y plataformas al azar. */
-function waveSpawns(waveNumber, platforms) {
-  if (waveNumber === 1) return DEFAULT_SPAWNS.map((spawn) => ({ ...spawn }));
-  const count = Math.min(
-    DEFAULT_SPAWNS.length + (waveNumber - 1) * CONFIG.wave.extraPerWave,
-    CONFIG.wave.maxCount,
-  );
-  const spawns = [];
-  for (let i = 0; i < count; i += 1) {
-    const type = ENEMY_TYPES[Math.floor(Math.random() * ENEMY_TYPES.length)];
-    const platformIndex = Math.floor(Math.random() * platforms.length);
-    const platform = platforms[platformIndex];
-    const margin = CONFIG.enemy[type].width + 4;
-    spawns.push({
-      type,
-      x: platform.x + 2 + Math.random() * Math.max(1, platform.width - margin),
-      platform: platformIndex,
-    });
-  }
-  return spawns;
+export function createEnemy(type, x, y, o = {}) {
+  const t = TYPES[type] || TYPES.portavoz;
+  const e = {
+    id: nextId++, type, t, x: x - CONFIG.enemy.w / 2, y: o.enter ? -120 - rand(0, 200) : y - CONFIG.enemy.h, w: CONFIG.enemy.w, h: CONFIG.enemy.h,
+    vx: 0, vy: o.vy ?? 0, dir: o.dir ?? pick([-1, 1]), onGround: false,
+    state: o.enter ? 'enter' : 'walk', enterDelay: o.delay ?? 0, suck: 0, stun: 0, beam: false, angry: false,
+    shootT: rand(1.5, 3.5), jumpT: rand(1, 3), drop: 0, edgeLock: 0, anim: rand(0, 1), sq: 1, flash: 0, ghostT: rand(0, 4),
+    speedMul: o.speedMul ?? 1, thrown: !!o.thrown, targetY: y,
+  };
+  if (o.enter) e.x = x - CONFIG.enemy.w / 2;
+  return e;
 }
 
-/**
- * Gestor de enemigos. T06 trajo a La Portavoz Airada; T07 añadió lanzar la
- * bola (aplastar, rebotes, combos); T08 puebla la pantalla con los 8 tipos
- * inventados, cada uno con su comportamiento; T10 integra sprites y
- * onomatopeyas. T09 añadirá oleadas y victoria/derrota.
- */
-export function createEnemyManager({
-  platforms = DEFAULT_PLATFORMS,
-  spawns = null, // oleada 1 por defecto (los 8 tipos); null = waveSpawns(1)
-  assets,
-  effects = null,
-} = {}) {
-  let enemies = [];
-  const bullets = []; // bulos disparados por El Tertuliano (T08)
-  let lives = CONFIG.player.lives;
-  let invulnerableLeft = 0;
-  let hits = 0;
-  let score = 0;
-  let comboChain = 0; // enemigos aplastados con la bola en vuelo ahora mismo
-  let lastCombo = 0;  // cadena del último lanzamiento (para el HUD)
-  let wave = 1;
-  let phase = 'playing'; // 'playing' | 'interwave' | 'gameover' | 'victory'
-  let interwaveLeft = 0;
-
-  /** Las oleadas siguientes van más rápidas (T09, DESIGN.md). */
-  function speedMul() {
-    return 1 + Math.min((wave - 1) * CONFIG.wave.speedBonusPerWave, CONFIG.wave.maxSpeedBonus);
+/** Actualiza un enemigo vivo. ctx: { plats, player, shots, fx, freeze, difficulty } */
+export function updateEnemy(e, dt, ctx) {
+  e.anim += dt; e.flash = Math.max(0, e.flash - dt * 4); e.sq += (1 - e.sq) * Math.min(1, dt * 12);
+  if (e.state === 'enter') {
+    e.enterDelay -= dt;
+    if (e.enterDelay > 0) return;
+    const r = stepBody(e, ctx.plats, dt, { gravity: 1800, noCeiling: true, drop: e.y + e.h < e.targetY - 6 });
+    if (r.landed) { e.state = 'walk'; e.sq = 0.7; ctx.fx.dust(e.x + e.w / 2, e.y + e.h, 6); }
+    return;
   }
-
-  function spawnWave() {
-    const list = wave === 1 && spawns ? spawns : waveSpawns(wave, platforms);
-    const mul = speedMul();
-    enemies = list.map((spawn, i) => createEnemy({
-      type: spawn.type,
-      x: spawn.x,
-      y: platforms[spawn.platform].y - (CONFIG.enemy[spawn.type]?.height ?? 22),
-      platforms,
-      direction: i % 2 === 0 ? 1 : -1,
-      speed: (CONFIG.enemy[spawn.type]?.speed ?? CONFIG.enemy.portavoz.speed) * mul,
-      assets,
-    }));
-    bullets.length = 0;
+  if (e.state === 'dead') {
+    e.vy += 2000 * dt; e.x += e.vx * dt; e.y += e.vy * dt; e.rot += e.vr * dt;
+    if (e.y > 900) e.gone = true;
+    return;
   }
-
-  spawnWave();
-
-  /** Reinicio tras derrota o victoria (T09). */
-  function restart() {
-    wave = 1;
-    phase = 'playing';
-    interwaveLeft = 0;
-    lives = CONFIG.player.lives;
-    invulnerableLeft = 0;
-    hits = 0;
-    score = 0;
-    comboChain = 0;
-    lastCombo = 0;
-    spawnWave();
+  const p = ctx.player;
+  const frozen = ctx.freeze > 0;
+  if (e.beam) {
+    e.vx = 0;
+  } else if (e.suck > 0) {
+    e.suck = Math.max(0, e.suck - dt * 1.4);
   }
-
-  function hitPlayer(player) {
-    if (invulnerableLeft > 0 || phase !== 'playing') return false;
-    lives = Math.max(0, lives - 1);
-    invulnerableLeft = CONFIG.player.invulnerableSeconds;
-    hits += 1;
-    if (lives === 0) phase = 'gameover'; // T09: derrota
-    effects?.spawn(player.body.x + player.body.width / 2, player.body.y - 2, '¡AY!', {
-      fill: '#ff8787',
-      accent: '#111',
-    });
-    // Reaparición limpia en el centro del suelo, como manda DESIGN.md.
-    player.body.x = (CONFIG.screen.width - player.body.width) / 2;
-    player.body.y = CONFIG.player.spawnY;
-    player.body.vx = 0;
-    player.body.vy = 0;
-    return true;
-  }
-
-  /**
-   * Lanza al enemigo que Don Presi lleva dentro como bola (T07).
-   * Devuelve la bola, o null si no lleva a nadie.
-   */
-  function launchBall(player) {
-    const carried = enemies.find((enemy) => enemy.isContained());
-    if (!carried) return null;
-    // T07: el enemigo se queda encerrado dentro de la bola hasta que muera.
-    carried.lockInBall();
-    comboChain = 0;
-    lastCombo = 0;
-    const p = player.body;
-    const size = CONFIG.ball.size;
-    const facing = player.facing >= 0 ? 1 : -1;
-    effects?.spawn(p.x + p.width / 2 + facing * 12, p.y + 8, '¡ZAS!', {
-      fill: '#ffe44d',
-      accent: '#c92a2a',
-    });
-    return createBall({
-      x: facing > 0 ? p.x + p.width : p.x - size,
-      y: p.y + p.height / 2 - size / 2,
-      direction: facing,
-      carrier: carried,
-      platforms,
-    });
-  }
-
-  /** La bola aplasta a los enemigos libres, mareados o escondidos que toca; cada uno sube el combo. */
-  function hitByBall(ball) {
-    if (!ball || !ball.alive) return;
-    for (const enemy of enemies) {
-      // El portador va enrollado dentro de la bola: la bola no le aplasta a él.
-      if (enemy === ball.carrier) continue;
-      const aplastable = enemy.isDangerous() || enemy.state === 'stunned' || enemy.isHidden();
-      if (!aplastable || !overlaps(ball.body, enemy.body)) continue;
-      if (enemy.crush()) {
-        const points = CONFIG.combo[Math.min(comboChain, CONFIG.combo.length - 1)];
-        score += points;
-        comboChain += 1;
-        lastCombo = comboChain;
-        const word = CRUSH_ONOMATOPEYAS[Math.min(comboChain - 1, CRUSH_ONOMATOPEYAS.length - 1)];
-        effects?.spawn(
-          enemy.body.x + enemy.body.width / 2,
-          enemy.body.y,
-          comboChain > 1 ? `${word} +${points}` : word,
-          { fill: '#ffe44d', accent: '#b81d13', duration: 0.65 },
-        );
+  if (e.stun > 0) e.stun -= dt;
+  const stunned = e.beam || e.stun > 0 || frozen;
+  if (!stunned && e.onGround) {
+    const sp = e.t.speed * e.speedMul * (e.angry ? 1.6 : 1) * ctx.difficulty;
+    if (e.t.chase && p.alive && Math.abs(p.y - e.y) < 60 && Math.random() < dt * 1.5) e.dir = p.x > e.x ? 1 : -1;
+    e.vx = e.dir * sp;
+    // Bordes: girar o tirarse
+    e.edgeLock -= dt;
+    const front = e.dir > 0 ? e.x + e.w + 6 : e.x - 6;
+    let supported = false;
+    for (const pl of ctx.plats) if (front >= pl.x && front <= pl.x + pl.w && Math.abs(pl.y - (e.y + e.h)) < 4) { supported = true; break; }
+    if (!supported && e.edgeLock <= 0) {
+      e.edgeLock = 0.6;
+      const wantDown = p.alive && p.y > e.y + 40;
+      if (!(Math.random() < e.t.drop || (e.t.chase && wantDown))) { e.dir *= -1; e.vx = -e.vx; }
+    }
+    // Saltos
+    e.jumpT -= dt;
+    if (e.jumpT <= 0) {
+      e.jumpT = e.t.hop ? rand(0.6, 1.2) : rand(1.5, 3.5);
+      const wantUp = p.alive && p.y + p.h < e.y && Math.abs(p.x - e.x) < 300;
+      if (wantUp && Math.random() < 0.6 + e.t.jump * 0.3) { e.vy = -1060; e.sq = 1.25; }
+      else if (Math.random() < e.t.jump) { e.vy = e.t.hop ? -560 : -480; e.sq = 1.2; }
+      else if (p.alive && p.y > e.y + 60 && Math.abs(p.x - e.x) < 200 && e.y + e.h < 630 && Math.random() < 0.5) e.drop = 0.25;
+    }
+    // Disparos
+    if (e.t.shoot && !ctx.calm) {
+      e.shootT -= dt;
+      if (e.shootT <= 0 && p.alive) {
+        e.shootT = rand(...e.t.rate) / (e.angry ? 1.6 : 1);
+        if (Math.abs(p.y - e.y) < 140 || e.t.shoot === 'bulo') { e.dir = p.x > e.x ? 1 : -1; ctx.shots.push(makeShot(e.t.shoot, e.x + e.w / 2 + e.dir * 30, e.y + 34, e.dir, p)); }
       }
     }
+  } else if (stunned) {
+    e.vx *= 0.8;
   }
+  if (e.t.ghost) e.ghostT += dt;
+  e.drop = Math.max(0, e.drop - dt);
+  const wasGround = e.onGround;
+  const r = stepBody(e, ctx.plats, dt, { drop: e.drop > 0 });
+  e.onGround = r.landed;
+  if (r.landed && !wasGround) { e.sq = 0.78; if (e.thrown) { e.thrown = false; ctx.fx.dust(e.x + e.w / 2, e.y + e.h, 5); } }
+  if (r.wall) e.dir = -r.wall;
+  if (e.x < -40 || e.x > W + 40) e.x = clamp(e.x, 0, W - e.w);
+}
 
-  /** Los bulos del Tertuliano dañan a Don Presi (T08). */
-  function updateBullets(dt, player) {
-    for (let i = bullets.length - 1; i >= 0; i -= 1) {
-      const bulo = bullets[i];
-      bulo.update(dt);
-      if (!bulo.alive) { bullets.splice(i, 1); continue; }
-      if (overlaps(bulo.body, player.body)) {
-        hitPlayer(player);
-        bullets.splice(i, 1);
-      }
+export function killEnemy(e, dir) {
+  e.state = 'dead'; e.vx = dir * rand(240, 420); e.vy = rand(-1100, -800); e.rot = 0; e.vr = dir * rand(8, 14);
+}
+
+export function enemyGhostAlpha(e) {
+  if (!e.t.ghost || e.state !== 'walk') return 1;
+  const k = Math.sin(e.ghostT * 1.3);
+  return k > 0.55 ? 0.22 : 1;
+}
+
+export function drawEnemy(ctx, e, time) {
+  const cx = e.x + e.w / 2, by = e.y + e.h;
+  const s = CONFIG.enemy.scale;
+  if (e.state === 'dead') {
+    drawSprite(ctx, e.type + '-down', cx, by, { s: s * 0.9, rot: e.rot, flip: e.vx < 0 });
+    return;
+  }
+  if (e.state === 'enter' && e.enterDelay > 0) return;
+  const stunned = e.beam || e.stun > 0;
+  let frame = e.type + (stunned ? '-stun' : Math.floor(e.anim * (e.t.speed > 140 ? 9 : 6)) % 2 ? '-walkA' : '-walkB');
+  if (!e.onGround && !stunned && e.state === 'walk') frame = e.type + '-walkA';
+  const shake = e.beam ? Math.sin(time * 90) * (2 + e.suck * 5) : 0;
+  const shrink = 1 - e.suck * 0.35;
+  const stretch = e.beam ? 1 + e.suck * 0.35 : 1;
+  const sq = e.sq;
+  const alpha = enemyGhostAlpha(e);
+  drawSprite(ctx, frame, cx + shake, by, {
+    s: s * shrink, flip: e.dir < 0, sx: stretch * (2 - sq), sy: sq / stretch, alpha,
+    flash: e.flash, tint: e.angry ? '#ff2a2a' : null, tintA: e.angry ? 0.25 + 0.15 * Math.sin(time * 10) : 0,
+    rot: e.state === 'walk' && e.onGround && !stunned ? Math.sin(e.anim * 12) * 0.05 : 0,
+  });
+  if (e.stun > 0 && !e.beam) {
+    ctx.save(); ctx.translate(cx, e.y - 6);
+    for (let i = 0; i < 3; i++) { const a = time * 6 + i * 2.1; ctx.fillStyle = '#ffe14d'; ctx.font = `20px ${FONT}`; ctx.textAlign = 'center'; ctx.fillText('★', Math.cos(a) * 22, Math.sin(a) * 6); }
+    ctx.restore();
+  }
+}
+
+export function makeShot(kind, x, y, dir, target) {
+  if (kind === 'bulo') {
+    const dx = (target ? target.x : x + dir * 300) - x;
+    return { kind, x, y, vx: clamp(dx * 0.9, -420, 420) || dir * 260, vy: -760, r: 22, life: 3.2, t: 0, g: 1500 };
+  }
+  if (kind === 'flash') return { kind, x, y, vx: dir * 430, vy: 0, r: 16, life: 2.4, t: 0, g: 0 };
+  return { kind: 'shout', x, y, vx: dir * 290, vy: 0, r: 20, life: 1.9, t: 0, g: 0, dir };
+}
+
+export function updateShot(s, dt) {
+  s.t += dt; s.vy += s.g * dt; s.x += s.vx * dt; s.y += s.vy * dt;
+  return s.t < s.life && s.x > -60 && s.x < W + 60 && s.y < 760;
+}
+
+export function drawShot(ctx, s, time) {
+  ctx.save(); ctx.translate(s.x, s.y);
+  if (s.kind === 'bulo') {
+    ctx.rotate(Math.sin(time * 8 + s.t * 3) * 0.2);
+    ctx.fillStyle = '#fff'; ctx.strokeStyle = '#1a1030'; ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.ellipse(0, 0, 34, 20, 0, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(-8, 16); ctx.lineTo(-18, 30); ctx.lineTo(4, 18); ctx.fill(); ctx.stroke();
+    ctx.fillStyle = '#e0242c'; ctx.font = `20px ${FONT}`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('BULO', 0, 1);
+  } else if (s.kind === 'flash') {
+    ctx.globalCompositeOperation = 'lighter';
+    const g = ctx.createRadialGradient(0, 0, 2, 0, 0, 40); g.addColorStop(0, 'rgba(255,120,200,0.9)'); g.addColorStop(1, 'rgba(255,60,160,0)');
+    ctx.fillStyle = g; ctx.fillRect(-40, -40, 80, 80);
+    ctx.globalCompositeOperation = 'source-over';
+    ctx.fillStyle = '#ff4fa3'; ctx.strokeStyle = '#1a1030'; ctx.lineWidth = 3; ctx.scale(1 + Math.sin(time * 20) * 0.1, 1 + Math.sin(time * 20) * 0.1);
+    ctx.beginPath(); ctx.moveTo(0, 12); ctx.bezierCurveTo(-22, -2, -12, -20, 0, -8); ctx.bezierCurveTo(12, -20, 22, -2, 0, 12); ctx.fill(); ctx.stroke();
+  } else {
+    if (s.dir < 0) ctx.scale(-1, 1);
+    ctx.lineCap = 'round';
+    for (let i = 0; i < 3; i++) {
+      const k = (s.t * 3 + i / 3) % 1;
+      ctx.globalAlpha = 1 - k;
+      ctx.strokeStyle = '#1a1030'; ctx.lineWidth = 10;
+      ctx.beginPath(); ctx.arc(-20, 0, 14 + k * 26, -0.9, 0.9); ctx.stroke();
+      ctx.strokeStyle = '#ffe14d'; ctx.lineWidth = 5; ctx.stroke();
     }
   }
-
-  function update(dt, player, input = {}, ball = null) {
-    if (invulnerableLeft > 0) invulnerableLeft -= dt;
-
-    for (const enemy of enemies) {
-      enemy.update(dt, { player, bullets });
-      if (enemy.isDangerous() && overlaps(enemy.body, player.body)) hitPlayer(player);
-    }
-
-    updateBullets(dt, player);
-    hitByBall(ball);
-
-    // T09: oleadas. Si no queda ningún enemigo vivo, se acaba la oleada.
-    if (phase === 'playing' && enemies.length > 0 && enemies.every((enemy) => enemy.isDefeated())) {
-      if (wave >= CONFIG.wave.winWave) {
-        phase = 'victory';
-      } else {
-        phase = 'interwave';
-        interwaveLeft = CONFIG.wave.interWaveSeconds;
-        effects?.spawn(CONFIG.screen.width / 2 - 30, 90, `OLEADA ${wave + 1}`, {
-          fill: '#ffe44d',
-          accent: '#b81d13',
-          duration: CONFIG.wave.interWaveSeconds,
-        });
-      }
-    }
-    if (phase === 'interwave') {
-      interwaveLeft -= dt;
-      if (interwaveLeft <= 0) {
-        wave += 1;
-        spawnWave();
-        phase = 'playing';
-      }
-    }
-
-    // Aspirar: solo si Don Presi mantiene la acción y no lleva ya a alguien dentro.
-    const carriesOne = enemies.some((enemy) => enemy.isContained());
-    const wantsSuck = Boolean(input.suck) && !carriesOne;
-    if (wantsSuck) {
-      for (const enemy of enemies) {
-        if (!enemy.canBeSucked()) continue;
-        if (overlaps(enemy.body, player.suckZone) && enemy.suck()) {
-          effects?.spawn(enemy.body.x + enemy.body.width / 2, enemy.body.y + 4, '¡GLUP!', {
-            fill: '#b8f2ff',
-            accent: '#124e78',
-          });
-          break;
-        }
-      }
-    }
-  }
-
-  function render(ctx, alpha = 1, player = null, ball = null) {
-    for (const enemy of enemies) {
-      // Lo que Don Presi lleva dentro se ve encogido en la punta de la boquilla;
-      // si la bola está en vuelo con ese enemigo dentro, la bola lo dibuja.
-      if (enemy.isContained() && ball && ball.alive && ball.carrier === enemy) continue;
-      if (enemy.isContained() && player) {
-        const p = player.body;
-        const cx = p.x + p.width / 2 + player.facing * 9;
-        const cy = p.y + 13;
-        const shrink = Math.max(0.28, Math.min(1, enemy.containedSeconds / CONFIG.suck.escapeSeconds));
-        ctx.save();
-        ctx.translate(cx, cy + Math.sin(enemy.containedSeconds * 20) * 1);
-        ctx.scale(0.55 * shrink * (player.facing >= 0 ? 1 : -1), 0.55 * shrink);
-        enemy.drawBody(ctx, 1, { atOrigin: true });
-        ctx.restore();
-        continue;
-      }
-      // Parpadeo de invulnerabilidad del jugador tras un golpe.
-      if (player && invulnerableLeft > 0 && Math.floor(invulnerableLeft * 12) % 2 === 0) continue;
-      enemy.render(ctx, alpha);
-    }
-    for (const bulo of bullets) bulo.render(ctx);
-  }
-
-  return {
-    bullets, update, render, launchBall, restart,
-    get enemies() { return enemies; },
-    get lives() { return lives; },
-    get hits() { return hits; },
-    get invulnerableLeft() { return invulnerableLeft; },
-    get score() { return score; },
-    get comboChain() { return comboChain; },
-    get lastCombo() { return lastCombo; },
-    get wave() { return wave; },
-    get phase() { return phase; },
-    /** Lo que lleva dentro Don Presi, o null. */
-    get carried() { return enemies.find((enemy) => enemy.isContained()) ?? null; },
-  };
+  ctx.restore();
 }

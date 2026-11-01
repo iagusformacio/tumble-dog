@@ -1,33 +1,32 @@
-# DESIGN — cómo es Tumble Dog (decisiones del coordinador, 2026-11-01)
+# DESIGN — Tumble Dog v2 (reescritura del 2026-11-01)
 
-Referencia de género: arcades de pantalla fija tipo *Tumblepop*. No se copia arte, sonido ni niveles de nadie.
+Homenaje a **Tumblepop** (Data East, 1991): plataformas de pantalla fija donde aspiras enemigos y los lanzas como bola. No se copia arte, música ni niveles del original; personajes y melodías son inventados.
 
-## Pantalla y feeling
-- Resolución lógica **320×224**, escalada a la ventana con píxel nítido. Una sola pantalla fija, **La Moncloa de fondo**.
-- Paso fijo **60 Hz**, render interpolado. Objetivo: 60 fps estables también en móvil.
-- «Fluido» = respuesta inmediata: sin retraso de entrada, salto con **coyote time** (6 frames) y **buffer de salto** (6 frames), aceleración corta al andar.
-- **Todos los números del feeling viven en `src/config.js`.** Ajustar el juego = cambiar un número, nunca reescribir lógica.
+## Lo que hace bueno a Tumblepop (y está implementado)
+- **Aspirar** (mantener X): un cono arcoíris aturde y absorbe a los enemigos que tiene delante. Se pueden llevar **hasta 4**.
+- **Si los guardas demasiado se escapan** (aviso a los 3 s, estallan a los 4,6 s y te hieren).
+- **Lanzar** (Z): salen como **bola que rueda**, cae por los bordes, **rebota en las paredes** y se rompe tras 4 rebotes. Más enemigos dentro = bola más grande.
+- **Combos** por cadena: 100, 200, 400, 800, 1600, 3200, 6400.
+- Cada enemigo eliminado suelta **premios** (monedas, gemas, turbo, superaspiradora, pausa, 1UP) y a veces una **burbuja con letra**.
+- **T-U-M-B-L-E-D-O-G**: con las 9 letras, **ronda bonus** con lluvia de premios y vida extra.
+- **Prisa**: a los 32 s «¡DATE PRISA!» (enemigos furiosos, música más rápida); a los 42 s llega **el Inspector de Hacienda**, invencible, a perseguirte.
+- El **último enemigo** se enfada (como en Bubble Bobble).
+- **Jefes** en las fases 5 y 10: versiones gigantes que lanzan secuaces (munición) y proyectiles; solo se les hace daño con bolas.
+- Se atraviesan las plataformas hacia arriba y hacia abajo (↓ + salto).
 
-## Bucle de juego
-1. Aparece una **oleada** de enemigos en las plataformas.
-2. Don Presi los **aspira** (mantener acción, rango corto frente a él). Un enemigo aspirado se encoge y entra en la boquilla.
-3. Con un enemigo dentro, Don Presi puede **lanzarlo**: sale como **bola** en línea recta, rebota en paredes y suelo.
-4. La bola **elimina** a los enemigos que toca (cadena). Si toca varios, **combo**: 100, 200, 400, 800 puntos.
-5. Sin enemigos → siguiente oleada (más enemigos o más rápidos).
-6. **3 vidas.** Tocar a un enemigo libre cuesta una vida, con 2 s de invulnerabilidad al reaparecer.
-7. Un enemigo aspirado tarda en escaparse si no se lanza (**3 s**), para que haya tensión.
+## Presentación
+- Resolución lógica **1280×720**, HiDPI, simulación fija a 120 Hz.
+- Fondo HD de La Moncloa dibujado por código con 5 horas del día (mañana, mediodía, atardecer, ocaso, noche con focos y luz dinámica).
+- Sprites del tebeo procesados (recorte del verde, sin halo, escalas coherentes) en `assets/sprites/` con `tools/prepare_assets.py`.
+- «Juice»: partículas, confeti, estrellas, ondas, temblor de cámara, hit-stop, squash & stretch, onomatopeyas (¡PAF!, ¡ZAS!, ¡CRAC!), rastro arcoíris de la bola, transición en iris, viñeta, luz nocturna.
+- Música y efectos sintetizados (WebAudio), melodías originales.
+- Controles: teclado, mando y táctil (botones en pantalla al tocar).
 
-## Controles
-- Teclado: A/D o flechas mover · Espacio salto · X aspirar · Z lanzar.
-- Mando: stick/cruceta, A salto, X aspirar, B lanzar.
-- Táctil: botones en pantalla (izquierda/derecha, salto, aspirar, lanzar).
+## Personajes (todos inventados)
+Don Presi (protagonista) y 8 enemigos: La Portavoz Airada (grito), El Tertuliano (lanza «BULOS»), El Asesor Misterioso (rápido, se vuelve invisible), El Influencer Bulero (brinca, dispara corazones), La Activista Municipal (persigue), El Líder Eterno (lento, cuesta aspirarlo), El Barón Regional (persigue y se tira), El Diputado Gruñón (lento, lanza bulos).
 
-## Personajes (TODOS INVENTADOS — ver ORDERS.md)
-- **Don Presi:** presidente ficticio, traje oscuro, flequillo, sonrisa de político.
-- **Enemigos (8):** La Portavoz Airada, El Tertuliano, El Asesor Misterioso, El Influencer Bulero, El Líder Eterno de la Oposición, El Barón Regional, La Activista Municipal, El Diputado Gruñón. Cada uno con **un comportamiento distinto** (p. ej. salta, dispara bulos, se esconde, corre en línea recta).
-- Estilo visual: tebeo clásico español (cabezones, líneas gruesas, onomatopeyas «¡PAF!», «¡ZAS!»). Sin personajes ni nombres protegidos.
-
-## Calidad
-- Todo se entiende sin manual: el primer nivel enseña aspirar y lanzar con una pista en pantalla.
-- Cada PR con cambios visibles pasa por el smoke test del CI y, cuando exista, adjunta captura.
-- Prueba humana de 10 minutos al final de cada oleada de tareas.
+## Dónde se toca cada cosa
+- Números del juego: `src/config.js`. Fases: `src/stages.js`. Enemigos: `src/enemies.js`.
+- Reglas y estados: `src/game.js`. Efectos: `src/fx.js`. Fondo: `src/background.js`. HUD: `src/hud.js`.
+- Arte nuevo: PNG con fondo verde en `assets/` → añadirlo a `tools/prepare_assets.py` → ejecutar el script.
+- Enlace jugable: `python3 tools/bundle.py . salida.html`.

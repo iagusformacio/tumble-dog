@@ -2,9 +2,11 @@
 
 **Fecha:** 2026-11-01 · **Coordinador:** Claude · **Dueño del proyecto:** Iagus (la persona)
 
-## PRIORIDAD ACTUAL
-1. Tener `main` siempre jugable en local (`python3 -m http.server 8000`) y un bucle de juego fluido a 60 fps. El repo es privado: NO hay Pages ni despliegue web.
-2. Después, por hitos pequeños y siempre jugables (ver las issues del repo).
+## PRIORIDAD ACTUAL (2026-11-01, tarde) — VERSIÓN 2
+**El coordinador ha reescrito el juego entero** (motor HD 1280×720, mecánicas fieles a Tumblepop, efectos). El código anterior ya no existe: **lee `DESIGN.md` antes de tocar nada**.
+1. No se rehace nada de lo que hay: se **pule** sobre la v2 (issues etiquetadas `v2`).
+2. `main` siempre jugable en local (`python3 -m http.server 8000`). Repo privado: el enlace jugable lo publica el coordinador.
+3. Antes de cualquier PR: `npm test` en verde y probar el juego en el navegador.
 
 ## El juego
 **Tumble Dog** — homenaje a los arcades de pantalla fija tipo *Tumblepop*: una sola pantalla, plataformas, el protagonista **aspira** a los enemigos, los convierte en bola y los **lanza** para aplastar a los demás.
