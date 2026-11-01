@@ -17,6 +17,33 @@ const DEFAULT_SPAWNS = Object.freeze([
   { type: 'lider', x: 230, platform: 0 },
 ]);
 
+/** Tipos de enemigo disponibles (las claves de CONFIG.enemy con tamaño). */
+const ENEMY_TYPES = Object.freeze(
+  Object.keys(CONFIG.enemy).filter((key) => CONFIG.enemy[key]?.width),
+);
+
+/** Oleadas siguientes (T09): más enemigos, tipos y plataformas al azar. */
+function waveSpawns(waveNumber, platforms) {
+  if (waveNumber === 1) return DEFAULT_SPAWNS.map((spawn) => ({ ...spawn }));
+  const count = Math.min(
+    DEFAULT_SPAWNS.length + (waveNumber - 1) * CONFIG.wave.extraPerWave,
+    CONFIG.wave.maxCount,
+  );
+  const spawns = [];
+  for (let i = 0; i < count; i += 1) {
+    const type = ENEMY_TYPES[Math.floor(Math.random() * ENEMY_TYPES.length)];
+    const platformIndex = Math.floor(Math.random() * platforms.length);
+    const platform = platforms[platformIndex];
+    const margin = CONFIG.enemy[type].width + 4;
+    spawns.push({
+      type,
+      x: platform.x + 2 + Math.random() * Math.max(1, platform.width - margin),
+      platform: platformIndex,
+    });
+  }
+  return spawns;
+}
+
 /**
  * Gestor de enemigos. T06 trajo a La Portavoz Airada; T07 añadió lanzar la
  * bola (aplastar, rebotes, combos); T08 puebla la pantalla con los 8 tipos
@@ -25,18 +52,11 @@ const DEFAULT_SPAWNS = Object.freeze([
  */
 export function createEnemyManager({
   platforms = DEFAULT_PLATFORMS,
-  spawns = DEFAULT_SPAWNS,
+  spawns = null, // oleada 1 por defecto (los 8 tipos); null = waveSpawns(1)
   assets,
   effects = null,
 } = {}) {
-  const enemies = spawns.map((spawn, i) => createEnemy({
-    type: spawn.type,
-    x: spawn.x,
-    y: platforms[spawn.platform].y - (CONFIG.enemy[spawn.type]?.height ?? 22),
-    platforms,
-    direction: i % 2 === 0 ? 1 : -1,
-    assets,
-  }));
+  let enemies = [];
   const bullets = []; // bulos disparados por El Tertuliano (T08)
   let lives = CONFIG.player.lives;
   let invulnerableLeft = 0;
@@ -44,12 +64,52 @@ export function createEnemyManager({
   let score = 0;
   let comboChain = 0; // enemigos aplastados con la bola en vuelo ahora mismo
   let lastCombo = 0;  // cadena del último lanzamiento (para el HUD)
+  let wave = 1;
+  let phase = 'playing'; // 'playing' | 'interwave' | 'gameover' | 'victory'
+  let interwaveLeft = 0;
+
+  /** Las oleadas siguientes van más rápidas (T09, DESIGN.md). */
+  function speedMul() {
+    return 1 + Math.min((wave - 1) * CONFIG.wave.speedBonusPerWave, CONFIG.wave.maxSpeedBonus);
+  }
+
+  function spawnWave() {
+    const list = wave === 1 && spawns ? spawns : waveSpawns(wave, platforms);
+    const mul = speedMul();
+    enemies = list.map((spawn, i) => createEnemy({
+      type: spawn.type,
+      x: spawn.x,
+      y: platforms[spawn.platform].y - (CONFIG.enemy[spawn.type]?.height ?? 22),
+      platforms,
+      direction: i % 2 === 0 ? 1 : -1,
+      speed: (CONFIG.enemy[spawn.type]?.speed ?? CONFIG.enemy.portavoz.speed) * mul,
+      assets,
+    }));
+    bullets.length = 0;
+  }
+
+  spawnWave();
+
+  /** Reinicio tras derrota o victoria (T09). */
+  function restart() {
+    wave = 1;
+    phase = 'playing';
+    interwaveLeft = 0;
+    lives = CONFIG.player.lives;
+    invulnerableLeft = 0;
+    hits = 0;
+    score = 0;
+    comboChain = 0;
+    lastCombo = 0;
+    spawnWave();
+  }
 
   function hitPlayer(player) {
-    if (invulnerableLeft > 0) return false;
+    if (invulnerableLeft > 0 || phase !== 'playing') return false;
     lives = Math.max(0, lives - 1);
     invulnerableLeft = CONFIG.player.invulnerableSeconds;
     hits += 1;
+    if (lives === 0) phase = 'gameover'; // T09: derrota
     effects?.spawn(player.body.x + player.body.width / 2, player.body.y - 2, '¡AY!', {
       fill: '#ff8787',
       accent: '#111',
@@ -129,19 +189,33 @@ export function createEnemyManager({
     for (const enemy of enemies) {
       enemy.update(dt, { player, bullets });
       if (enemy.isDangerous() && overlaps(enemy.body, player.body)) hitPlayer(player);
-      // T08: cada enemigo aplastado reaparece solo en su punto de partida.
-      if (enemy.isDefeated()) {
-        enemy.respawnLeft = (enemy.respawnLeft ?? CONFIG.enemy.respawnSeconds) - dt;
-        if (enemy.respawnLeft <= 0) {
-          enemy.respawn();
-          // Al reaparecer da un respiro: invulnerable un momento.
-          invulnerableLeft = Math.max(invulnerableLeft, 0.4);
-        }
-      }
     }
 
     updateBullets(dt, player);
     hitByBall(ball);
+
+    // T09: oleadas. Si no queda ningún enemigo vivo, se acaba la oleada.
+    if (phase === 'playing' && enemies.length > 0 && enemies.every((enemy) => enemy.isDefeated())) {
+      if (wave >= CONFIG.wave.winWave) {
+        phase = 'victory';
+      } else {
+        phase = 'interwave';
+        interwaveLeft = CONFIG.wave.interWaveSeconds;
+        effects?.spawn(CONFIG.screen.width / 2 - 30, 90, `OLEADA ${wave + 1}`, {
+          fill: '#ffe44d',
+          accent: '#b81d13',
+          duration: CONFIG.wave.interWaveSeconds,
+        });
+      }
+    }
+    if (phase === 'interwave') {
+      interwaveLeft -= dt;
+      if (interwaveLeft <= 0) {
+        wave += 1;
+        spawnWave();
+        phase = 'playing';
+      }
+    }
 
     // Aspirar: solo si Don Presi mantiene la acción y no lleva ya a alguien dentro.
     const carriesOne = enemies.some((enemy) => enemy.isContained());
@@ -183,13 +257,16 @@ export function createEnemyManager({
   }
 
   return {
-    enemies, bullets, update, render, launchBall,
+    bullets, update, render, launchBall, restart,
+    get enemies() { return enemies; },
     get lives() { return lives; },
     get hits() { return hits; },
     get invulnerableLeft() { return invulnerableLeft; },
     get score() { return score; },
     get comboChain() { return comboChain; },
     get lastCombo() { return lastCombo; },
+    get wave() { return wave; },
+    get phase() { return phase; },
     /** Lo que lleva dentro Don Presi, o null. */
     get carried() { return enemies.find((enemy) => enemy.isContained()) ?? null; },
   };

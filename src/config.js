@@ -51,6 +51,14 @@ export const CONFIG = Object.freeze({
     respawnSeconds: 1.2,
     bulletSize: 6,
   }),
+  wave: Object.freeze({
+    extraPerWave: 2,         // enemigos extra por cada oleada nueva
+    maxCount: 14,            // tope de enemigos simultáneos
+    speedBonusPerWave: 0.15, // cada oleada va un 15% más rápida
+    maxSpeedBonus: 0.6,
+    interWaveSeconds: 2,     // pausa con aviso entre oleada y oleada
+    winWave: 5,              // limpiar esta oleada = victoria
+  }),
   ball: Object.freeze({
     speed: 260,
     size: 10,          // diámetro de la bola (enemigo enrollado)
