@@ -55,3 +55,4 @@
     - Guardar en `assets/<tipo>/<nombre>.png`, PNG, ≤ 200 KB cada uno (reducir si hace falta). El prompt de cada imagen, en `assets/PROMPTS.md`.
     - Si en esa sesión no quedan issues `ART-n` libres, generar imágenes para lo que falte en `DESIGN.md` y anotarlo.
     - Con imágenes ya en `main`, el código las usa (`src/assets.js`); el arte dibujado por código queda solo como provisional.
+21. **Ciclo de sesión:** una sesión de agente = una rama = un PR. Cuando tu PR se fusiona, la rama queda congelada (`pr_merged`): pulsa **Continue** junto al estado del PR (o abre sesión nueva) para tener rama limpia, haz `git pull` y coge la siguiente issue. Antes de dar un PR por fusionado, comprueba en GitHub que lo está de verdad.
