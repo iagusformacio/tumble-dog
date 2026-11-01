@@ -5,12 +5,15 @@ import { DEFAULT_PLATFORMS } from './physics.js';
 import { createPlayer } from './player.js';
 import { createMoncloaBackground } from './background.js';
 import { createEnemyManager } from './enemies.js';
+import { createComicEffects, getSharedAssets } from './assets.js';
 
 const canvas = document.getElementById('game');
+const assets = getSharedAssets();
+const comicEffects = createComicEffects();
 const input = createInput();
-const player = createPlayer();
+const player = createPlayer({ assets });
 const background = createMoncloaBackground();
-const enemyManager = createEnemyManager();
+const enemyManager = createEnemyManager({ assets, effects: comicEffects });
 const screenCenterX = CONFIG.screen.width / 2;
 let previousTick = 0;
 let currentTick = 0;
@@ -34,22 +37,31 @@ function update(deltaSeconds) {
     if (!ball.alive) ball = null;
   }
   enemyManager.update(deltaSeconds, player, inputState, ball);
+  comicEffects.update(deltaSeconds);
 }
 
 function render(alpha, isPaused = false) {
   const ctx = canvas.getContext('2d');
   const interpolatedTick = previousTick + (currentTick - previousTick) * alpha;
 
-  background.render(ctx);
+  const moncloaSprite = assets.getSprite('escenario', 'moncloa');
+  if (moncloaSprite && typeof ctx.drawImage === 'function') {
+    ctx.drawImage(moncloaSprite.image, 0, 0, CONFIG.screen.width, CONFIG.screen.height);
+  } else {
+    background.render(ctx);
+  }
   for (const platform of DEFAULT_PLATFORMS) {
-    ctx.fillStyle = '#765b42';
+    ctx.fillStyle = '#111';
     ctx.fillRect(platform.x, platform.y, platform.width, platform.height);
+    ctx.fillStyle = '#765b42';
+    ctx.fillRect(platform.x + 1, platform.y + 1, platform.width - 2, platform.height - 2);
     ctx.fillStyle = '#d3bc8c';
-    ctx.fillRect(platform.x, platform.y, platform.width, 2);
+    ctx.fillRect(platform.x + 1, platform.y + 1, platform.width - 2, 2);
   }
   enemyManager.render(ctx, alpha, player);
   if (ball) ball.render(ctx, alpha);
   player.render(ctx, alpha);
+  comicEffects.render(ctx);
   // HUD mínimo mientras no existe T09: vidas y puntos en texto.
   ctx.fillStyle = '#fff';
   ctx.font = 'bold 8px monospace';

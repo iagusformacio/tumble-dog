@@ -1,12 +1,12 @@
 import { CONFIG } from './config.js';
 import { DEFAULT_PLATFORMS, overlaps } from './physics.js';
+import { drawAnchoredSprite, getSharedAssets } from './assets.js';
 
 /**
- * Enemigos inventados de Tumble Dog. T06 trae a La Portavoz Airada:
- * patrulla la plataforma de un lado a otro, se para al girar y, si Don Presi
- * la aspira, se encoge y entra en la boquilla. Estados:
- * 'patrol' (libre), 'sucked' (dentro de Don Presi), 'stunned' (se ha escapado)
- * y 'defeated' (aplastada por la bola lanzada, T07).
+ * Enemigos inventados de Tumble Dog. T06 trae a La Portavoz Airada y T10
+ * integra las hojas de sprites de assets/enemigos/ con fallback por código.
+ * Estados: 'patrol' (libre), 'sucked' (dentro de Don Presi),
+ * 'stunned' (se ha escapado) y 'defeated' (aplastada por la bola, T07).
  */
 const TIPO = 'portavoz';
 
@@ -28,6 +28,7 @@ export function createEnemy({
   platforms = DEFAULT_PLATFORMS,
   speed = CONFIG.enemy[type]?.speed ?? CONFIG.enemy.portavoz.speed,
   direction = 1,
+  assets = getSharedAssets(),
 } = {}) {
   const size = CONFIG.enemy[type] ?? CONFIG.enemy.portavoz;
   const body = { x, y, width: size.width, height: size.height };
@@ -46,6 +47,13 @@ export function createEnemy({
   const left = soporte ? soporte.x : 0;
   const right = soporte ? soporte.x + soporte.width : CONFIG.screen.width;
 
+  function currentPose() {
+    if (state === 'defeated') return 'defeated';
+    if (state === 'sucked' || state === 'stunned') return 'sucked';
+    if (pauseLeft > 0) return 'walkA';
+    return Math.floor(wobble * 8) % 2 === 0 ? 'walkA' : 'walkB';
+  }
+
   function update(dt, { player } = {}) {
     previousX = body.x;
     previousY = body.y;
@@ -55,7 +63,6 @@ export function createEnemy({
     if (state === 'sucked') {
       containLeft -= dt;
       if (containLeft <= 0 && player) {
-        // Se escapa: sale despedido un poco por delante de Don Presi, mareado.
         escapeFrom(player);
       }
       return;
@@ -64,6 +71,10 @@ export function createEnemy({
     if (state === 'stunned') {
       stunLeft -= dt;
       if (stunLeft <= 0) state = 'patrol';
+      return;
+    }
+
+    if (state === 'defeated') {
       return;
     }
 
@@ -118,25 +129,50 @@ export function createEnemy({
   function isDangerous() { return state === 'patrol'; }
   function isDefeated() { return state === 'defeated'; }
 
-  function drawBody(ctx, alpha = 1) {
-    const x = previousX + (body.x - previousX) * alpha;
-    const y = previousY + (body.y - previousY) * alpha;
-    const bob = Math.sin(wobble * 6) * (state === 'stunned' ? 0 : 0.6);
+  function drawBody(ctx, alpha = 1, { atOrigin = false } = {}) {
+    const x = atOrigin ? -body.width / 2 : previousX + (body.x - previousX) * alpha;
+    const y = atOrigin ? -body.height / 2 : previousY + (body.y - previousY) * alpha;
+    const bob = atOrigin || state === 'stunned' ? 0 : Math.sin(wobble * 6) * 0.6;
+    const tilt = state === 'stunned' ? Math.sin(wobble * 18) * 0.12 : 0;
+    const pose = currentPose();
+    const sprite = assets?.getSprite(type, pose) ?? assets?.getSprite(type, 'walkA') ?? null;
+
+    if (drawAnchoredSprite(ctx, sprite, {
+      x,
+      y: y + bob,
+      bodyWidth: body.width,
+      bodyHeight: body.height,
+      targetHeight: body.height + 3,
+      facing: atOrigin ? 1 : dir,
+      rotation: tilt,
+    })) {
+      return;
+    }
+
     ctx.save();
     ctx.translate(x + body.width / 2, y + body.height / 2 + bob);
-    if (state === 'stunned') ctx.rotate(Math.sin(wobble * 18) * 0.12);
-    ctx.scale(dir, 1);
-    // Provisional por código; el arte de assets/enemigos/ llega con T10.
+    if (tilt) ctx.rotate(tilt);
+    if (!atOrigin) ctx.scale(dir, 1);
     drawPortavoz(ctx, body.width, body.height);
     ctx.restore();
   }
 
   function render(ctx, alpha = 1) {
-    if (state === 'sucked') return; // se dibuja encoquita en la boquilla (enemies.js)
+    if (state === 'sucked') return;
     if (state === 'defeated') {
-      // Aplastada: mancha plana sobre el suelo (humor físico de tebeo).
       const x = previousX + (body.x - previousX) * alpha;
       const y = previousY + (body.y - previousY) * alpha;
+      const defeatedSprite = assets?.getSprite(type, 'defeated') ?? null;
+      if (drawAnchoredSprite(ctx, defeatedSprite, {
+        x,
+        y,
+        bodyWidth: body.width,
+        bodyHeight: body.height,
+        targetHeight: 16,
+        facing: dir,
+      })) {
+        return;
+      }
       ctx.save();
       ctx.translate(x + body.width / 2, y + body.height);
       ctx.scale(1.35, 0.22);
@@ -152,21 +188,24 @@ export function createEnemy({
     type, body, update, render, drawBody, suck, release, crush,
     canBeSucked, isContained, isDangerous, isDefeated,
     get state() { return state; },
+    get pose() { return currentPose(); },
     get direction() { return dir; },
     get containedSeconds() { return state === 'sucked' ? containLeft : 0; },
   };
 }
 
-/** Provisional dibujado por código: cabezona, melena y dedo acusador. */
+/** Dibujo estilo tebeo por código (con contorno negro) si aún no hay PNG cargado. */
 function drawPortavoz(ctx, width, height) {
   const w = width / 2;
   const h = height / 2;
+  ctx.fillStyle = '#111';
+  ctx.fillRect(-w + 1, -h, width - 2, height);
   ctx.fillStyle = '#b03a63';
-  ctx.fillRect(-w + 2, -h + 12, width - 4, height - 12);
+  ctx.fillRect(-w + 2, -h + 12, width - 4, height - 13);
   ctx.fillStyle = '#f0c8a0';
-  ctx.fillRect(-w + 3, -h + 1, width - 6, 11);
+  ctx.fillRect(-w + 3, -h + 2, width - 6, 10);
   ctx.fillStyle = '#3a2634';
-  ctx.fillRect(-w + 2, -h, width - 4, 5);
+  ctx.fillRect(-w + 2, -h + 1, width - 4, 4);
   ctx.fillRect(-w + 1, -h + 3, 3, 8);
   ctx.fillStyle = '#111';
   ctx.fillRect(w - 7, -h + 6, 2, 2);
