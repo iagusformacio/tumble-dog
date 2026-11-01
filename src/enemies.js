@@ -2,7 +2,7 @@
 import { CONFIG, W } from './config.js';
 import { stepBody } from './physics.js';
 import { rand, pick, clamp } from './util.js';
-import { drawSprite } from './sprites.js';
+import { drawSprite, hasSprite } from './sprites.js';
 import { FONT } from './fx.js';
 
 export const TYPES = {
@@ -16,6 +16,62 @@ export const TYPES = {
   diputado: { name: 'El Diputado Gruñón', speed: 66, jump: 0.35, drop: 0.25, shoot: 'bulo', rate: [4.5, 7], res: 1.5, score: 400 },
 };
 export const TYPE_KEYS = Object.keys(TYPES);
+
+// Colores de dibujo provisional por código (nunca negro: siempre visibles y diferenciados).
+export const ENEMY_COLORS = {
+  portavoz: '#ff4d4d',
+  tertuliano: '#ffb627',
+  asesor: '#c9a3ff',
+  influencer: '#ff4fa3',
+  activista: '#3bceac',
+  diputado: '#ff8fa3',
+  lider: '#ff6b6b',
+  baron: '#ffe14d',
+};
+
+/**
+ * Dibujo provisional por código de un enemigo cuando su sprite no está disponible.
+ * Garantiza que el enemigo se vea (silueta cabezona estilo tebeo) y nunca como un
+ * bloque negro ni como un hueco invisible.
+ */
+function drawEnemyFallback(ctx, e, cx, by, s, angry = false) {
+  const color = ENEMY_COLORS[e.type] || '#ff6b6b';
+  const bw = e.w * 0.8 * s;
+  const bh = e.h * 0.9 * s;
+  ctx.save();
+  ctx.translate(cx, by);
+  ctx.fillStyle = color;
+  ctx.strokeStyle = '#1a1030';
+  ctx.lineWidth = 4;
+  // Cuerpo redondeado apoyado en el suelo (by es el borde inferior).
+  ctx.beginPath();
+  ctx.roundRect(-bw / 2, -bh, bw, bh * 0.72, bh * 0.18);
+  ctx.fill();
+  ctx.stroke();
+  // Cabeza cabezona.
+  ctx.beginPath();
+  ctx.ellipse(0, -bh * 0.62, bw * 0.5, bw * 0.5, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.stroke();
+  // Ojos.
+  ctx.fillStyle = '#1a1030';
+  ctx.beginPath();
+  ctx.arc(-bw * 0.17, -bh * 0.68, bw * 0.08, 0, Math.PI * 2);
+  ctx.arc(bw * 0.17, -bh * 0.68, bw * 0.08, 0, Math.PI * 2);
+  ctx.fill();
+  // Boca.
+  ctx.beginPath();
+  ctx.arc(0, -bh * 0.52, bw * 0.2, 0, Math.PI);
+  ctx.stroke();
+  if (angry) {
+    ctx.fillStyle = '#ff2a2a';
+    ctx.font = `${Math.max(14, bw * 0.5)}px ${FONT}`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('!', 0, -bh * 0.32);
+  }
+  ctx.restore();
+}
 
 let nextId = 1;
 
@@ -114,7 +170,12 @@ export function drawEnemy(ctx, e, time) {
   const cx = e.x + e.w / 2, by = e.y + e.h;
   const s = CONFIG.enemy.scale;
   if (e.state === 'dead') {
-    drawSprite(ctx, e.type + '-down', cx, by, { s: s * 0.9, rot: e.rot, flip: e.vx < 0 });
+    const frameDown = e.type + '-down';
+    if (hasSprite(frameDown)) {
+      drawSprite(ctx, frameDown, cx, by, { s: s * 0.9, rot: e.rot, flip: e.vx < 0 });
+    } else {
+      drawEnemyFallback(ctx, e, cx, by, s, e.angry);
+    }
     return;
   }
   if (e.state === 'enter' && e.enterDelay > 0) return;
@@ -126,11 +187,16 @@ export function drawEnemy(ctx, e, time) {
   const stretch = e.beam ? 1 + e.suck * 0.35 : 1;
   const sq = e.sq;
   const alpha = enemyGhostAlpha(e);
-  drawSprite(ctx, frame, cx + shake, by, {
+  if (hasSprite(frame)) {
+    drawSprite(ctx, frame, cx + shake, by, {
     s: s * shrink, flip: e.dir < 0, sx: stretch * (2 - sq), sy: sq / stretch, alpha,
     flash: e.flash, tint: e.angry ? '#ff2a2a' : null, tintA: e.angry ? 0.25 + 0.15 * Math.sin(time * 10) : 0,
     rot: e.state === 'walk' && e.onGround && !stunned ? Math.sin(e.anim * 12) * 0.05 : 0,
-  });
+    });
+  } else {
+    // Sprite no disponible: dibujo provisional por código, visible y nunca negro.
+    drawEnemyFallback(ctx, e, cx + shake, by, s, e.angry);
+  }
   if (e.stun > 0 && !e.beam) {
     ctx.save(); ctx.translate(cx, e.y - 6);
     for (let i = 0; i < 3; i++) { const a = time * 6 + i * 2.1; ctx.fillStyle = '#ffe14d'; ctx.font = `20px ${FONT}`; ctx.textAlign = 'center'; ctx.fillText('★', Math.cos(a) * 22, Math.sin(a) * 6); }

@@ -71,6 +71,18 @@ test('enemigos: ocho tipos, todos con sprites', () => {
   assert.equal(e.state, 'dead');
 });
 
+test('sprites de enemigos: recorte del verde no vacío (ni negro ni blanco)', () => {
+  for (const k of TYPE_KEYS) {
+    for (const f of ['walkA', 'walkB', 'stun', 'down']) {
+      const name = `${k}-${f}`;
+      const [src, w, h] = SPRITE_FILES[name];
+      assert.ok(w > 0 && h > 0, `${name}: sprite sin dimensiones`);
+      const data = readFileSync(src.replace('./', ''));
+      assert.ok(data.length > 512, `${name}: sprite vacío`);
+    }
+  }
+});
+
 test('los jefes leen sus puntos de vida de src/config.js', () => {
   assert.equal(CONFIG.bossHp.tertuliano, 10);
   assert.equal(CONFIG.bossHp.lider, 14);
