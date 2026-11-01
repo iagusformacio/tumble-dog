@@ -85,6 +85,22 @@ test('bucle fijo de 60 Hz y render interpolado entre pasos', () => {
   loop.stop();
 });
 
+test('una pausa larga limita la recuperación y no deja ráfagas de pasos pendientes', () => {
+  const harness = makeHarness();
+  const { loop, updates, alphas } = makeLoop(harness);
+
+  harness.fireFrame(0);
+  harness.fireFrame(250);
+  assert.equal(updates.length, 5);
+  assert.ok(alphas.at(-1) >= 0 && alphas.at(-1) < 1);
+
+  for (let frame = 1; frame <= 3; frame += 1) {
+    harness.fireFrame(250 + frame * (1000 / 60));
+  }
+  assert.ok(updates.length <= 8, 'no debe perseguir el tiempo perdido en frames posteriores');
+  loop.stop();
+});
+
 test('canvas responsive conserva aspecto y escala según la densidad de píxel', () => {
   const harness = makeHarness();
   const { loop } = makeLoop(harness);
