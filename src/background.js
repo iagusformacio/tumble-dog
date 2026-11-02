@@ -1,9 +1,19 @@
 // Fondo HD de La Moncloa, dibujado por código en estilo tebeo (contorno negro, colores planos con brillo).
 // Cada «tema» (hora del día) se pre-renderiza una vez; lo animado se pinta cada frame.
+// Los temas de juego (p. ej. «marcos») pueden sustituir las horas del día por
+// fondos imagen propios con setImageBackgrounds({ barra: 'fondo-barra', ... }).
 import { W, H, FLOOR_Y } from './config.js';
 import { rand } from './util.js';
+import { hasSprite, getSpriteImage } from './sprites.js';
 
 const INK = '#1a1030';
+
+// Fondos imagen del tema activo: nombre de fase → sprite (lo fija game.js).
+let IMAGE_BG = null;
+export function setImageBackgrounds(map) { IMAGE_BG = map || null; }
+function knownBackground(name) {
+  return !!THEMES[name] || !!(IMAGE_BG && IMAGE_BG[name] && hasSprite(IMAGE_BG[name]));
+}
 
 export const THEMES = {
   manana: { sky: ['#4f9bff', '#9fd0ff', '#ffe2b8'], sun: [170, 150, '#fff6c9'], tint: null, night: 0, hills: '#7fa6d9', cloud: '#ffffff' },
@@ -123,6 +133,13 @@ function renderTheme(name) {
   const th = THEMES[name];
   const c = canvas(W, H); if (!c) return null;
   const g = c.getContext('2d');
+  // Fondo imagen del tema de juego (barra de bar, terraza...): se dibuja tal cual.
+  if (!th) {
+    const spr = IMAGE_BG && IMAGE_BG[name];
+    const img = spr && getSpriteImage(spr);
+    if (img) { g.drawImage(img, 0, 0, W, H); return c; }
+    return null;
+  }
   const sky = g.createLinearGradient(0, 0, 0, 470);
   sky.addColorStop(0, th.sky[0]); sky.addColorStop(0.55, th.sky[1]); sky.addColorStop(1, th.sky[2]);
   g.fillStyle = sky; g.fillRect(0, 0, W, 480);
@@ -200,18 +217,21 @@ export function createBackground() {
 
   return {
     get theme() { return theme; },
-    setTheme(name) { theme = THEMES[name] ? name : 'manana'; if (!cache.has(theme)) cache.set(theme, renderTheme(theme)); },
-    nightLevel() { return THEMES[theme].night; },
+    setImageBackgrounds(m) { IMAGE_BG = m || null; cache.clear(); },
+    setTheme(name) { theme = knownBackground(name) ? name : 'manana'; if (!cache.has(theme)) cache.set(theme, renderTheme(theme)); },
+    nightLevel() { return THEMES[theme] ? THEMES[theme].night : 0; },
     update(dt) {
       for (const c of clouds) { c.x += c.v * dt; if (c.x > W + 160) { c.x = -160; c.y = rand(40, 250); } }
       for (const b of birds) { b.x += b.v * dt; b.p += dt * 9; if (b.x > W + 60) { b.x = -rand(60, 400); b.y = rand(80, 220); } }
-      if (Math.random() < dt * 40) drops.push({ x: 640 + rand(-6, 6), y: 492, vx: rand(-70, 70), vy: rand(-260, -160), t: 0 });
+      if (THEMES[theme] && Math.random() < dt * 40) drops.push({ x: 640 + rand(-6, 6), y: 492, vx: rand(-70, 70), vy: rand(-260, -160), t: 0 });
       for (let i = drops.length - 1; i >= 0; i--) { const d = drops[i]; d.t += dt; d.vy += 700 * dt; d.x += d.vx * dt; d.y += d.vy * dt; if (d.y > 545) drops.splice(i, 1); }
     },
     draw(ctx, t) {
       const th = THEMES[theme];
       const base = cache.get(theme);
       if (base) ctx.drawImage(base, 0, 0);
+      // Fondo imagen de un tema de juego: sin nubes, pájaros ni bandera.
+      if (!th) return;
       // Astro
       ctx.save(); ctx.globalCompositeOperation = 'lighter';
       if (th.sun) {

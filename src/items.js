@@ -3,6 +3,7 @@ import { CONFIG, W } from './config.js';
 import { stepBody } from './physics.js';
 import { rand, pick, hsl } from './util.js';
 import { FONT, star } from './fx.js';
+import { drawSprite, hasSprite, spriteSize } from './sprites.js';
 
 export const ITEM_KINDS = {
   coin: { value: 100 }, gemB: { value: 500 }, gemR: { value: 1000 }, gemG: { value: 2000 },
@@ -37,6 +38,14 @@ export function drawItem(ctx, it, time) {
   ctx.save(); ctx.translate(cx, cy);
   ctx.strokeStyle = '#1a1030'; ctx.lineWidth = 3; ctx.lineJoin = 'round';
   const k = it.kind;
+  // Premio con sprite propio del tema (p. ej. café, flan, antiácido...) si existe.
+  const spr = 'item-' + k;
+  if (hasSprite(spr)) {
+    const sz = spriteSize(spr);
+    drawSprite(ctx, spr, 0, 17, { s: 36 / (sz.h || 36), rot: Math.sin(time * 3 + it.x) * 0.08 });
+    ctx.restore();
+    return;
+  }
   if (k === 'coin') {
     ctx.scale(Math.max(0.15, Math.abs(Math.cos(time * 4 + it.x))), 1);
     const g = ctx.createRadialGradient(-5, -6, 2, 0, 0, 17); g.addColorStop(0, '#fff6b0'); g.addColorStop(1, '#e0a118');
@@ -70,8 +79,8 @@ export function drawItem(ctx, it, time) {
   ctx.restore();
 }
 
-export function createLetter(letter, x, y) {
-  return { letter, x, y, vx: (x < W / 2 ? 1 : -1) * CONFIG.letters.bubbleSpeed, vy: -40, t: 0, life: 12, r: 30 };
+export function createLetter(letter, x, y, speed = CONFIG.letters.bubbleSpeed) {
+  return { letter, x, y, vx: (x < W / 2 ? 1 : -1) * speed, vy: -40, t: 0, life: 12, r: 30 };
 }
 
 export function updateLetter(l, dt) {

@@ -8,13 +8,17 @@ const NOTE = (n) => {
 };
 const seq = (s) => s.trim().split(/\s+/).map((tok) => { const [n, d] = tok.split(':'); return [NOTE(n), Number(d || 1)]; });
 
-// Canciones del tema «tumbledog»: lead, bajo y batería por semicorcheas. bpm en negras.
+// Canciones sintetizadas por defecto (tema «tumbledog»); cada tema puede traer
+// las suyas con setSongs, y además ficheros de audio propios (mp3) por sección.
 import { SONGS } from './themes/tumbledog.js';
 
 export function createAudio() {
   let ctx = null, master = null, musicGain = null, sfxGain = null, noiseBuf = null;
   let muted = false, song = null, songName = null, step = 0, nextTime = 0, leadI = 0, leadLeft = 0, bassI = 0, bassLeft = 0, tempo = 1;
   let suckNode = null;
+  let songs = SONGS;      // canciones sintetizadas del tema activo
+  let files = null;       // { sección: './assets/audio/x.mp3' } del tema activo
+  let media = null;       // HTMLAudioElement en curso (música mp3 del tema)
 
   function init() {
     if (ctx) return ctx;
@@ -62,16 +66,34 @@ export function createAudio() {
     }
   }
 
+  function stopMedia() {
+    if (media) { try { media.pause(); } catch { /* sin audio */ } media = null; }
+  }
+
   const api = {
     unlock() { init(); if (ctx && ctx.state === 'suspended') ctx.resume().catch(() => {}); },
     get muted() { return muted; },
-    toggleMute() { muted = !muted; if (master) master.gain.value = muted ? 0 : 0.55; return muted; },
+    toggleMute() { muted = !muted; if (master) master.gain.value = muted ? 0 : 0.55; if (media) media.muted = muted; return muted; },
+    // Fija las canciones y ficheros del tema activo (game.js al cambiar de tema).
+    setSongs(s, f) { songs = s || SONGS; files = f || null; },
     music(name, t = 1) {
       if (name === songName && t === tempo) return;
-      songName = name; song = SONGS[name] || null; tempo = t; step = 0; leadI = 0; bassI = 0; leadLeft = 0; bassLeft = 0;
+      stopMedia();
+      songName = name; tempo = t; step = 0; leadI = 0; bassI = 0; leadLeft = 0; bassLeft = 0;
+      if (files && files[name] && typeof Audio !== 'undefined') {
+        // Música aportada por el tema (p. ej. dieta-de-marcos.mp3 en título y bonus).
+        song = null;
+        try {
+          media = new Audio(files[name]);
+          media.loop = true; media.volume = 0.45; media.muted = muted;
+          const p = media.play(); if (p && p.catch) p.catch(() => {});
+        } catch { media = null; }
+        return;
+      }
+      song = songs[name] || null;
       if (ctx) nextTime = ctx.currentTime + 0.05;
     },
-    stopMusic() { song = null; songName = null; },
+    stopMusic() { song = null; songName = null; stopMedia(); },
     update() { if (ctx && song && nextTime < ctx.currentTime) nextTime = ctx.currentTime + 0.02; schedule(); },
     suck(on) {
       if (!ctx || muted) return;

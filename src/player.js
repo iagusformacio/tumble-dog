@@ -2,7 +2,8 @@
 import { CONFIG, W, FLOOR_Y } from './config.js';
 import { stepBody } from './physics.js';
 import { approach, clamp } from './util.js';
-import { drawSprite } from './sprites.js';
+import { drawSprite, hasSprite } from './sprites.js';
+import { skin } from './skin.js';
 
 const C = CONFIG.player;
 
@@ -80,11 +81,59 @@ export function drawPlayer(ctx, p, time) {
   else if (Math.abs(p.vx) > 30) f = Math.floor(p.anim * 9) % 2 ? 'presi-walkA' : 'presi-walkB';
   const breathe = f === 'presi-idle' ? 1 + Math.sin(time * 3) * 0.015 : 1;
   const shake = p.held.length && p.heldT > CONFIG.vacuum.warnAt ? Math.sin(time * 80) * 3 : 0;
-  drawSprite(ctx, f, cx + shake, by, {
-    s: C.scale, flip: p.facing < 0, sx: p.sx, sy: p.sy * breathe,
-    rot: !p.alive ? p.hurtT * 6 : (p.onGround && Math.abs(p.vx) > 30 ? Math.sin(p.anim * 18) * 0.04 : 0),
-    tint: p.speedUp > 0 ? '#4dd2ff' : null, tintA: p.speedUp > 0 ? 0.18 : 0,
-  });
+  const rot = !p.alive ? p.hurtT * 6 : (p.onGround && Math.abs(p.vx) > 30 ? Math.sin(p.anim * 18) * 0.04 : 0);
+  if (hasSprite(f)) {
+    drawSprite(ctx, f, cx + shake, by, {
+      s: C.scale, flip: p.facing < 0, sx: p.sx, sy: p.sy * breathe,
+      rot,
+      tint: p.speedUp > 0 ? '#4dd2ff' : null, tintA: p.speedUp > 0 ? 0.18 : 0,
+    });
+  } else {
+    // Sprite del tema aún no disponible: provisional por código (nunca un bloque negro).
+    drawPlayerFallback(ctx, cx + shake, by, { s: C.scale, flip: p.facing < 0, sx: p.sx, sy: p.sy * breathe, rot, hurt: !p.alive, anim: p.anim, moving: Math.abs(p.vx) > 30 });
+  }
+}
+
+/**
+ * Dibujo provisional por código del protagonista (estilo tebeo: cabezón, chaqueta
+ * de color del tema). Se usa cuando el tema declara sus sprites pero aún no
+ * están en disco. Nunca un bloque negro ni un hueco invisible.
+ */
+export function drawPlayerFallback(ctx, cx, by, o = {}) {
+  const s = o.s ?? 0.5;
+  const w = 46 * s, h = 92 * s;
+  const jacket = (skin.playerTint) || '#3d6f9e';
+  const skinC = '#f4c89a';
+  ctx.save();
+  ctx.translate(cx, by);
+  if (o.flip) ctx.scale(-1, 1);
+  ctx.scale(o.sx ?? 1, o.sy ?? 1);
+  if (o.rot) { ctx.translate(0, -h / 2); ctx.rotate(o.rot); ctx.translate(0, h / 2); }
+  ctx.lineWidth = 3; ctx.strokeStyle = '#1a1030'; ctx.lineJoin = 'round';
+  // Piernas
+  const step = o.moving ? Math.sin(o.anim * 12) * w * 0.28 : 0;
+  ctx.fillStyle = '#2b2440';
+  ctx.beginPath(); ctx.roundRect(-w * 0.32 + step, -h * 0.3, w * 0.26, h * 0.3, 4); ctx.fill(); ctx.stroke();
+  ctx.beginPath(); ctx.roundRect(w * 0.06 - step, -h * 0.3, w * 0.26, h * 0.3, 4); ctx.fill(); ctx.stroke();
+  // Cuerpo (chaqueta del tema)
+  ctx.fillStyle = jacket;
+  ctx.beginPath(); ctx.roundRect(-w * 0.42, -h * 0.78, w * 0.84, h * 0.52, w * 0.2); ctx.fill(); ctx.stroke();
+  // Cabeza cabezona
+  ctx.fillStyle = skinC;
+  ctx.beginPath(); ctx.ellipse(0, -h * 0.88, w * 0.4, w * 0.38, 0, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+  // Ojos (X si está herido)
+  ctx.strokeStyle = '#1a1030'; ctx.lineWidth = 2.5;
+  if (o.hurt) {
+    for (const ex of [-w * 0.16, w * 0.16]) {
+      ctx.beginPath(); ctx.moveTo(ex - 4, -h * 0.92); ctx.lineTo(ex + 4, -h * 0.84); ctx.moveTo(ex + 4, -h * 0.92); ctx.lineTo(ex - 4, -h * 0.84); ctx.stroke();
+    }
+  } else {
+    ctx.fillStyle = '#1a1030';
+    ctx.beginPath(); ctx.arc(-w * 0.16, -h * 0.9, 3, 0, Math.PI * 2); ctx.arc(w * 0.16, -h * 0.9, 3, 0, Math.PI * 2); ctx.fill();
+    // Sonrisa
+    ctx.beginPath(); ctx.arc(0, -h * 0.82, w * 0.16, 0.15, Math.PI - 0.15); ctx.stroke();
+  }
+  ctx.restore();
 }
 
 /** Burbujas con los enemigos cazados sobre la mochila. */
@@ -103,7 +152,14 @@ export function drawHeld(ctx, p, time) {
     ctx.fillStyle = g; ctx.beginPath(); ctx.arc(bx, by, r, 0, Math.PI * 2); ctx.fill();
     ctx.lineWidth = 3; ctx.strokeStyle = '#1a1030'; ctx.stroke();
     ctx.beginPath(); ctx.arc(bx, by, r - 1, 0, Math.PI * 2); ctx.clip();
-    drawSprite(ctx, type + '-stun', bx, by + r * 1.1, { s: 0.2 });
+    const sf = type + '-stun';
+    if (hasSprite(sf)) drawSprite(ctx, sf, bx, by + r * 1.1, { s: 0.2 });
+    else {
+      // Sin sprite del tema: burbuja con el color provisional del tipo.
+      ctx.fillStyle = (skin.enemyColors && skin.enemyColors[type]) || '#9fe7ff';
+      ctx.beginPath(); ctx.arc(bx, by, r * 0.55, 0, Math.PI * 2); ctx.fill();
+      ctx.strokeStyle = '#1a1030'; ctx.lineWidth = 3; ctx.stroke();
+    }
     ctx.restore();
   });
 }

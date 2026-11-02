@@ -2,7 +2,7 @@
 import { CONFIG } from './config.js';
 import { stepBody } from './physics.js';
 import { hsl } from './util.js';
-import { drawSprite } from './sprites.js';
+import { drawSprite, hasSprite, spriteSize } from './sprites.js';
 
 const B = CONFIG.ball;
 
@@ -40,10 +40,15 @@ export function drawBall(ctx, b, time) {
   halo.addColorStop(0, hsl(b.hue, 100, 65, 0.55)); halo.addColorStop(1, hsl(b.hue + 60, 100, 60, 0));
   ctx.fillStyle = halo; ctx.beginPath(); ctx.arc(0, 0, b.r * 1.9, 0, Math.PI * 2); ctx.fill();
   ctx.globalCompositeOperation = 'source-over';
-  // Esfera
-  const g = ctx.createRadialGradient(-b.r * 0.35, -b.r * 0.4, 2, 0, 0, b.r);
-  g.addColorStop(0, '#ffffff'); g.addColorStop(0.35, hsl(b.hue, 95, 72)); g.addColorStop(1, hsl(b.hue + 90, 90, 45));
-  ctx.fillStyle = g; ctx.beginPath(); ctx.arc(0, 0, b.r, 0, Math.PI * 2); ctx.fill();
+  // Esfera: sprite propio del tema si lo declara y existe (p. ej. bola de vómito)
+  if (hasSprite('ball')) {
+    const sz = spriteSize('ball');
+    drawSprite(ctx, 'ball', 0, b.r, { s: (b.r * 2) / (sz.h || b.r * 2) });
+  } else {
+    const g = ctx.createRadialGradient(-b.r * 0.35, -b.r * 0.4, 2, 0, 0, b.r);
+    g.addColorStop(0, '#ffffff'); g.addColorStop(0.35, hsl(b.hue, 95, 72)); g.addColorStop(1, hsl(b.hue + 90, 90, 45));
+    ctx.fillStyle = g; ctx.beginPath(); ctx.arc(0, 0, b.r, 0, Math.PI * 2); ctx.fill();
+  }
   ctx.save(); ctx.clip(); ctx.rotate(b.spin);
   const n = b.held.length;
   b.held.forEach((type, i) => {

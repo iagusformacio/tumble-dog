@@ -1,9 +1,16 @@
 import { CONFIG } from './config.js';
 import { rand, pick, hsl, easeOutBack, clamp } from './util.js';
+import { drawSprite, hasSprite, spriteSize } from './sprites.js';
 
 export const FONT = '"Bangers", "Luckiest Guy", Impact, "Arial Black", sans-serif';
 const CONFETTI = ['#ff3b5c', '#ffd23f', '#3bceac', '#4d9de0', '#ff8c42', '#b15eff', '#ffffff'];
-import { onomatopeyas as WORDS } from './themes/tumbledog.js';
+import { onomatopeyas as DEFAULT_WORDS } from './themes/tumbledog.js';
+
+// Onomatopeyas del tema activo (game.js las fija con setWords). Si el tema declara
+// un sprite por onomatopeya y existe en disco, se dibuja la imagen; si no, texto.
+let WORDS = DEFAULT_WORDS;
+let WORD_SPRITES = null;
+export function setWords(words, sprites) { WORDS = words || DEFAULT_WORDS; WORD_SPRITES = sprites || null; }
 
 export function createFx() {
   const parts = [];
@@ -60,7 +67,11 @@ export function createFx() {
     text(x, y, str, o = {}) {
       texts.push({ x, y, str, t: 0, life: o.life ?? 1.0, size: o.size ?? 34, color: o.color ?? '#fff', stroke: o.stroke ?? '#1a1030', vy: o.vy ?? -70, burst: !!o.burst, hue: o.hue ?? rand(0, 360), rot: o.rot ?? rand(-0.18, 0.18) });
     },
-    word(x, y, size = 46) { api.text(x, y, pick(WORDS), { burst: true, size, life: 0.75, vy: -40, color: '#fff35c' }); },
+    word(x, y, size = 46) {
+      const i = Math.floor(Math.random() * WORDS.length);
+      const spr = WORD_SPRITES && WORD_SPRITES[i];
+      api.text(x, y, WORDS[i], { burst: true, size, life: 0.75, vy: -40, color: '#fff35c', sprite: spr && hasSprite(spr) ? spr : null });
+    },
 
     update(dt) {
       time += dt;
@@ -129,9 +140,14 @@ export function createFx() {
         const a = k > 0.7 ? 1 - (k - 0.7) / 0.3 : 1;
         ctx.save(); ctx.translate(t.x, t.y); ctx.rotate(t.rot); ctx.scale(pop, pop); ctx.globalAlpha = a;
         if (t.burst) burst(ctx, t.size * 1.9, t.size * 1.25, t.hue, t.t);
-        ctx.font = `${t.size}px ${FONT}`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-        ctx.lineJoin = 'round'; ctx.lineWidth = Math.max(4, t.size * 0.18); ctx.strokeStyle = t.stroke;
-        ctx.strokeText(t.str, 0, 0); ctx.fillStyle = t.color; ctx.fillText(t.str, 0, 0);
+        if (t.sprite) {
+          const sz = spriteSize(t.sprite);
+          drawSprite(ctx, t.sprite, 0, t.size * 0.55, { s: (t.size * 2.1) / (sz.h || 1) });
+        } else {
+          ctx.font = `${t.size}px ${FONT}`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+          ctx.lineJoin = 'round'; ctx.lineWidth = Math.max(4, t.size * 0.18); ctx.strokeStyle = t.stroke;
+          ctx.strokeText(t.str, 0, 0); ctx.fillStyle = t.color; ctx.fillText(t.str, 0, 0);
+        }
         ctx.restore();
       }
     },
