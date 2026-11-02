@@ -52,16 +52,16 @@
   120
  ],
  "bocata-stun": [
-  305,
-  206
+  816,
+  350
  ],
  "bocata-walkA": [
-  415,
+  412,
   200
  ],
  "bocata-walkB": [
-  406,
-  217
+  916,
+  444
  ],
  "boss-cocinero-plancha-angry": [
   246,
@@ -228,16 +228,16 @@
   120
  ],
  "cacahuete-stun": [
-  138,
-  184
+  738,
+  408
  ],
  "cacahuete-walkA": [
-  164,
+  163,
   200
  ],
  "cacahuete-walkB": [
-  161,
-  208
+  369,
+  442
  ],
  "camarero-grito": [
   215,
@@ -256,16 +256,16 @@
   120
  ],
  "chupito-stun": [
-  141,
-  202
+  785,
+  368
  ],
  "chupito-walkA": [
-  187,
+  188,
   200
  ],
  "chupito-walkB": [
-  180,
-  199
+  394,
+  444
  ],
  "diputado-down": [
   262,
@@ -560,16 +560,16 @@
   120
  ],
  "tostada-stun": [
-  148,
-  204
+  683,
+  421
  ],
  "tostada-walkA": [
-  193,
+  192,
   200
  ],
  "tostada-walkB": [
-  186,
-  204
+  423,
+  436
  ],
  "ui-bleeeh": [
   263,
