@@ -1,6 +1,7 @@
 # PROGRESS
 
 - V2-6 (#53): joystick táctil con salto y palancas independientes; prueba multitáctil en Chromium.
+- Jefe: arte propio de jefes (10 imágenes, norma 20) — boss-tertuliano y boss-lider (walkA/walkB/stun/down/shout) en assets/enemigos/, registrados en src/sprite-list.js y src/boss.js actualizado para usarlos; 11/11 tests verdes.
 
 - Rescate de #40 (AGB): integrado el arte de FETS tras resolver el conflicto en `assets/PROMPTS.md` y registradas en `ASSET_MANIFEST` las hojas de poses ART-3 de enemigos 5-8; test de manifiesto para los 8 tipos.
 - Arte de sesión (FETS, norma 20): 10 imágenes PNG8 ≤52 KB — derrotados y retratos de enemigos 5-8 (`lider`, `baron`, `activista`, `diputado`), icono de vida y cartel Game Over en `assets/` + registrados en `src/assets.js` y `assets/PROMPTS.md`.
