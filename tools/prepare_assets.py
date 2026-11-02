@@ -10,6 +10,7 @@ Uso: python3 tools/prepare_assets.py   (desde la raíz del repo)
 """
 import json
 import os
+import re
 import numpy as np
 from PIL import Image
 from scipy import ndimage
@@ -83,6 +84,7 @@ def save(img, name, scale):
 P = 'personajes/'
 E = 'enemigos/'
 U = 'ui/'
+S = 'escenario/'
 
 # familia: (altura objetivo de la referencia, (ruta, viñeta) referencia, {nombre: (ruta, viñeta)})
 FAMILIES = {
@@ -294,6 +296,38 @@ SINGLES.update({
 
 # Estos sprites se entregan como PNG ya preparados y los consume el juego directamente.
 # Se conservan aquí para que regenerar el manifiesto no los borre de src/sprite-list.js.
+# ---- A9 · Objetos de las mecánicas de campaña y fondo nocturno (arena/363901b4, #57) ----
+# Arte que falta para la campaña de 4 bares: manchas del Bar La Taca, bola de sorteo
+# del Bar Los Concursos, bandeja/campana/ticket del Bar Pols y proyectiles de los
+# jefes (tostada, aceite, bola numerada, cazo), más el fondo nocturno del Bar del
+# Jefe. Los objetos viven en assets/sprites/objetos/ (subcarpeta propia) y se
+# declaran como externos para no tocar el listado generado de los demás bloques.
+A9_OBJETOS = {
+    # nombre: (ruta fuente, alto objetivo en px)
+    'obj-mancha': ('escenario/mancha-suelo.png', 60),
+    'obj-campana': ('ui/campana-barra.png', 90),
+    'obj-ticket': ('ui/ticket-cuenta.png', 120),
+    'obj-sorteo': ('ui/sorteo-bola-loteria.png', 110),
+    'obj-bandeja': ('ui/bandeja-camarera.png', 90),
+    'proj-tostada': ('ui/proyectil-tostada.png', 90),
+    'proj-aceite': ('ui/proyectil-aceite.png', 90),
+    'proj-bola': ('ui/proyectil-bola-numerada.png', 90),
+    'proj-cazo': ('ui/proyectil-cazo.png', 90),
+}
+
+
+def main_a9():
+    """Genera los objetos de A9 en assets/sprites/objetos/ y su fondo nocturno."""
+    out = os.path.join(OUT, 'objetos')
+    os.makedirs(out, exist_ok=True)
+    for name, (rel, target) in A9_OBJETOS.items():
+        img = figure(rel)
+        scale = target / img.size[1]
+        img = img.resize((max(1, round(img.size[0] * scale)), target), Image.LANCZOS)
+        img.save(os.path.join(out, name + '.webp'), 'WEBP', quality=90, method=6)
+    src = os.path.join(SRC, 'escenario', 'bar-jefe-noche.png')
+    Image.open(src).convert('RGB').save(os.path.join(OUT, 'fondo-noche-jefe.png'), 'PNG', optimize=True)
+
 EXTERNAL_SPRITES = {
     'fondo-barra': ('./assets/sprites/fondo-barra.png', 1280, 720),
     'fondo-terraza': ('./assets/sprites/fondo-terraza.png', 1280, 720),
@@ -309,6 +343,11 @@ EXTERNAL_SPRITES = {
     'boss-lider-stun': ('./assets/enemigos/boss-lider-stun.png', 550, 300),
     'boss-lider-down': ('./assets/enemigos/boss-lider-down.png', 477, 260),
     'boss-lider-shout': ('./assets/enemigos/boss-lider-shout.png', 642, 350),
+    # A9 · objetos de campaña del tema «Dieta de Marcos» (subcarpeta propia).
+    # El tamaño se lee del WebP ya generado por main_a9().
+    **{k: ('./assets/sprites/objetos/%s.webp' % k, *Image.open(os.path.join(OUT, 'objetos', k + '.webp')).size)
+       for k in A9_OBJETOS},
+    'fondo-noche-jefe': ('./assets/sprites/fondo-noche-jefe.png', 1280, 720),
 }
 
 # ---- A8 · Dieta de Marcos: Camarero de la Cuenta y premios (arena/5e565596) ----
@@ -357,6 +396,7 @@ SINGLES['dm-bocata-down'] = (E + 'jefe-bocata-gigante-derrotado.png', 190)
 
 
 def main():
+    main_a9()
     manifest = {}
     for name, rel in FONDOS_MARCOS.items():
         save_fondo(rel, name)
@@ -383,6 +423,18 @@ def main():
         lines.append(f"  '{k}': ['./assets/sprites/{k}.webp', {w}, {h}],")
     for k, (path, w, h) in EXTERNAL_SPRITES.items():
         lines.append(f"  '{k}': ['{path}', {w}, {h}],")
+    # Conserva entradas que este script no produce (arte de otros bloques que sí
+    # está en disco y en la lista): regenerar nunca debe borrar el trabajo ajeno.
+    lst_path = os.path.join(ROOT, 'src', 'sprite-list.js')
+    known = set(manifest) | set(EXTERNAL_SPRITES)
+    if os.path.exists(lst_path):
+        with open(lst_path) as f:
+            for m in re.finditer(r"^\s*'([^']+)': \[('[^']+'), (\d+), (\d+)\],\s*$", f.read(), re.M):
+                name = m.group(1)
+                if name in known:
+                    continue
+                known.add(name)
+                lines.append(f"  '{name}': ['{m.group(2)}', {m.group(3)}, {m.group(4)}],")
     lines.append('};')
     with open(os.path.join(ROOT, 'src', 'sprite-list.js'), 'w') as f:
         f.write('\n'.join(lines) + '\n')

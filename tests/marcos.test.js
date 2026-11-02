@@ -186,3 +186,19 @@ test('el tema tumbledog no declara mapeo de sprites (su comportamiento no cambia
   assert.equal(TUMBLEDOG.letters.word, 'TUMBLEDOG');
   assert.equal(listThemes()[0].theme.letters.word, 'TUMBLEDOG');
 });
+
+test('objetos de las mecánicas de campaña y proyectiles de jefes (A9) existen en disco', () => {
+  const grupos = { ...MARCOS.mecanicas, ...MARCOS.proyectiles };
+  assert.ok(Object.keys(MARCOS.mecanicas).length >= 5, 'mancha, sorteo, bandeja, campana y ticket');
+  assert.ok(Object.keys(MARCOS.proyectiles).length >= 4, 'tostada, aceite, bola numerada y cazo');
+  for (const [que, spr] of Object.entries(grupos)) {
+    assert.ok(SPRITE_FILES[spr], `el sprite ${spr} (${que}) no está en sprite-list.js`);
+    assert.ok(disk(SPRITE_FILES[spr][0]), `falta en disco ${SPRITE_FILES[spr][0]}`);
+  }
+});
+
+test('el fondo nocturno del Bar del Jefe (A9) sustituye a la terraza en la noche', () => {
+  assert.equal(MARCOS.nightTheme, 'noche');
+  assert.equal(MARCOS.backgrounds.noche, 'fondo-noche-jefe');
+  assert.ok(disk(SPRITE_FILES['fondo-noche-jefe'][0]));
+});

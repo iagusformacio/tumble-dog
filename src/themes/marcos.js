@@ -44,8 +44,9 @@ export const THEME = {
   // Fondos por código del motor sustituidos por escenarios del tema:
   // 'barra'/'terraza'/'mercado'/'playa' son los de las fases; en el título,
   // bonus y ending se usan startTheme/bonusTheme/nightTheme.
-  startTheme: 'barra', bonusTheme: 'mercado', nightTheme: 'terraza',
+  startTheme: 'barra', bonusTheme: 'mercado', nightTheme: 'noche',
   backgrounds: {
+    noche: 'fondo-noche-jefe',
     barra: 'fondo-barra',
     terraza: 'fondo-terraza',
     mercado: 'fondo-mercado',
@@ -106,6 +107,22 @@ export const THEME = {
   // Onomatopeyas del juego (con sprite propio cada una, ya en main).
   onomatopeyas: ['¡BLEEEH!', '¡GLUP!', '¡PLAF!', '¡CRAC!'],
   onomatopeyaSprites: ['ui-bleeeh', 'ui-glup', 'ui-plaf', 'ui-crac'],
+  // Objetos de las mecánicas de los bares y proyectiles de los jefes (bloque A9).
+  // Están en disco y registrados en sprite-list.js; el motor los usará cuando
+  // lleguen las mecánicas de campaña (C1, #57).
+  mecanicas: {
+    mancha: 'obj-mancha',      // Bar La Taca: mancha que resbala
+    sorteo: 'obj-sorteo',      // Bar Los Concursos: bola de sorteo con «?»
+    bandeja: 'obj-bandeja',    // Bar Pols: bandeja deslizante
+    campana: 'obj-campana',    // aviso de pedido en la barra
+    ticket: 'obj-ticket',      // la cuenta del camarero
+  },
+  proyectiles: {
+    tostada: 'proj-tostada',   // jefe Cocinero de la Plancha
+    aceite: 'proj-aceite',     // jefe Cocinero de la Plancha
+    bola: 'proj-bola',         // jefe Presentador del Bingo
+    cazo: 'proj-cazo',         // jefe del Bar (jefe final)
+  },
   // Mensajes al recibir daño.
   hurtMessages: ['¡INDIGESTIÓN!', '¡ESO NO ASIENTA!', '¡DEMASIADO PICANTE!', '¡REPITE!'],
   // Golpes del jefe.
@@ -193,7 +210,7 @@ const RAW = [
   { name: 'BAR POLS · LA SALA', theme: 'barra', plats: [[60, 520, 260], [510, 520, 260], [960, 520, 260], [280, 400, 260], [740, 400, 260], [60, 280, 260], [510, 280, 260], [960, 280, 260], [380, 160, 520]],
     foes: [['activista', 180, 520], ['influencer', 1080, 520], ['asesor', 400, 400], ['tertuliano', 860, 400], ['portavoz', 640, 280], ['activista', 640, 160]] },
   { name: 'JEFE: EL BOCATA GIGANTE', theme: 'barra', boss: 'tertuliano', plats: [[60, 500, 380], [60, 360, 300], [60, 220, 380], [520, 430, 200]], foes: [] },
-  { name: 'BAR DEL JEFE · LA BARRA', theme: 'terraza', plats: [[0, 520, 420], [860, 520, 420], [330, 400, 620], [0, 280, 300], [980, 280, 300], [400, 280, 480], [500, 160, 280]],
+  { name: 'BAR DEL JEFE · LA BARRA', theme: 'noche', plats: [[0, 520, 420], [860, 520, 420], [330, 400, 620], [0, 280, 300], [980, 280, 300], [400, 280, 480], [500, 160, 280]],
     foes: [['baron', 200, 520], ['diputado', 1060, 520], ['activista', 640, 400], ['asesor', 150, 280], ['influencer', 1130, 280], ['baron', 640, 160]] },
   { name: 'LA TERRAZA DE VALÈNCIA', theme: 'terraza', plats: [[100, 520, 1080], [100, 400, 300], [880, 400, 300], [440, 340, 400], [100, 240, 360], [820, 240, 360], [460, 140, 360]],
     foes: [['diputado', 300, 520], ['lider', 980, 520], ['tertuliano', 250, 400], ['activista', 1030, 400], ['baron', 640, 340], ['influencer', 640, 140]] },
