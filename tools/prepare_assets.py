@@ -241,6 +241,11 @@ def main():
     for k in sorted(manifest):
         w, h = manifest[k]
         lines.append(f"  '{k}': ['./assets/sprites/{k}.webp', {w}, {h}],")
+    if FONDOS_MARCOS:
+        lines.append('  // Fondos de bar del tema «Dieta de Marcos» (bloque A4, opacos, 1280×720)')
+        for k in sorted(FONDOS_MARCOS):
+            with Image.open(os.path.join(OUT, k + '.png')) as im:
+                lines.append(f"  '{k}': ['./assets/sprites/{k}.png', {im.size[0]}, {im.size[1]}],")
     if EXTRA_FILES:
         lines.append('  // Sprites propios de jefes (arte de sesión, norma 20)')
         for k in EXTRA_FILES:

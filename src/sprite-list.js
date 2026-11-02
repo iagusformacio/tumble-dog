@@ -85,9 +85,9 @@ export const SPRITE_FILES = {
   'ui-stars': ['./assets/sprites/ui-stars.webp', 212, 90],
   // Fondos de bar del tema «Dieta de Marcos» (bloque A4, opacos, 1280×720)
   'fondo-barra': ['./assets/sprites/fondo-barra.png', 1280, 720],
-  'fondo-terraza': ['./assets/sprites/fondo-terraza.png', 1280, 720],
   'fondo-mercado': ['./assets/sprites/fondo-mercado.png', 1280, 720],
   'fondo-playa': ['./assets/sprites/fondo-playa.png', 1280, 720],
+  'fondo-terraza': ['./assets/sprites/fondo-terraza.png', 1280, 720],
   // Sprites propios de jefes (arte de sesión, norma 20)
   'boss-tertuliano-walkA': ['./assets/enemigos/boss-tertuliano-walkA.png', 825, 450],
   'boss-tertuliano-walkB': ['./assets/enemigos/boss-tertuliano-walkB.png', 825, 450],
