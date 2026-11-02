@@ -34,8 +34,10 @@ try {
 
 // --- canvas y document mínimos para el motor ---
 const main = createCanvas(1280, 720);
+// Lienzos fuera de pantalla (fondos pre-renderizados, capas de plataformas):
+// el motor los crea con document.createElement('canvas') y les fija width/height.
 globalThis.document = {
-  createElement: (tag) => (tag === 'canvas' ? createCanvas(1280, 720) : {}),
+  createElement: () => createCanvas(1, 1),
   fonts: null,
   addEventListener() {},
 };
@@ -90,7 +92,10 @@ const held = Object.fromEntries(ACTIONS.map((a) => [a, false]));
 const pressed = Object.fromEntries(ACTIONS.map((a) => [a, false]));
 const input = { held, pressed, update() {}, takeAny: () => false, get touch() { return false; } };
 const audio = new Proxy({}, { get: () => () => {} });
+const { listThemes } = await import('../src/themes/index.js');
 const game = createGame({ input, audio, themeId: theme });
+// El título enseña el juego seleccionado con gameSel: se alinea con --tema.
+game.state.gameSel = Math.max(0, listThemes().findIndex((t) => t.id === theme));
 
 if (mode === 'campaña' || mode === 'campana') {
   // Pantalla de ruta de la campaña (mapa de los 4 bares), sin entrar a jugar.
