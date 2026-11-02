@@ -269,6 +269,27 @@ for fam in ('boss-cocinero-plancha', 'boss-presentador-bingo'):
     for pose, suf in A10_POSES.items():
         frames[fam + '-' + pose] = (E + base + '-' + suf + '.png', None)
 # --- Fin del bloque A10 -----------------------------------------------------
+# --- A6 · Jefe final de «Dieta de Marcos» (issue #57) -----------------------
+# El Jefe del Bar (València · Bar del Jefe): 10 poses, personaje inventado,
+# fondo chroma #00FF00, un PNG por pose en assets/enemigos/jefe-bar-*.png.
+# El polo es verde botella muy oscuro (no lima) para sobrevivir al recorte de
+# croma. Bloque propio de la tarea A6; no mezclar con otras.
+JEFE_BAR = E + 'jefe-bar-'
+FAMILIES['jefe-bar'] = (320, (JEFE_BAR + 'reposo.png', None), {
+    'boss-jefe-bar-idle': (JEFE_BAR + 'reposo.png', None),
+    'boss-jefe-bar-walkA': (JEFE_BAR + 'andar-a.png', None),
+    'boss-jefe-bar-walkB': (JEFE_BAR + 'andar-b.png', None),
+    'boss-jefe-bar-stun': (JEFE_BAR + 'herido.png', None),
+    'boss-jefe-bar-attack': (JEFE_BAR + 'cucharonazo.png', None),
+    'boss-jefe-bar-shout': (JEFE_BAR + 'grito.png', None),
+    'boss-jefe-bar-angry': (JEFE_BAR + 'enfadado.png', None),
+    'boss-jefe-bar-win': (JEFE_BAR + 'victoria.png', None),
+})
+SINGLES.update({
+    'boss-jefe-bar-down': (JEFE_BAR + 'derrotado.png', 160),
+    'boss-jefe-bar-portrait': (JEFE_BAR + 'retrato.png', 360),
+})
+# --- Fin del bloque A6 ------------------------------------------------------
 
 
 # Estos sprites se entregan como PNG ya preparados y los consume el juego directamente.

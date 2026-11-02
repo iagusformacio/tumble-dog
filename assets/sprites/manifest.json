@@ -143,6 +143,46 @@
   149,
   320
  ],
+ "boss-jefe-bar-angry": [
+  201,
+  328
+ ],
+ "boss-jefe-bar-attack": [
+  307,
+  312
+ ],
+ "boss-jefe-bar-down": [
+  416,
+  160
+ ],
+ "boss-jefe-bar-idle": [
+  128,
+  320
+ ],
+ "boss-jefe-bar-portrait": [
+  254,
+  360
+ ],
+ "boss-jefe-bar-shout": [
+  154,
+  321
+ ],
+ "boss-jefe-bar-stun": [
+  147,
+  320
+ ],
+ "boss-jefe-bar-walkA": [
+  160,
+  316
+ ],
+ "boss-jefe-bar-walkB": [
+  166,
+  314
+ ],
+ "boss-jefe-bar-win": [
+  175,
+  328
+ ],
  "boss-presentador-bingo-angry": [
   184,
   292
