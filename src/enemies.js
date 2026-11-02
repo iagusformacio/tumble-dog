@@ -4,30 +4,13 @@ import { stepBody } from './physics.js';
 import { rand, pick, clamp } from './util.js';
 import { drawSprite, hasSprite } from './sprites.js';
 import { FONT } from './fx.js';
+import { enemyTypes, enemyColors } from './themes/tumbledog.js';
 
-export const TYPES = {
-  portavoz: { name: 'La Portavoz Airada', speed: 100, jump: 0.18, drop: 0.45, shoot: 'shout', rate: [3.2, 5], res: 1, score: 200 },
-  tertuliano: { name: 'El Tertuliano', speed: 90, jump: 0.45, drop: 0.3, shoot: 'bulo', rate: [3.5, 5.5], res: 1, score: 200 },
-  asesor: { name: 'El Asesor Misterioso', speed: 165, jump: 0.1, drop: 0.85, shoot: null, res: 1, ghost: true, score: 300 },
-  influencer: { name: 'El Influencer Bulero', speed: 120, jump: 0.9, hop: true, drop: 0.5, shoot: 'flash', rate: [3.8, 6], res: 0.9, score: 300 },
-  activista: { name: 'La Activista Municipal', speed: 190, jump: 0.25, drop: 0.6, shoot: null, res: 1, chase: true, score: 300 },
-  lider: { name: 'El Líder Eterno', speed: 72, jump: 0.15, drop: 0.3, shoot: 'shout', rate: [4, 6], res: 2.1, score: 500 },
-  baron: { name: 'El Barón Regional', speed: 105, jump: 0.5, drop: 0.7, shoot: null, res: 1.3, chase: true, score: 400 },
-  diputado: { name: 'El Diputado Gruñón', speed: 66, jump: 0.35, drop: 0.25, shoot: 'bulo', rate: [4.5, 7], res: 1.5, score: 400 },
-};
+export const TYPES = enemyTypes;
 export const TYPE_KEYS = Object.keys(TYPES);
 
 // Colores de dibujo provisional por código (nunca negro: siempre visibles y diferenciados).
-export const ENEMY_COLORS = {
-  portavoz: '#ff4d4d',
-  tertuliano: '#ffb627',
-  asesor: '#c9a3ff',
-  influencer: '#ff4fa3',
-  activista: '#3bceac',
-  diputado: '#ff8fa3',
-  lider: '#ff6b6b',
-  baron: '#ffe14d',
-};
+export const ENEMY_COLORS = enemyColors;
 
 /**
  * Dibujo provisional por código de un enemigo cuando su sprite no está disponible.

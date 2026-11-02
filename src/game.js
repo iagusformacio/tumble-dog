@@ -12,6 +12,7 @@ import { drawHud, drawVignette } from './hud.js';
 import { drawSprite } from './sprites.js';
 import { groundBelow } from './physics.js';
 import { rand, pick, clamp, lerp, overlap, easeOutBack, hsl } from './util.js';
+import { THEME } from './themes/tumbledog.js';
 
 const V = CONFIG.vacuum;
 
@@ -79,7 +80,7 @@ export function createGame({ input, audio }) {
     if (g.score >= g.nextLife) { g.nextLife += CONFIG.player.extraLifeEvery; gainLife(); }
     if (g.score > g.hi) { g.hi = g.score; }
   }
-  function gainLife() { g.lives++; audio.sfx('oneup'); fx.text(g.player.x + 20, g.player.y - 40, '¡1UP!', { size: 52, color: '#7dff8a', burst: true, life: 1.4 }); }
+  function gainLife() { g.lives++; audio.sfx('oneup'); fx.text(g.player.x + 20, g.player.y - 40, THEME.juice.oneup, { size: 52, color: '#7dff8a', burst: true, life: 1.4 }); }
 
   // ---------- Jugador herido
   function hurt() {
@@ -89,7 +90,7 @@ export function createGame({ input, audio }) {
     releaseHeld(p);
     g.lives--;
     fx.shake(0.7); fx.flash(0.45, '#ff2a4a'); fx.stop(0.18); fx.stars(p.x + p.w / 2, p.y + 20, 12);
-    fx.text(p.x + p.w / 2, p.y - 20, pick(['¡DIMISIÓN!', '¡ESCÁNDALO!', '¡CRISIS!', '¡MOCIÓN!']), { size: 48, burst: true, life: 1.2 });
+        fx.text(p.x + p.w / 2, p.y - 20, pick(THEME.hurtMessages), { size: 48, burst: true, life: 1.2 });
     audio.sfx('hurt'); audio.suck(false);
     g.deadT = 0;
   }
@@ -137,7 +138,7 @@ export function createGame({ input, audio }) {
         p.held.push(e.type);
         if (p.held.length === 1) p.heldT = 0;
         fx.spark(n.x, n.y, 14, { hue: rand(0, 360) }); fx.ring(n.x, n.y, '#ffffff', 70, 0.3);
-        fx.text(n.x, n.y - 50, '¡GLUP!', { size: 30, color: '#9fe7ff', life: 0.6 });
+        fx.text(n.x, n.y - 50, THEME.juice.capture, { size: 30, color: '#9fe7ff', life: 0.6 });
         audio.sfx('capture'); fx.shake(0.12);
       }
     }
@@ -181,7 +182,7 @@ export function createGame({ input, audio }) {
 
   function shatter(b) {
     fx.stars(b.x, b.y, 18, { max: 620, size: 18 }); fx.spark(b.x, b.y, 30); fx.ring(b.x, b.y, '#fff', b.r * 2.6, 0.4, 8);
-    fx.text(b.x, b.y - 30, '¡CRAC!', { size: 50, burst: true, life: 0.8, color: '#fff35c' });
+    fx.text(b.x, b.y - 30, THEME.juice.shatter, { size: 50, burst: true, life: 0.8, color: '#fff35c' });
     fx.shake(0.3); audio.sfx('shatter');
     if (b.chain >= 3) for (let i = 0; i < b.chain - 1; i++) g.items.push(createItem(pick(['gemB', 'gemR', 'gemG']), b.x, b.y));
     b.alive = false;
@@ -215,7 +216,7 @@ export function createGame({ input, audio }) {
     if (p.alive && p.held.length) {
       g.warnT -= dt;
       if (p.heldT > V.warnAt && g.warnT <= 0) { g.warnT = 0.22; audio.sfx('warn'); }
-      if (p.heldT > V.burstAt) { fx.text(p.x + p.w / 2, p.y - 60, '¡SE ESCAPAN!', { size: 40, burst: true }); hurt(); }
+      if (p.heldT > V.burstAt) { fx.text(p.x + p.w / 2, p.y - 60, THEME.juice.escape, { size: 40, burst: true }); hurt(); }
     }
     const ectx = { plats: g.plats, player: p, shots: g.shots, fx, freeze: g.freeze, difficulty: difficulty(), calm: g.stageIndex === 0 && g.loop === 0 };
     const living = g.enemies.filter((e) => e.state !== 'dead');
@@ -238,7 +239,7 @@ export function createGame({ input, audio }) {
     for (const b of g.balls) {
       const r = updateBall(b, dt, g.plats);
       fx.trail(b.x, b.y, b.r, b.hue);
-      if (r === 'wall') { audio.sfx('boing'); fx.dust(b.x + b.dir * b.r, b.y + b.r, 6, b.dir); fx.shake(0.12); fx.text(b.x, b.y - b.r - 20, '¡BOING!', { size: 28, color: '#9fe7ff', life: 0.5 }); }
+      if (r === 'wall') { audio.sfx('boing'); fx.dust(b.x + b.dir * b.r, b.y + b.r, 6, b.dir); fx.shake(0.12); fx.text(b.x, b.y - b.r - 20, THEME.juice.wall, { size: 28, color: '#9fe7ff', life: 0.5 }); }
       if (r === 'land') { fx.dust(b.x, b.y + b.r, 8); fx.shake(0.15); }
       if (r === 'shatter') { shatter(b); continue; }
       for (const e of g.enemies) {
@@ -283,10 +284,10 @@ export function createGame({ input, audio }) {
     if (!g.stage.boss && g.state === 'play') {
       if (!g.hurried && g.stageT > CONFIG.stage.hurryAt) {
         g.hurried = true; audio.sfx('hurry'); audio.music('stage', 1.3);
-        fx.text(W / 2, 330, '¡DATE PRISA!', { size: 80, burst: true, life: 1.6, color: '#ff6b6b' });
+        fx.text(W / 2, 330, THEME.hud.datePrisa, { size: 80, burst: true, life: 1.6, color: '#ff6b6b' });
         for (const e of g.enemies) e.angry = true;
       }
-      if (!g.chaser && g.stageT > CONFIG.stage.chaserAt) { g.chaser = createChaser(); fx.text(W / 2, 260, '¡LLEGA HACIENDA!', { size: 70, burst: true, life: 2, color: '#c9a3ff' }); fx.flash(0.5, '#6a2cff'); }
+      if (!g.chaser && g.stageT > CONFIG.stage.chaserAt) { g.chaser = createChaser(); fx.text(W / 2, 260, THEME.juice.chaser, { size: 70, burst: true, life: 2, color: '#c9a3ff' }); fx.flash(0.5, '#6a2cff'); }
     }
     if (g.chaser) updateChaser(g.chaser, dt, p);
     // Muerte y reaparición
@@ -465,7 +466,7 @@ export function createGame({ input, audio }) {
     ctx.fillStyle = 'rgba(20,10,50,0.35)'; ctx.fillRect(0, 0, W, H);
     drawSprite(ctx, 'portrait-presi', 230, 560, { s: 1, rot: Math.sin(t * 2) * 0.04 });
     drawSprite(ctx, 'presi-suck', 1060, FLOOR_Y, { s: 0.85, flip: true, sy: 1 + Math.sin(t * 4) * 0.02 });
-    const word = 'TUMBLE DOG';
+    const word = THEME.title;
     ctx.font = `132px ${FONT}`;
     const widths = [...word].map((ch) => (ch === ' ' ? 44 : ctx.measureText(ch).width + 6));
     let x = W / 2 - widths.reduce((a, b) => a + b, 0) / 2;
@@ -480,14 +481,14 @@ export function createGame({ input, audio }) {
       ctx.restore();
       x += widths[i] / 2;
     }
-    outlinedText(ctx, 'EL PRESIDENTE QUE ASPIRA A LA OPOSICIÓN', W / 2, 270, 32, '#ffffff');
-    if (Math.floor(t * 2) % 2 === 0) outlinedText(ctx, input.touch ? 'TOCA PARA JUGAR' : 'PULSA ESPACIO PARA JUGAR', W / 2, 360, 46, '#fff35c');
+    outlinedText(ctx, THEME.tagline, W / 2, 270, 32, '#ffffff');
+    if (Math.floor(t * 2) % 2 === 0) outlinedText(ctx, input.touch ? THEME.titleScreen.startTouch : THEME.titleScreen.startKeyboard, W / 2, 360, 46, '#fff35c');
     ctx.save(); ctx.fillStyle = 'rgba(20,10,50,0.7)'; ctx.beginPath(); ctx.roundRect(W / 2 - 290, 410, 580, 120, 18); ctx.fill(); ctx.strokeStyle = '#ffe14d'; ctx.lineWidth = 3; ctx.stroke(); ctx.restore();
-    outlinedText(ctx, '← →  MOVER    ESPACIO  SALTAR    ↓+ESPACIO  BAJAR', W / 2, 440, 22, '#fff');
-    outlinedText(ctx, 'X  ASPIRAR (MANTÉN)    Z  LANZAR LA BOLA', W / 2, 474, 22, '#9fe7ff');
-    outlinedText(ctx, 'JUNTA LAS LETRAS T·U·M·B·L·E·D·O·G   ·   M SONIDO   ·   P PAUSA', W / 2, 508, 18, '#ffb3d9');
-    outlinedText(ctx, 'RÉCORD ' + String(g.hi).padStart(7, '0'), W / 2, 590, 28, '#ffb3d9');
-    outlinedText(ctx, 'Personajes inventados · parodia', W / 2, 700, 16, 'rgba(255,255,255,0.7)');
+    outlinedText(ctx, `${THEME.titleScreen.move}    ${THEME.titleScreen.jump}    ${THEME.titleScreen.down}`, W / 2, 440, 22, '#fff');
+    outlinedText(ctx, `${THEME.titleScreen.suck}    ${THEME.titleScreen.shoot}`, W / 2, 474, 22, '#9fe7ff');
+    outlinedText(ctx, `${THEME.titleScreen.lettersHint}   ·   ${THEME.titleScreen.mute}   ·   ${THEME.titleScreen.pause}`, W / 2, 508, 18, '#ffb3d9');
+    outlinedText(ctx, THEME.hud.record + ' ' + String(g.hi).padStart(7, '0'), W / 2, 590, 28, '#ffb3d9');
+    outlinedText(ctx, THEME.titleScreen.parody, W / 2, 700, 16, 'rgba(255,255,255,0.7)');
   }
 
   function render(ctx) {
@@ -510,25 +511,25 @@ export function createGame({ input, audio }) {
       ctx.beginPath(); ctx.roundRect(bx - tw / 2, by - 26, tw, 46, 20); ctx.fill(); ctx.stroke(); ctx.fillStyle = '#1a1030'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(msg, bx, by - 2);
       ctx.restore();
     }
-    if (g.state === 'intro') banner(ctx, g.stage.boss ? '¡JEFE!' : `FASE ${g.stageIndex + 1}`, g.stage.name, g.stateT / 0.4, g.stage.boss ? 350 : 45);
-    if (g.state === 'clear' && g.stateT < CONFIG.stage.clearDelay + 1.2) banner(ctx, '¡FASE LIMPIA!', g.clearBonus ? `BONUS TIEMPO +${g.clearBonus}` : '¡ADIÓS, OPOSICIÓN!', g.stateT / 0.4, 140);
+    if (g.state === 'intro') banner(ctx, g.stage.boss ? THEME.banner.jefe : `FASE ${g.stageIndex + 1}`, g.stage.name, g.stateT / 0.4, g.stage.boss ? 350 : 45);
+    if (g.state === 'clear' && g.stateT < CONFIG.stage.clearDelay + 1.2) banner(ctx, THEME.banner.faseLimpia, g.clearBonus ? `BONUS TIEMPO +${g.clearBonus}` : THEME.banner.adios, g.stateT / 0.4, 140);
     if (g.state === 'bonus') {
-      outlinedText(ctx, '¡RONDA BONUS!', W / 2, 140, 70, hsl(g.time * 120, 95, 62));
-      outlinedText(ctx, `¡COGE TODO! ${Math.max(0, Math.ceil(CONFIG.bonus.time - g.stateT))}`, W / 2, 200, 40, '#fff');
+      outlinedText(ctx, THEME.banner.bonus, W / 2, 140, 70, hsl(g.time * 120, 95, 62));
+      outlinedText(ctx, `${THEME.banner.cogeTodo} ${Math.max(0, Math.ceil(CONFIG.bonus.time - g.stateT))}`, W / 2, 200, 40, '#fff');
     }
     if (g.state === 'gameover') {
       ctx.fillStyle = 'rgba(10,0,30,0.55)'; ctx.fillRect(0, 0, W, H);
       const k = easeOutBack(clamp(g.stateT / 0.6, 0, 1));
       drawSprite(ctx, 'ui-gameover', W / 2, 400, { s: 1.15 * k, rot: Math.sin(g.time * 2) * 0.05 });
-      outlinedText(ctx, 'PUNTOS ' + g.score, W / 2, 470, 40, '#ffe14d');
-      if (g.stateT > 1.5 && Math.floor(g.time * 2) % 2 === 0) outlinedText(ctx, `¿CONTINUAR? ${Math.max(0, Math.ceil(12 - g.stateT))}`, W / 2, 540, 46, '#fff');
+      outlinedText(ctx, THEME.gameOver.puntos + ' ' + g.score, W / 2, 470, 40, '#ffe14d');
+      if (g.stateT > 1.5 && Math.floor(g.time * 2) % 2 === 0) outlinedText(ctx, `${THEME.gameOver.continuar} ${Math.max(0, Math.ceil(12 - g.stateT))}`, W / 2, 540, 46, '#fff');
     }
     if (g.state === 'ending') {
       ctx.fillStyle = 'rgba(10,0,30,0.4)'; ctx.fillRect(0, 0, W, H);
       drawSprite(ctx, 'presi-win', W / 2, FLOOR_Y, { s: 1.4, sy: 1 + Math.sin(g.time * 5) * 0.03 });
-      outlinedText(ctx, '¡LEGISLATURA COMPLETADA!', W / 2, 140, 76, hsl(g.time * 90, 95, 62));
-      outlinedText(ctx, 'PUNTOS ' + g.score, W / 2, 220, 44, '#ffe14d');
-      if (g.stateT > 3) outlinedText(ctx, 'PULSA PARA LA SIGUIENTE LEGISLATURA (MÁS DIFÍCIL)', W / 2, 290, 30, '#fff');
+      outlinedText(ctx, THEME.ending.completed, W / 2, 140, 76, hsl(g.time * 90, 95, 62));
+      outlinedText(ctx, THEME.ending.puntos + ' ' + g.score, W / 2, 220, 44, '#ffe14d');
+      if (g.stateT > 3) outlinedText(ctx, THEME.ending.next, W / 2, 290, 30, '#fff');
     }
     if (g.paused) { ctx.fillStyle = 'rgba(10,0,30,0.6)'; ctx.fillRect(0, 0, W, H); outlinedText(ctx, 'PAUSA', W / 2, H / 2, 100, '#fff'); }
     drawVignette(ctx);

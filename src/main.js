@@ -5,6 +5,7 @@ import { createAudio } from './audio.js';
 import { loadSprites } from './sprites.js';
 import { createGame } from './game.js';
 import { FONT } from './fx.js';
+import { THEME } from './themes/tumbledog.js';
 
 const canvas = document.getElementById('game');
 const ctx = canvas.getContext('2d');
@@ -25,7 +26,7 @@ resize();
 function loading(k) {
   ctx.setTransform(scale, 0, 0, scale, 0, 0);
   ctx.fillStyle = '#140a32'; ctx.fillRect(0, 0, W, H);
-  ctx.fillStyle = '#ffe14d'; ctx.font = `64px ${FONT}`; ctx.textAlign = 'center'; ctx.fillText('TUMBLE DOG', W / 2, H / 2 - 20);
+  ctx.fillStyle = '#ffe14d'; ctx.font = `64px ${FONT}`; ctx.textAlign = 'center'; ctx.fillText(THEME.title, W / 2, H / 2 - 20);
   ctx.fillStyle = 'rgba(255,255,255,0.2)'; ctx.fillRect(W / 2 - 200, H / 2 + 20, 400, 14);
   ctx.fillStyle = '#ff4fa3'; ctx.fillRect(W / 2 - 200, H / 2 + 20, 400 * k, 14);
 }

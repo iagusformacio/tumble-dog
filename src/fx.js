@@ -3,7 +3,7 @@ import { rand, pick, hsl, easeOutBack, clamp } from './util.js';
 
 export const FONT = '"Bangers", "Luckiest Guy", Impact, "Arial Black", sans-serif';
 const CONFETTI = ['#ff3b5c', '#ffd23f', '#3bceac', '#4d9de0', '#ff8c42', '#b15eff', '#ffffff'];
-const WORDS = ['¡PAF!', '¡ZAS!', '¡PUM!', '¡CATAPUM!', '¡PLAF!', '¡TOMA!', '¡ZASCA!', '¡BOING!'];
+import { onomatopeyas as WORDS } from './themes/tumbledog.js';
 
 export function createFx() {
   const parts = [];
