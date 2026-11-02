@@ -3,10 +3,12 @@
 //   2 · Bar Los Concursos: sorteos con bola de interrogación (efecto aleatorio).
 //   3 · Bar Pols: bandejas giratorias que golpean + barra deslizante que lleva al jugador.
 //   4 · Bar del Jefe: todo mezclado, de noche y con más enemigos.
-// Dibujo de tebeo por código (trazo grueso, color plano), sin imágenes nuevas.
+// Dibujo: si el arte del tema está en disco (objetos de A9) se usa el sprite;
+// si no, se dibuja por código con trazo de tebeo (nunca un hueco negro).
 import { W, FLOOR_Y } from './config.js';
 import { FONT, outlinedText } from './fx.js';
 import { TYPE_KEYS } from './enemies.js';
+import { drawSprite, hasSprite, spriteSize } from './sprites.js';
 import { clamp } from './util.js';
 
 const INK = '#1a1030';
@@ -183,9 +185,19 @@ export function createBarMechanic(stage, rng = Math.random) {
     if (has('bandejas')) updateTrays(dt, h);
   }
 
+  // Escala para que un sprite de A9 ocupe el tamaño que pide la mecánica.
+  const fit = (name, target) => {
+    const sz = spriteSize(name);
+    return sz.h > 0 ? target / sz.h : 1;
+  };
+
   function draw(ctx, time) {
     // Manchas:charco plano con brillo y trazo grueso.
     for (const st of s.stains) {
+      if (hasSprite('obj-mancha')) {
+        drawSprite(ctx, 'obj-mancha', st.x + st.w / 2, st.y + 8, { s: fit('obj-mancha', 34) * (st.w / 120), sy: 0.9 });
+        continue;
+      }
       ctx.save(); ctx.translate(st.x + st.w / 2, st.y - 2);
       ctx.fillStyle = st.color; ctx.strokeStyle = INK; ctx.lineWidth = 4;
       ctx.beginPath();
@@ -210,6 +222,11 @@ export function createBarMechanic(stage, rng = Math.random) {
     }
     // Bolas de sorteo.
     for (const b of s.balls) {
+      if (hasSprite('obj-sorteo')) {
+        ctx.save(); ctx.translate(b.x, b.y); ctx.rotate(Math.sin(time * 3 + b.t) * 0.25);
+        drawSprite(ctx, 'obj-sorteo', 0, b.r, { s: fit('obj-sorteo', b.r * 2.4) });
+        ctx.restore(); continue;
+      }
       ctx.save(); ctx.translate(b.x, b.y); ctx.rotate(Math.sin(time * 3 + b.t) * 0.25);
       ctx.fillStyle = '#ffffff'; ctx.strokeStyle = INK; ctx.lineWidth = 4;
       ctx.beginPath(); ctx.arc(0, 0, b.r, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
@@ -219,6 +236,11 @@ export function createBarMechanic(stage, rng = Math.random) {
     }
     // Bandejas giratorias.
     for (const t of s.trays) {
+      if (hasSprite('obj-bandeja')) {
+        ctx.save(); ctx.translate(t.x, t.y); ctx.rotate(t.rot);
+        drawSprite(ctx, 'obj-bandeja', 0, t.r + 8, { s: fit('obj-bandeja', (t.r + 10) * 1.5) });
+        ctx.restore(); continue;
+      }
       ctx.save(); ctx.translate(t.x, t.y); ctx.rotate(t.rot);
       ctx.fillStyle = '#d9e6ef'; ctx.strokeStyle = INK; ctx.lineWidth = 4;
       ctx.beginPath(); ctx.ellipse(0, 0, t.r + 10, 9, 0, 0, Math.PI * 2); ctx.fill(); ctx.stroke();

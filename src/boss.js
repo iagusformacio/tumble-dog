@@ -50,6 +50,8 @@ export function updateBoss(b, dt, ctx) {
   if (b.shotT <= 0 && ctx.player.alive) {
     b.shotT = rand(1.4, 2.4);
     const s = makeShot(b.shot, b.x - 90, b.y - 150, -1, ctx.player);
+    // Arte del proyectil del tema (A9): cada jefe de campaña tiene el suyo.
+    s.spr = (skin.bossShots && skin.bossShots[b.art || b.type]) || null;
     if (b.shot === 'shout') s.y = ctx.player.y + 40 > b.y - 200 ? ctx.player.y + 40 : b.y - 120;
     ctx.shots.push(s);
   }

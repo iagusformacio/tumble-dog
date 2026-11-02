@@ -207,6 +207,16 @@ export function updateShot(s, dt) {
 }
 
 export function drawShot(ctx, s, time) {
+  // Arte del proyectil (A9): si el tema trae sprite para este jefe, se usa.
+  if (s.spr && hasSprite(s.spr)) {
+    ctx.save(); ctx.translate(s.x, s.y);
+    const dir = s.dir < 0 ? 1 : -1;
+    if (s.kind === 'flash') { ctx.rotate(Math.sin(time * 8) * 0.2); }
+    else ctx.rotate(time * 6 * dir);
+    drawSprite(ctx, s.spr, 0, 22, { s: 0.5 });
+    ctx.restore();
+    return;
+  }
   ctx.save(); ctx.translate(s.x, s.y);
   if (s.kind === 'bulo') {
     ctx.rotate(Math.sin(time * 8 + s.t * 3) * 0.2);

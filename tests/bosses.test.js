@@ -70,3 +70,16 @@ test('tema tumbledog: los jefes siguen usando su propio tipo y sus sprites', () 
     assert.ok(SPRITE_FILES[sprite], `falta ${sprite}`);
   }
 });
+
+test('tema marcos: objetos de las mecánicas y proyectiles de jefe existen en disco', () => {
+  for (const sprite of Object.values(MARCOS.mecanicas)) {
+    assert.ok(SPRITE_FILES[sprite], `falta el objeto ${sprite}`);
+    assert.ok(fileExists(SPRITE_FILES[sprite][0]), `no está en disco ${sprite}`);
+  }
+  for (const bar of BARS) {
+    const sprite = MARCOS.bossShots && MARCOS.bossShots[bar.bossArt];
+    assert.ok(sprite, `${bar.id}: el jefe no tiene proyectil dibujado`);
+    assert.ok(SPRITE_FILES[sprite], `${bar.id}: falta el sprite ${sprite}`);
+    assert.ok(fileExists(SPRITE_FILES[sprite][0]), `${bar.id}: no está en disco ${sprite}`);
+  }
+});

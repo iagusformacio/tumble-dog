@@ -42,6 +42,7 @@ export function createGame({ input, audio, themeId = DEFAULT_THEME_ID }) {
       chaser: (THEME.chaser && THEME.chaser.draw) || null,
       hitWords: THEME.bossHitWords || null,
       touch: THEME.touch || null,
+      bossShots: THEME.bossShots || null,
     });
     setEnemyTypes(THEME.enemyTypes);
     setBossNames(THEME.bossNames || null);

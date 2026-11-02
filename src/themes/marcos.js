@@ -139,6 +139,14 @@ export const THEME = {
     bola: 'proj-bola',         // jefe Presentador del Bingo
     cazo: 'proj-cazo',         // jefe del Bar (jefe final)
   },
+  // Proyectil dibujado de cada jefe de campaña (arte A9): el motor lo consulta
+  // al disparar y lo pinta con `drawShot`. Sin entrada, dibujo por código.
+  bossShots: {
+    'cocinero-plancha': 'proj-tostada',
+    'presentador-bingo': 'proj-bola',
+    jefa: 'obj-bandeja',
+    'jefe-bar': 'proj-cazo',
+  },
   // Mensajes al recibir daño.
   hurtMessages: ['¡INDIGESTIÓN!', '¡ESO NO ASIENTA!', '¡DEMASIADO PICANTE!', '¡REPITE!'],
   // Golpes del jefe.
