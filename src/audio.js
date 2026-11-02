@@ -28,6 +28,7 @@ export function createAudio() {
   let files = null;       // { sección: './assets/audio/x.mp3' } del tema activo
   let media = null;       // { el, vol, maxVol, rate, name }: canción mp3 en curso
   let fading = [];        // canciones mp3 que se están apagando (fundido de salida)
+  const failed = new Set(); // secciones cuyo mp3 no ha cargado: respaldo sintetizado
   let lastTick = 0;       // reloj del último update (segundos)
   let pending = false;    // el navegador bloqueó el autoplay: se reintenta al desbloquear
   let opts = { volume: AX.mediaVolume, rate: {} }; // volumen y velocidad por sección del tema
@@ -121,6 +122,7 @@ export function createAudio() {
   function onMediaError(m) {
     const i = fading.indexOf(m); if (i >= 0) fading.splice(i, 1);
     stopMedia(m.el);
+    failed.add(m.name); // no se reintenta el fichero roto en cada pantalla
     if (media !== m) return;
     media = null;
     startSynth(m.name, 1); // respaldo: melodía sintetizada del tema
@@ -131,6 +133,7 @@ export function createAudio() {
     if (m.vol > 0) fading.push(m); else stopMedia(m.el);
   }
   function startSynth(name, t) {
+    if (songName === name && tempo === t && song && !media) return; // ya está sonando
     songName = name; tempo = t; step = 0; leadI = 0; bassI = 0; leadLeft = 0; bassLeft = 0;
     song = songs[name] || null;
     if (ctx) nextTime = ctx.currentTime + 0.05;
@@ -173,6 +176,7 @@ export function createAudio() {
     // opts: { volume: 0-1, rate: { sección: playbackRate } } del tema.
     setSongs(s, f, o) {
       songs = s || SONGS; files = f || null;
+      failed.clear(); // tema nuevo: se vuelve a intentar el fichero
       opts = { volume: o && o.volume != null ? o.volume : AX.mediaVolume, rate: (o && o.rate) || {} };
       // La sección que está sonando se reaplica con la fuente nueva: al pasar de
       // Tumble Dog a Dieta de Marcos con el título sonando, el sintetizador se
@@ -193,6 +197,7 @@ export function createAudio() {
           if (Math.abs(media.rate - rate) > 0.001) setRate(media, rate);
           return;
         }
+        if (failed.has(name)) { startSynth(name, t); return; } // respaldo ya en marcha
         songName = name; song = null; tempo = t; // manda el fichero del tema
         if (!playMedia(file, name, rate)) startSynth(name, t); // sin Audio: respaldo
         return;

@@ -148,6 +148,18 @@ test('si el mp3 no carga, suena el respaldo sintetizado del tema', () => withAud
   assert.equal(el.paused, true, 'el elemento roto se para');
 }));
 
+test('un mp3 roto no se reintenta en cada pantalla: sigue el respaldo', () => withAudio(() => {
+  const a = marcosAudio();
+  a.music('stage');
+  FakeAudio.created.at(-1).emit('error');
+  const n = FakeAudio.created.length;
+  a.music('stage'); // el juego vuelve a pedir la misma sección (respawn, etc.)
+  a.music('stage');
+  assert.equal(FakeAudio.created.length, n, 'no se crean reproductores nuevos del fichero roto');
+  assert.equal(a.info().source, 'synth');
+  assert.equal(a.info().section, 'stage');
+}));
+
 test('sin soporte de Audio (Node/headless) no rompe: respaldo sintetizado', () => withAudio(() => {
   const a = marcosAudio();
   a.music('stage');
