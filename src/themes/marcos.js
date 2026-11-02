@@ -2,30 +2,28 @@
 // «tumbledog», con protagonista, enemigos, textos, fases, fondos y música propios.
 // Todo inventado: nada de personas reales ni personajes protegidos.
 //
-// Arte conectado (ya en main, bloque A4): logo, bola de vómito, onomatopeyas y
-// fondos de bar. El arte de A1 (Marcos, 10 poses) y A2/A3 (los 8 esmorzars) aún
-// no está en main: esos sprites se declaran en `spritesWanted` y, mientras no
-// existan en disco, el motor dibuja un provisional por código (nunca un bloque
-// negro). Cuando los PR de arte fusionen, esos sprites se activan solos.
+// Arte conectado ya en main: A4 (logo, bola de vómito, onomatopeyas, fondos de
+// bar), A1 (10 poses de Marcos), A8 (retrato, camarero, premios), A2+A3 (los 8
+// esmorzars y los jefes bocata/paella). Si llegara más arte, se declara en
+// `spritesWanted` y, mientras no exista en disco, el motor dibuja un provisional
+// por código (nunca un bloque negro).
 import { FLOOR } from '../physics.js';
 
 const T = 18;
 const P = (x, y, w) => ({ x, y, w, h: T });
 
 // Mapeo tipo-de-mecánica → esmorzar (los 8 enemigos de la dieta).
-// A3 (ya en main) nombra sin prefijo bocata/cacahuete/tostada/chupito;
-// A2 (pendiente, PR #64) usa prefijo dm- para calamares/carajillo/café/tortilla.
+// A3 (PR #80): bocata/cacahuete/tostada/chupito sin prefijo.
+// A2 (PR #85): dm-calamares/dm-carajillo/dm-cafe/dm-tortilla.
 const ESMORZAR = {
-  portavoz: 'dm-calamares',   // bocadillo de calamares (A2, pendiente)
-  tertuliano: 'dm-carajillo', // carajillo (A2, pendiente)
-  asesor: 'dm-cafe',          // café con leche (A2, pendiente)
-  diputado: 'dm-tortilla',    // tortilla de patatas (A2, pendiente)
-};
-const ESMORZAR_EN_MAIN = {
+  portavoz: 'dm-calamares',   // bocadillo de calamares (A2)
+  tertuliano: 'dm-carajillo', // carajillo (A2)
+  asesor: 'dm-cafe',          // café con leche (A2)
   influencer: 'cacahuete',    // cacahuete saltarín (A3)
   activista: 'bocata',        // bocata de lomo (A3)
   lider: 'tostada',           // tostada con tomate (A3)
   baron: 'chupito',           // chupito (A3)
+  diputado: 'dm-tortilla',    // tortilla de patatas (A2)
 };
 
 export const THEME = {
@@ -88,15 +86,18 @@ export const THEME = {
     'item-pow': 'premio-antiacido',
     'item-clock': 'premio-tila',
     'item-life': 'premio-flan',
-    // A3 · Esmorzars 5-8 ya en main:
-    ...Object.fromEntries(Object.entries(ESMORZAR_EN_MAIN).flatMap(([type, spr]) =>
-      ['walkA', 'walkB', 'stun', 'down'].map((pose) => [`${type}-${pose}`, `${spr}-${pose}`]))),
-  },
-  // Sprites del tema que llegarán con el PR de arte A2 (calamares, carajillo,
-  // café y tortilla, aún no en main): mientras falten, provisional por código.
-  spritesWanted: {
+    // Los 8 esmorzars (A2 + A3, ya en main):
     ...Object.fromEntries(Object.entries(ESMORZAR).flatMap(([type, spr]) =>
       ['walkA', 'walkB', 'stun', 'down'].map((pose) => [`${type}-${pose}`, `${spr}-${pose}`]))),
+    // Jefes del tema (A2/A3): bocata gigante y paella gigante.
+    'boss-tertuliano-walkA': 'dm-bocata-reposo',
+    'boss-tertuliano-walkB': 'dm-bocata-reposo',
+    'boss-tertuliano-stun': 'dm-bocata-reposo',
+    'boss-tertuliano-down': 'dm-bocata-down',
+    'boss-lider-walkA': 'paella-walkA',
+    'boss-lider-walkB': 'paella-walkB',
+    'boss-lider-stun': 'paella-idle',
+    'boss-lider-down': 'paella-down',
   },
   // Color de la chaqueta turquesa de Marcos para el provisional por código.
   playerSkin: { tint: '#2ec4b6' },
