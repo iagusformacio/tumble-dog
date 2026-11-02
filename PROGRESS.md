@@ -1,6 +1,7 @@
 # PROGRESS
 
 - A4 (arena/79932f6e, #57): escenario y UI de «Dieta de Marcos» — 4 fondos de bar valenciano 1280×720 (barra, terraza, mercado, chiringuito), bola de vómito, logo del título y onomatopeyas ¡BLEEEH! ¡GLUP! ¡PLAF! en assets/ + bloque propio en tools/prepare_assets.py (fondos sin croma, UI recortada) y sprites en assets/sprites/; 9 imágenes ≤200 KB.
+- A2 · Arte (#56): enemigos 1-4 del tema «Dieta de Marcos» (bocadillo de calamares, carajillo, tortilla y café con leche) con 4 hojas de poses 3×1, sus 4 derrotados y el jefe bocata gigante (reposo/derrotado); 20 sprites nuevos en `assets/sprites/` vía `tools/prepare_assets.py`; prompts en `assets/PROMPTS.md`. El derrotado del jefe queda provisional: el generador repitió un vaso de café y el cupo de la sesión se agotó.
 - V2-6 (#53): joystick táctil con salto y palancas independientes; prueba multitáctil en Chromium.
 - Jefe: arte propio de jefes (10 imágenes, norma 20) — boss-tertuliano y boss-lider (walkA/walkB/stun/down/shout) en assets/enemigos/, registrados en src/sprite-list.js y src/boss.js actualizado para usarlos; 11/11 tests verdes.
 
