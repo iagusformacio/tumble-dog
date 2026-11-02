@@ -1,5 +1,6 @@
 # PROGRESS
 
+- A9b (arena/363901b4, #57): los proyectiles de los jefes usan arte propio — `THEME.shotSprites` (bulo→tostada, grito→cazo) conectado vía `skin.shotSprites`; `drawShot` usa el sprite si el tema lo aporta y si no sigue el dibujo por código; test añadido (54/54).
 - A10 (#57, 2026-11-02): completadas las 10 poses del Cocinero de la Plancha y el Presentador del Bingo (A7 + andar A/B, grito, victoria y retrato), 10 PNG ≤200 KB con chroma #00FF00, bloque propio A10 en `tools/prepare_assets.py` que extiende las familias A7, 10 sprites WebP y tests en `tests/a10-art.test.js`. Nota: el generador agotó el cupo de 10 imágenes de la sesión; `presentador-bingo-andar-b.png` se derivó por código del frame A (anotado en `assets/PROMPTS.md`).
 - A6 (#57, 2026-11-02): El Jefe del Bar (jefe final), 10 poses en `assets/enemigos/jefe-bar-*.png` (≤67 KB, chroma #00FF00), sprites `boss-jefe-bar-*` vía bloque A6 de `tools/prepare_assets.py`, prompts en `assets/PROMPTS.md` y tests en `tests/a6-art.test.js`.
 - C1 (#57, 2026-11-02): campaña «Dieta de Marcos» — ruta de 4 bares × (3 rondas + jefe) = 16 fases, pantalla de ruta con carteles, guardado en localStorage con «continuar», mecanicas propias (manchas, sorteos, bandejas/barra deslizante y mezcla nocturna), fondos A4 y sprites de Marcos A1 integrados; 25/25 tests y smoke en Chromium verdes.

@@ -207,6 +207,14 @@ export function updateShot(s, dt) {
 }
 
 export function drawShot(ctx, s, time) {
+  // Si el tema aporta arte para este disparo (p. ej. la tostada o el cazo de los
+  // jefes de «Dieta de Marcos», bloque A9), se usa el sprite; si no, dibujo por código.
+  const tspr = skin.shotSprites && skin.shotSprites[s.kind];
+  if (tspr && hasSprite(tspr)) {
+    const a = Math.atan2(s.vy, s.vx);
+    drawSprite(ctx, tspr, s.x, s.y + 30, { s: 0.9, rot: clamp(a * 0.5, -0.8, 0.8), flip: s.vx < 0 });
+    return;
+  }
   ctx.save(); ctx.translate(s.x, s.y);
   if (s.kind === 'bulo') {
     ctx.rotate(Math.sin(time * 8 + s.t * 3) * 0.2);

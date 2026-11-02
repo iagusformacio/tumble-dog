@@ -8,6 +8,7 @@ export const skin = {
   chaser: null,      // 'camarero' dibuja el perseguidor provisional del tema
   hitWords: null,    // onomatopeyas del jefe al recibir daño
   touch: null,       // etiquetas de los botones táctiles
+  shotSprites: null, // { tipo de disparo: sprite } con arte propio del tema (opcional)
 };
 
 export function setSkin(s = {}) { Object.assign(skin, s); }

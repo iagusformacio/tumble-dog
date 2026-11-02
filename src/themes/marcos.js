@@ -123,6 +123,12 @@ export const THEME = {
     bola: 'proj-bola',         // jefe Presentador del Bingo
     cazo: 'proj-cazo',         // jefe del Bar (jefe final)
   },
+  // Tipos de disparo del motor que el tema dibuja con su propio arte (A9). Los
+  // que no están aquí siguen con el dibujo de cómic por código (bulo, grito...).
+  shotSprites: {
+    bulo: 'proj-tostada',
+    shout: 'proj-cazo',
+  },
   // Mensajes al recibir daño.
   hurtMessages: ['¡INDIGESTIÓN!', '¡ESO NO ASIENTA!', '¡DEMASIADO PICANTE!', '¡REPITE!'],
   // Golpes del jefe.

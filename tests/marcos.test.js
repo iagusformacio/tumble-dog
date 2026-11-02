@@ -9,6 +9,7 @@ import { THEME as MARCOS, STAGES, STAGE_COUNT, SONGS } from '../src/themes/marco
 import { THEME as TUMBLEDOG } from '../src/themes/tumbledog.js';
 import { SPRITE_FILES } from '../src/sprite-list.js';
 import { setSpriteMap, getSpriteMap, spriteName } from '../src/sprites.js';
+import { setSkin, skin } from '../src/skin.js';
 import { TYPE_KEYS } from '../src/enemies.js';
 
 const disk = (p) => existsSync(p.replace(/^\.\//, ''));
@@ -201,4 +202,16 @@ test('el fondo nocturno del Bar del Jefe (A9) sustituye a la terraza en la noche
   assert.equal(MARCOS.nightTheme, 'noche');
   assert.equal(MARCOS.backgrounds.noche, 'fondo-noche-jefe');
   assert.ok(disk(SPRITE_FILES['fondo-noche-jefe'][0]));
+});
+
+test('los proyectiles del tema se dibujan con su arte propio cuando existe (A9)', () => {
+  assert.ok(MARCOS.shotSprites, 'el tema declara shotSprites');
+  for (const [kind, spr] of Object.entries(MARCOS.shotSprites)) {
+    assert.ok(SPRITE_FILES[spr], `el proyectil ${spr} (${kind}) no está en sprite-list.js`);
+    assert.ok(disk(SPRITE_FILES[spr][0]), `falta en disco ${SPRITE_FILES[spr][0]}`);
+  }
+  // El motor conserva el dibujo por código para los disparos sin arte.
+  setSkin({ shotSprites: MARCOS.shotSprites });
+  assert.equal(skin.shotSprites.bulo, 'proj-tostada');
+  setSkin({ shotSprites: null });
 });
