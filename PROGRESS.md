@@ -1,5 +1,7 @@
 # PROGRESS
 
+- V2-6 (#53): joystick táctil con salto y palancas independientes; prueba multitáctil en Chromium.
+
 - Rescate de #40 (AGB): integrado el arte de FETS tras resolver el conflicto en `assets/PROMPTS.md` y registradas en `ASSET_MANIFEST` las hojas de poses ART-3 de enemigos 5-8; test de manifiesto para los 8 tipos.
 - Arte de sesión (FETS, norma 20): 10 imágenes PNG8 ≤52 KB — derrotados y retratos de enemigos 5-8 (`lider`, `baron`, `activista`, `diputado`), icono de vida y cartel Game Over en `assets/` + registrados en `src/assets.js` y `assets/PROMPTS.md`.
 - Mejoras de juego (FETS, sin issue libre): bug del lanzamiento (T07) — el portador queda encerrado dentro de la bola, la bola no le aplasta y lo libera al morir; tests nuevos `tests/enemies.test.js` y `tests/ball.test.js`; 78/78 tests verdes.

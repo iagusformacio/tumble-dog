@@ -1,7 +1,5 @@
 // Entrada unificada: teclado, mando (Gamepad API) y táctil.
 // update() una vez por frame; held = mantenido, pressed = pulsado en este frame.
-import { W } from './config.js';
-
 const KEYS = {
   ArrowLeft: 'left', KeyA: 'left', ArrowRight: 'right', KeyD: 'right',
   ArrowUp: 'up', KeyW: 'up', ArrowDown: 'down', KeyS: 'down',
@@ -11,45 +9,8 @@ const KEYS = {
   Enter: 'start', Escape: 'pause', KeyP: 'pause', KeyM: 'mute',
 };
 const ACTIONS = ['left', 'right', 'up', 'down', 'jump', 'suck', 'shoot', 'start', 'pause', 'mute'];
-
-// Posiciones "casa" de los botones táctiles (px sobre un canvas de 1280×720).
-// Se escalan y reposicionan sobre el canvas real en placeTouchpad().
-const HOMES = {
-  l1: { hx: 'left', x: 18, hy: 'bottom', y: 24, w: 78, h: 78 },
-  l2: { hx: 'left', x: 108, hy: 'bottom', y: 24, w: 78, h: 78 },
-  l3: { hx: 'left', x: 63, hy: 'bottom', y: 110, w: 62, h: 62 },
-  r1: { hx: 'right', x: 18, hy: 'bottom', y: 24, w: 92, h: 92 },
-  r2: { hx: 'right', x: 124, hy: 'bottom', y: 24, w: 78, h: 78 },
-  r3: { hx: 'right', x: 60, hy: 'bottom', y: 128, w: 78, h: 78 },
-};
-
-/**
- * Recoloca y escala los botones táctiles sobre el caja CSS del canvas,
- * para que queden bajo el juego en cualquier tamaño de ventana (móvil incluido).
- */
-export function placeTouchpad(doc = globalThis.document) {
-  const tp = doc && doc.getElementById('touchpad');
-  const c = doc && doc.getElementById('game');
-  if (!tp || !c) return;
-  const r = c.getBoundingClientRect();
-  const s = r.width / W;
-  tp.style.position = 'fixed';
-  tp.style.left = Math.round(r.left) + 'px';
-  tp.style.top = Math.round(r.top) + 'px';
-  tp.style.width = Math.round(r.width) + 'px';
-  tp.style.height = Math.round(r.height) + 'px';
-  tp.style.pointerEvents = 'none';
-  for (const b of tp.querySelectorAll('.tbtn')) {
-    const home = HOMES[b.dataset.home];
-    if (!home) continue;
-    const lx = home.hx === 'left' ? home.x : r.width - home.x - home.w;
-    const ty = home.hy === 'bottom' ? r.height - home.y - home.h : home.y;
-    b.style.left = Math.round(r.left + lx * s) + 'px';
-    b.style.top = Math.round(r.top + ty * s) + 'px';
-    b.style.width = Math.round(home.w * s) + 'px';
-    b.style.height = Math.round(home.h * s) + 'px';
-  }
-}
+const DEAD_ZONE = 0.15;
+const STICK_SMOOTHING = 0.35;
 
 export function createInput(win = globalThis.window) {
   const keys = new Set();
@@ -60,6 +21,8 @@ export function createInput(win = globalThis.window) {
   let anyPressed = false;
   let usingTouch = false;
   let pad = null;
+  let clearTouch = () => {};
+  let updateStick = () => {};
   for (const a of ACTIONS) { held[a] = false; pressed[a] = false; }
 
   if (win && win.addEventListener) {
@@ -69,7 +32,7 @@ export function createInput(win = globalThis.window) {
       anyPressed = true;
     });
     win.addEventListener('keyup', (e) => { const a = KEYS[e.code]; if (a) { keys.delete(a); e.preventDefault(); } });
-    win.addEventListener('blur', () => { keys.clear(); touch.clear(); });
+    win.addEventListener('blur', () => { keys.clear(); latched.clear(); clearTouch(); });
     win.addEventListener('pointerdown', (e) => {
       anyPressed = true;
       if (e.pointerType === 'touch' && !usingTouch) { usingTouch = true; buildTouch(win.document); }
@@ -80,20 +43,68 @@ export function createInput(win = globalThis.window) {
     if (!doc || doc.getElementById('touchpad')) return;
     const root = doc.createElement('div');
     root.id = 'touchpad';
-    const mk = (action, label, cls) => {
-      const b = doc.createElement('button');
-      b.className = 'tbtn ' + cls; b.textContent = label; b.setAttribute('aria-label', action);
-      b.dataset.home = cls;
-      const on = (e) => { e.preventDefault(); touch.add(action); latched.add(action); b.classList.add('on'); };
-      const off = (e) => { e.preventDefault(); touch.delete(action); b.classList.remove('on'); };
-      b.addEventListener('pointerdown', on); b.addEventListener('pointerup', off);
-      b.addEventListener('pointercancel', off); b.addEventListener('pointerleave', off);
-      root.appendChild(b);
-    };
-    mk('left', '◀', 'l1'); mk('right', '▶', 'l2'); mk('down', '▼', 'l3');
-    mk('jump', 'SALTO', 'r1'); mk('suck', 'ASPIRA', 'r2'); mk('shoot', 'LANZA', 'r3');
+    root.innerHTML = `<div class="orientation-hint">GIRA EL MÓVIL PARA JUGAR</div>
+      <div class="stick" role="group" aria-label="Movimiento y salto"><div class="stick-knob"></div></div>
+      <div class="levers"><button type="button" class="lever suck" aria-label="Aspirar"><span>ASPIRA</span></button>
+      <button type="button" class="lever shoot" aria-label="Lanzar"><span>LANZA</span></button></div>`;
     doc.body.appendChild(root);
-    placeTouchpad(doc);
+    const stick = root.querySelector('.stick');
+    const knob = root.querySelector('.stick-knob');
+    const buttons = [...root.querySelectorAll('.lever')];
+    let stickId = null, targetX = 0, targetY = 0, x = 0, y = 0;
+    const owners = new Map();
+    const directions = ['left', 'right', 'up', 'down', 'jump'];
+    const vibrate = () => { try { if (win.navigator && win.navigator.vibrate) win.navigator.vibrate(12); } catch (_) {} };
+    const capture = (el, id) => { try { el.setPointerCapture(id); } catch (_) {} };
+    const point = (e) => {
+      const r = stick.getBoundingClientRect();
+      const radius = Math.min(r.width, r.height) / 2;
+      let dx = (e.clientX - (r.left + r.width / 2)) / radius;
+      let dy = (e.clientY - (r.top + r.height / 2)) / radius;
+      const length = Math.hypot(dx, dy);
+      if (length > 1) { dx /= length; dy /= length; }
+      targetX = dx; targetY = dy;
+    };
+    function resetStick() {
+      stickId = null; targetX = targetY = x = y = 0;
+      directions.forEach((a) => touch.delete(a));
+      knob.style.transform = ''; stick.classList.remove('on');
+    }
+    stick.addEventListener('pointerdown', (e) => {
+      if (stickId !== null) return;
+      e.preventDefault(); stickId = e.pointerId; capture(stick, e.pointerId);
+      point(e); stick.classList.add('on'); vibrate();
+    });
+    stick.addEventListener('pointermove', (e) => { if (e.pointerId === stickId) { e.preventDefault(); point(e); } });
+    const endStick = (e) => { if (e.pointerId === stickId) { e.preventDefault(); resetStick(); } };
+    stick.addEventListener('pointerup', endStick); stick.addEventListener('pointercancel', endStick);
+    stick.addEventListener('lostpointercapture', endStick);
+    updateStick = () => {
+      if (stickId === null) return;
+      x += (targetX - x) * STICK_SMOOTHING; y += (targetY - y) * STICK_SMOOTHING;
+      const active = { left: x < -DEAD_ZONE, right: x > DEAD_ZONE, up: y < -DEAD_ZONE, down: y > DEAD_ZONE, jump: y < -DEAD_ZONE };
+      for (const a of directions) {
+        if (active[a]) touch.add(a); else touch.delete(a);
+      }
+      knob.style.transform = `translate(${x * 50}%, ${y * 50}%)`;
+    };
+    for (const button of buttons) {
+      const action = button.classList.contains('suck') ? 'suck' : 'shoot';
+      button.addEventListener('pointerdown', (e) => {
+        if (owners.has(action)) return;
+        e.preventDefault(); owners.set(action, e.pointerId); capture(button, e.pointerId);
+        touch.add(action); latched.add(action); button.classList.add('on'); vibrate();
+      });
+      const off = (e) => {
+        if (owners.get(action) !== e.pointerId) return;
+        e.preventDefault(); owners.delete(action); touch.delete(action); button.classList.remove('on');
+      };
+      button.addEventListener('pointerup', off); button.addEventListener('pointercancel', off);
+      button.addEventListener('lostpointercapture', off);
+    }
+    clearTouch = () => {
+      touch.clear(); owners.clear(); resetStick(); buttons.forEach((b) => b.classList.remove('on'));
+    };
   }
 
   function readPad() {
@@ -111,6 +122,7 @@ export function createInput(win = globalThis.window) {
   }
 
   function update() {
+    updateStick();
     const p = readPad();
     for (const a of ACTIONS) {
       const now = keys.has(a) || latched.has(a) || touch.has(a) || !!p[a];
