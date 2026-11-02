@@ -127,6 +127,18 @@
   181,
   300
  ],
+ "camarero-grito": [
+  215,
+  209
+ ],
+ "camarero-walkA": [
+  120,
+  200
+ ],
+ "camarero-walkB": [
+  119,
+  200
+ ],
  "diputado-down": [
   262,
   120
@@ -239,6 +251,30 @@
   271,
   360
  ],
+ "premio-antiacido": [
+  62,
+  96
+ ],
+ "premio-cafe": [
+  105,
+  96
+ ],
+ "premio-ensaimada": [
+  97,
+  96
+ ],
+ "premio-flan": [
+  156,
+  96
+ ],
+ "premio-tila": [
+  80,
+  96
+ ],
+ "premio-zumo": [
+  56,
+  96
+ ],
  "presi-fall": [
   220,
   227
@@ -278,6 +314,10 @@
  "presi-win": [
   135,
   221
+ ],
+ "retrato-marcos": [
+  276,
+  360
  ],
  "tertuliano-down": [
   260,
