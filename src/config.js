@@ -47,4 +47,15 @@ export const CONFIG = {
   letters: { word: 'TUMBLEDOG', dropChance: 0.3, bubbleSpeed: 70 },
   bonus: { time: 12, rain: 0.09 },
   fx: { maxParticles: 900 },
+  // Móvil (issue #105): pantalla completa, horizontal y PWA. La lógica vive en
+  // `src/mobile.js`; aquí van los números (clave del aviso ya visto y lo que
+  // dura el cartel en pantalla). `autoFullscreenOnTouch` solo abre la pantalla
+  // completa en móvil: en el escritorio se entra y se sale con la tecla F.
+  mobile: {
+    installKey: 'tumbledog-install-hint',
+    hintMs: 9000,
+    autoFullscreenOnTouch: true,
+    gestureMs: 1200,   // si el navegador no resuelve la promesa, se sigue igual
+    lockTries: 2,      // intentos de bloqueo horizontal por entrada a pantalla completa
+  },
 };

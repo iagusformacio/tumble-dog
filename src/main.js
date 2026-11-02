@@ -1,9 +1,11 @@
-// Arranque: canvas HiDPI, carga de fuentes y sprites, bucle de paso fijo.
+// Arranque: canvas HiDPI, carga de fuentes y sprites, bucle de paso fijo
+// y capa de móvil (pantalla completa, aviso de girar y service worker).
 import { W, H, CONFIG } from './config.js';
 import { createInput } from './input.js';
 import { createAudio } from './audio.js';
 import { loadSprites } from './sprites.js';
 import { createGame } from './game.js';
+import { createMobile } from './mobile.js';
 import { FONT } from './fx.js';
 import { THEME } from './themes/tumbledog.js';
 import { initLanguage, setLanguage, getLanguage, onLanguageChange, t } from './i18n/index.js';
@@ -17,8 +19,25 @@ const languageButtons = [...languageSelector.querySelectorAll('button')];
 const ctx = canvas.getContext('2d');
 let scale = 1;
 
+// Caja útil: la ventana (visualViewport si existe, que es la que se entera de la
+// barra del navegador en iOS) menos los márgenes del body, que ya descuentan los
+// safe-area-inset-*. Así el canvas ocupa toda la pantalla posible sin meterse
+// bajo el notch ni bajo los bordes redondeados.
+function safeBox() {
+  const vp = window.visualViewport;
+  let w = Math.round((vp && vp.width) || window.innerWidth || W);
+  let h = Math.round((vp && vp.height) || window.innerHeight || H);
+  try {
+    const cs = window.getComputedStyle(document.body);
+    const px = (k) => Number.parseFloat(cs[k]) || 0;
+    w -= px('paddingLeft') + px('paddingRight');
+    h -= px('paddingTop') + px('paddingBottom');
+  } catch { /* sin CSS calculado */ }
+  return { w: Math.max(160, w), h: Math.max(90, h) };
+}
+
 function resize() {
-  const vw = window.innerWidth, vh = window.innerHeight;
+  const { w: vw, h: vh } = safeBox();
   const css = Math.min(vw / W, vh / H);
   const cw = Math.floor(W * css), ch = Math.floor(H * css);
   canvas.style.width = cw + 'px'; canvas.style.height = ch + 'px';
@@ -27,7 +46,12 @@ function resize() {
   scale = Math.min((cw * dpr) / W, 2);
   canvas.width = Math.round(W * scale); canvas.height = Math.round(H * scale);
 }
-window.addEventListener('resize', resize);
+// Girar el móvil, entrar/salir de la pantalla completa o cambiar el tamaño de la
+// ventana (y la barra de direcciones de iOS) vuelven a calcular el lienzo.
+for (const ev of ['resize', 'orientationchange', 'fullscreenchange', 'webkitfullscreenchange']) {
+  window.addEventListener(ev, resize);
+}
+if (window.visualViewport && window.visualViewport.addEventListener) window.visualViewport.addEventListener('resize', resize);
 resize();
 
 function loading(k) {
@@ -39,6 +63,11 @@ function loading(k) {
   ctx.fillStyle = '#ff4fa3'; ctx.fillRect(W / 2 - 200, H / 2 + 20, 400 * k, 14);
 }
 
+// El móvil manda: pantalla completa al primer toque del título, tecla F para
+// entrar y salir, bloqueo de orientación y el aviso «gira el móvil».
+const mobile = createMobile();
+mobile.arm();
+
 async function boot() {
   loading(0.1);
   const fonts = document.fonts ? Promise.race([document.fonts.load(`40px ${FONT}`).catch(() => {}), new Promise((r) => setTimeout(r, 2500))]) : Promise.resolve();
@@ -49,6 +78,8 @@ async function boot() {
   const game = createGame({ input, audio });
   window.__tumbleDog = game.debug;
   window.__tumbleDogAudio = audio; // comprobar en el navegador qué suena (issue #95)
+  window.__tumbleDogMobile = mobile; // estado de pantalla completa/orientación (issue #105)
+  mobile.attach({ game, audio });
   window.__tumbleDogLanguage = { get: getLanguage, set: setLanguage };
   const refreshLanguage = () => {
     const theme = listThemes()[game.state.gameSel]?.theme || THEME;
@@ -73,10 +104,14 @@ async function boot() {
   let last = performance.now(), acc = 0;
   const step = CONFIG.step;
   function frame(now) {
-    acc += Math.min(0.1, (now - last) / 1000);
+    mobile.tick();
+    const blocked = mobile.blocked(); // móvil en vertical: el juego espera girado
+    // El lienzo se ve en la pantalla del título mientras gira (y el HUD no tapa).
+    if (blocked) input.takeAny(); // lo que se toque con el aviso delante no inicia la partida
+    acc += blocked ? 0 : Math.min(0.1, (now - last) / 1000);
     last = now;
     let n = 0;
-    while (acc >= step && n < 24) { game.update(step); acc -= step; n++; }
+    if (!blocked) { while (acc >= step && n < 24) { game.update(step); acc -= step; n++; } }
     ctx.setTransform(scale, 0, 0, scale, 0, 0);
     ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = 'high';
     game.render(ctx);
@@ -86,6 +121,6 @@ async function boot() {
     requestAnimationFrame(frame);
   }
   requestAnimationFrame(frame);
-  document.addEventListener('visibilitychange', () => { last = performance.now(); acc = 0; });
+  document.addEventListener('visibilitychange', () => { last = performance.now(); acc = 0; mobile.refresh(); });
 }
 boot();
