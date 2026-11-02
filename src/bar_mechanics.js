@@ -3,9 +3,8 @@
 //   2 · Bar Los Concursos: sorteos con bola de interrogación (efecto aleatorio).
 //   3 · Bar Pols: bandejas giratorias que golpean + barra deslizante que lleva al jugador.
 //   4 · Bar del Jefe: todo mezclado, de noche y con más enemigos.
-// Dibujo: si el arte del tema está en disco (objetos de A9) se usa el sprite;
-// si no, se dibuja por código con trazo de tebeo (nunca un hueco negro).
-import { W, FLOOR_Y } from './config.js';
+// Dibujo con arte del tema (A9) o respaldo de tebeo por código.
+import { W, FLOOR_Y, CONFIG } from './config.js';
 import { FONT, outlinedText } from './fx.js';
 import { TYPE_KEYS } from './enemies.js';
 import { drawSprite, hasSprite, spriteSize } from './sprites.js';
@@ -177,8 +176,21 @@ export function createBarMechanic(stage, rng = Math.random) {
     s.trays = s.trays.filter((t) => !t.dead);
   }
 
+  // El aceite del cocinero crea manchas temporales y limitadas en el suelo.
+  function addOil(x) {
+    if (!has('manchas') || !Number.isFinite(x)) return false;
+    const cfg = CONFIG.laTacaBoss;
+    const oil = s.stains.filter((st) => st.oil);
+    if (oil.length >= cfg.maxOilStains) s.stains.splice(s.stains.indexOf(oil[0]), 1);
+    s.stains.push({ x: clamp(x - cfg.stainWidth / 2, 8, W - cfg.stainWidth - 8),
+      y: FLOOR_Y, w: cfg.stainWidth, kind: 'resbalon', color: '#e0a118', ph: 0, oil: true, ttl: cfg.stainLife });
+    return true;
+  }
+
   function update(dt, h) {
     s.t += dt;
+    for (const st of s.stains) if (st.oil) st.ttl -= dt;
+    s.stains = s.stains.filter((st) => !st.oil || st.ttl > 0);
     if (has('bandejas')) slideBar(dt, h);
     if (has('manchas')) applyStains(dt, h);
     if (has('sorteos')) updateBalls(dt, h);
@@ -195,6 +207,9 @@ export function createBarMechanic(stage, rng = Math.random) {
     // Manchas:charco plano con brillo y trazo grueso.
     for (const st of s.stains) {
       if (hasSprite('obj-mancha')) {
+        // El contorno abarca toda la zona resbaladiza, no solo el sprite central.
+        ctx.save(); ctx.fillStyle = st.color; ctx.strokeStyle = INK; ctx.lineWidth = 3;
+        ctx.beginPath(); ctx.ellipse(st.x + st.w / 2, st.y - 2, st.w / 2, 8, 0, 0, Math.PI * 2); ctx.fill(); ctx.stroke(); ctx.restore();
         drawSprite(ctx, 'obj-mancha', st.x + st.w / 2, st.y + 8, { s: fit('obj-mancha', 34) * (st.w / 120), sy: 0.9 });
         continue;
       }
@@ -253,7 +268,7 @@ export function createBarMechanic(stage, rng = Math.random) {
   }
 
   return {
-    id, state: s, onStart, onEnd, update, draw,
+    id, state: s, onStart, onEnd, update, draw, addOil,
     uses: has,
     get prizesCount() { return s.prizes; },
   };

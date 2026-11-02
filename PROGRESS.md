@@ -55,3 +55,5 @@
 - A3b (arte, 2026-11-02): poses originales de andar B y aspirado para los cuatro esmorzars 5-8 (sustituyen a los aplastados provisionales), hojas 3×1 rehechas a 960×320 y sprites walkA/walkB/stun regenerados.
 - I1 (2026-11-02): los 4 jefes de campaña muestran su propio arte — `createBoss(type, hp, art)` y `bossArt` por bar (cocinero de la plancha, presentador del bingo, jefa de sala y jefe del bar), mapeo en `src/themes/marcos.js`, retrato del jefe en la presentación y `tests/bosses.test.js` (5 pruebas nuevas); 62/62 verdes.
 - I1 (2026-11-02): el arte de A9 ya se usa — objetos de las mecánicas de bar (manchas, sorteo, bandeja) y proyectil propio de cada jefe de campaña (`bossShots`), con respaldo por código; prueba de que los objetos y proyectiles existen en disco.
+
+- C1 · La Taca (2026-11-02): Cocinero con sprites propios, tostadas dirigidas y aceite que crea manchas temporales; arcade intacto.

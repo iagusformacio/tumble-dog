@@ -24,14 +24,14 @@ export function createBoss(type, hpMap, art) {
   const d = BOSS[type] || BOSS.tertuliano;
   const hp = (hpMap || CONFIG.bossHp)[type] ?? 10;
   const name = (BOSS_NAMES && BOSS_NAMES[type]) || d.name;
-  return { type, art: art || type, ...d, name, maxHp: hp, hp, x: 1040, y: FLOOR_Y, vy: 0, t: 0, flash: 0, throwT: 2.5, shotT: 1.6, hopT: 4, dying: 0, dead: false, hitT: 0, s: 0.6 };
+  return { type, art: art || type, ...d, name, maxHp: hp, hp, x: 1040, y: FLOOR_Y, vy: 0, t: 0, flash: 0, throwT: 2.5, shotT: 1.6, hopT: 4, dying: 0, dead: false, hitT: 0, attackT: 0, shotCount: 0, s: 0.6 };
 }
 
 export function bossBox(b) { return { x: b.x - 110, y: b.y - 280, w: 220, h: 280 }; }
 
 /** ctx: { player, spawnMinion(type, x, y, vx, vy), shots, fx } */
 export function updateBoss(b, dt, ctx) {
-  b.t += dt; b.flash = Math.max(0, b.flash - dt * 4); b.hitT = Math.max(0, b.hitT - dt);
+  b.t += dt; b.flash = Math.max(0, b.flash - dt * 4); b.hitT = Math.max(0, b.hitT - dt); b.attackT = Math.max(0, b.attackT - dt);
   if (b.dying > 0) {
     b.dying += dt;
     if (Math.random() < dt * 14) { ctx.fx.stars(b.x + rand(-90, 90), b.y - rand(30, 220), 4); ctx.fx.word(b.x + rand(-80, 80), b.y - rand(40, 220), 40); ctx.fx.shake(0.25); }
@@ -49,9 +49,13 @@ export function updateBoss(b, dt, ctx) {
   }
   if (b.shotT <= 0 && ctx.player.alive) {
     b.shotT = rand(1.4, 2.4);
-    const s = makeShot(b.shot, b.x - 90, b.y - 150, -1, ctx.player);
-    // Arte del proyectil del tema (A9): cada jefe de campaña tiene el suyo.
-    s.spr = (skin.bossShots && skin.bossShots[b.art || b.type]) || null;
+    // El cocinero alterna tostadas dirigidas y aceite que forma manchas.
+    const chef = b.art === 'cocinero-plancha';
+    const shotKind = chef ? (b.shotCount++ % 2 ? 'aceite' : 'tostada') : b.shot;
+    if (chef) b.attackT = CONFIG.laTacaBoss.attackPoseTime;
+    const s = makeShot(shotKind, b.x - 90, b.y - 150, -1, ctx.player);
+    // Otros jefes de campaña conservan el mapeo de proyectiles A9.
+    if (!chef) s.spr = (skin.bossShots && skin.bossShots[b.art || b.type]) || null;
     if (b.shot === 'shout') s.y = ctx.player.y + 40 > b.y - 200 ? ctx.player.y + 40 : b.y - 120;
     ctx.shots.push(s);
   }
@@ -65,16 +69,35 @@ export function hitBoss(b, dmg, fx) {
   if (b.hp <= 0) { b.hp = 0; b.dying = 0.001; fx.flash(0.9); fx.confetti(b.x, b.y - 120, 80, 1.6); }
 }
 
+// Separado del dibujo para comprobar la selección de pose sin depender del canvas.
+export function bossFrame(b, time) {
+  const prefix = `boss-${b.art || b.type}`;
+  if (b.art === 'cocinero-plancha') {
+    if (b.dying) return `${prefix}-down`;
+    if (b.hitT > 0) return `${prefix}-hurt`;
+    if (b.attackT > 0) return `${prefix}-attack`;
+    if (b.hp < b.maxHp / 2 && Math.floor(time * 2) % 4 === 0) return `${prefix}-angry`;
+  }
+  return b.hitT > 0 || b.dying ? `${prefix}-stun` : (Math.floor(time * 4) % 2 ? `${prefix}-walkA` : `${prefix}-walkB`);
+}
+
 export function drawBoss(ctx, b, time) {
   const wob = Math.sin(time * 5) * 0.03;
-  const prefix = `boss-${b.art || b.type}`;
-  const frame = b.hitT > 0 || b.dying ? `${prefix}-stun` : (Math.floor(time * 4) % 2 ? `${prefix}-walkA` : `${prefix}-walkB`);
+  const frame = bossFrame(b, time);
   ctx.fillStyle = 'rgba(10,5,30,0.35)'; ctx.beginPath(); ctx.ellipse(b.x, FLOOR_Y + 4, 110 * (1 - (FLOOR_Y - b.y) / 900), 16, 0, 0, Math.PI * 2); ctx.fill();
-  drawSprite(ctx, frame, b.x + (b.hitT > 0 ? Math.sin(time * 90) * 6 : 0), b.y, {
+  const drawn = drawSprite(ctx, frame, b.x + (b.hitT > 0 ? Math.sin(time * 90) * 6 : 0), b.y, {
     s: b.s, flip: true, sx: 1 + wob, sy: 1 - wob, flash: b.flash,
     tint: b.hp < b.maxHp / 2 ? '#ff2a2a' : null, tintA: b.hp < b.maxHp / 2 ? 0.18 + 0.1 * Math.sin(time * 8) : 0,
     rot: b.dying ? Math.sin(time * 30) * 0.12 : 0, alpha: b.dying > 1.6 ? Math.max(0, 1 - (b.dying - 1.6) / 0.6) : 1,
   });
+  if (!drawn && b.art === 'cocinero-plancha') {
+    // Provisional visible si todavía no se han cargado los sprites.
+    ctx.save(); ctx.translate(b.x, b.y); ctx.fillStyle = '#f5e2bc'; ctx.strokeStyle = '#1a1030'; ctx.lineWidth = 6;
+    ctx.beginPath(); ctx.roundRect(-76, -235, 152, 220, 35); ctx.fill(); ctx.stroke();
+    ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.ellipse(0, -245, 72, 38, 0, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+    ctx.fillStyle = '#1a1030'; ctx.beginPath(); ctx.arc(-24, -180, 8, 0, Math.PI * 2); ctx.arc(24, -180, 8, 0, Math.PI * 2); ctx.fill();
+    ctx.restore();
+  }
 }
 
 // ---- Camarero con la cuenta (perseguidor del tema «marcos», provisional por código)

@@ -29,6 +29,12 @@ export const CONFIG = {
   enemy: { w: 48, h: 86, scale: 0.47, stunAfterBeam: 0.7 },
   stage: { hurryAt: 32, chaserAt: 42, clearDelay: 1.6, introTime: 1.8 },
   bossHp: { tertuliano: 10, lider: 14 },
+  laTacaBoss: {
+    scale: 0.9, attackPoseTime: 0.48,
+    toastSpeed: 310, toastRadius: 24, toastLife: 3.2, toastScale: 0.5,
+    oilSpeed: 360, oilUpSpeed: 420, oilGravity: 1250, oilRadius: 22, oilLife: 3.5, oilScale: 0.52,
+    stainWidth: 120, stainLife: 8, maxOilStains: 4,
+  },
   letters: { word: 'TUMBLEDOG', dropChance: 0.3, bubbleSpeed: 70 },
   bonus: { time: 12, rain: 0.09 },
   fx: { maxParticles: 900 },

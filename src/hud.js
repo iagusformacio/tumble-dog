@@ -39,7 +39,8 @@ export function drawHud(ctx, g, time, theme = THEME) {
   if (g.freeze > 0) icon(T.hud.pausa, '#3bceac', g.freeze);
   // Jefe
   if (g.boss && !g.boss.dead) {
-    const b = g.boss; const w = 520, x = W / 2 - w / 2, y = 70;
+    // En campaña el cartel superior ocupa 66 px: dejar visible el nombre del jefe.
+    const b = g.boss; const w = 520, x = W / 2 - w / 2, y = g.campaign ? 96 : 70;
     outlinedText(ctx, b.name, W / 2, y + 2, 22, '#ff8fa3');
     ctx.fillStyle = 'rgba(0,0,0,0.55)'; ctx.beginPath(); ctx.roundRect(x, y + 16, w, 18, 9); ctx.fill();
     const bg = ctx.createLinearGradient(x, 0, x + w, 0); bg.addColorStop(0, '#ff3b5c'); bg.addColorStop(1, '#ffb627');

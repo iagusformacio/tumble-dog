@@ -21,7 +21,8 @@ export const BARS = Object.freeze([
     mechanic: 'manchas', mechanicLabel: 'MANCHAS EN EL SUELO',
     hint: 'Resbala y no te fíes del suelo',
     boss: 'EL COCINERO DE LA PLANCHA', bossType: 'tertuliano', bossArt: 'cocinero-plancha', bossHp: 10,
-    bossMinions: ['portavoz', 'tertuliano', 'asesor'], bossShot: 'shout',
+    bossMinions: ['portavoz', 'tertuliano', 'asesor'], bossShot: 'tostada',
+    bossScale: CONFIG.laTacaBoss.scale,
     color: '#ffd23f', accent: '#ff6b3d',
     hours: ['manana', 'manana', 'mediodia', 'atardecer'],
   },
@@ -127,7 +128,7 @@ export const CAMPAIGN_STAGES = Object.freeze(BARS.flatMap((bar, b) => ROUND_NAME
     Object.assign(stage, {
       boss: bar.bossType, bossArt: bar.bossArt, bossName: bar.boss, bossHp: bar.bossHp,
       bossMinions: bar.bossMinions, bossShot: bar.bossShot,
-      bossScale: b === 3 ? 0.74 : 0.64,
+      bossScale: bar.bossScale ?? (b === 3 ? 0.74 : 0.64),
     });
   } else {
     stage.foes = foesFor(b, r, layout);

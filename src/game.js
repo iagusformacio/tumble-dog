@@ -363,7 +363,16 @@ export function createGame({ input, audio, themeId = DEFAULT_THEME_ID }) {
     }
     g.balls = g.balls.filter((b) => b.alive);
     // Disparos enemigos
-    g.shots = g.shots.filter((s) => updateShot(s, dt));
+    g.shots = g.shots.filter((s) => {
+      const active = updateShot(s, dt);
+      if (s.kind === 'aceite' && s.vy > 0 && s.y + s.r >= FLOOR_Y) {
+        if (mech && mech.addOil(s.x)) {
+          fx.dust(s.x, FLOOR_Y, 5); audio.sfx('land');
+        }
+        return false;
+      }
+      return active;
+    });
     // Premios y letras
     g.items = g.items.filter((it) => updateItem(it, dt, g.plats));
     g.letterBubbles = g.letterBubbles.filter((l) => updateLetter(l, dt));

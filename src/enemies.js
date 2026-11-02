@@ -193,6 +193,19 @@ export function drawEnemy(ctx, e, time) {
 }
 
 export function makeShot(kind, x, y, dir, target) {
+  if (kind === 'tostada') {
+    const cfg = CONFIG.laTacaBoss;
+    const dx = (target ? target.x + target.w / 2 : x + dir * 300) - x;
+    const dy = (target ? target.y + target.h / 2 : y) - y;
+    const length = Math.hypot(dx, dy) || 1;
+    return { kind, x, y, vx: dx / length * cfg.toastSpeed, vy: dy / length * cfg.toastSpeed,
+      r: cfg.toastRadius, life: cfg.toastLife, t: 0, g: 0, dir };
+  }
+  if (kind === 'aceite') {
+    const cfg = CONFIG.laTacaBoss;
+    return { kind, x, y, vx: dir * cfg.oilSpeed, vy: -cfg.oilUpSpeed,
+      r: cfg.oilRadius, life: cfg.oilLife, t: 0, g: cfg.oilGravity, dir };
+  }
   if (kind === 'bulo') {
     const dx = (target ? target.x : x + dir * 300) - x;
     return { kind, x, y, vx: clamp(dx * 0.9, -420, 420) || dir * 260, vy: -760, r: 22, life: 3.2, t: 0, g: 1500 };
@@ -218,7 +231,18 @@ export function drawShot(ctx, s, time) {
     return;
   }
   ctx.save(); ctx.translate(s.x, s.y);
-  if (s.kind === 'bulo') {
+  if (s.kind === 'tostada' || s.kind === 'aceite') {
+    const sprite = s.kind === 'tostada' ? 'proj-tostada' : 'proj-aceite';
+    const scale = s.kind === 'tostada' ? CONFIG.laTacaBoss.toastScale : CONFIG.laTacaBoss.oilScale;
+    // El anclaje de drawSprite está abajo-centro; centrar el proyectil en su caja.
+    if (hasSprite(sprite)) {
+      drawSprite(ctx, sprite, 0, s.r, { s: scale, rot: s.t * 3, flip: s.dir < 0 });
+    } else {
+      ctx.fillStyle = s.kind === 'tostada' ? '#d97525' : '#f1c52b';
+      ctx.strokeStyle = '#1a1030'; ctx.lineWidth = 4;
+      ctx.beginPath(); ctx.arc(0, 0, s.r, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+    }
+  } else if (s.kind === 'bulo') {
     ctx.rotate(Math.sin(time * 8 + s.t * 3) * 0.2);
     ctx.fillStyle = '#fff'; ctx.strokeStyle = '#1a1030'; ctx.lineWidth = 3;
     ctx.beginPath(); ctx.ellipse(0, 0, 34, 20, 0, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
