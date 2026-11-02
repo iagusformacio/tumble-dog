@@ -557,11 +557,12 @@ export function createGame({ input, audio, themeId = DEFAULT_THEME_ID }) {
   function drawWorld(ctx) {
     const t = g.time;
     bg.draw(ctx, t);
-    // El Bar del Jefe es nocturno: oscurecemos el fondo de bar (A4).
+    if (g.platLayer && g.state !== 'title') ctx.drawImage(g.platLayer, 0, 0);
+    // El Bar del Jefe es nocturno: oscurecemos el escenario entero (fondo de bar
+    // de A4 y muebles de E1) para que las plataformas no canten de noche.
     if (g.campaign && g.stage && g.stage.night && !['title', 'route'].includes(g.state)) {
       ctx.fillStyle = 'rgba(6,8,34,0.34)'; ctx.fillRect(0, 0, W, H);
     }
-    if (g.platLayer && g.state !== 'title') ctx.drawImage(g.platLayer, 0, 0);
     if (mech && ['intro', 'play', 'clear', 'bonus'].includes(g.state)) mech.draw(ctx, t);
     const p = g.player;
     if (g.state !== 'title' && g.state !== 'ending') {
