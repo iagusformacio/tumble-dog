@@ -8,6 +8,7 @@ export const skin = {
   chaser: null,      // 'camarero' dibuja el perseguidor provisional del tema
   hitWords: null,    // onomatopeyas del jefe al recibir daño
   touch: null,       // etiquetas de los botones táctiles
+  bossShots: null,   // { arte-de-jefe: nombre-del-sprite } para sus proyectiles
 };
 
 export function setSkin(s = {}) { Object.assign(skin, s); }

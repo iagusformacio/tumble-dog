@@ -20,7 +20,7 @@ export const BARS = Object.freeze([
     id: 'la-taca', town: 'VILA-REAL', name: 'BAR LA TACA',
     mechanic: 'manchas', mechanicLabel: 'MANCHAS EN EL SUELO',
     hint: 'Resbala y no te fíes del suelo',
-    boss: 'EL COCINERO DE LA PLANCHA', bossType: 'tertuliano', bossHp: 10,
+    boss: 'EL COCINERO DE LA PLANCHA', bossType: 'tertuliano', bossArt: 'cocinero-plancha', bossHp: 10,
     bossMinions: ['portavoz', 'tertuliano', 'asesor'], bossShot: 'shout',
     color: '#ffd23f', accent: '#ff6b3d',
     hours: ['manana', 'manana', 'mediodia', 'atardecer'],
@@ -29,7 +29,7 @@ export const BARS = Object.freeze([
     id: 'concursos', town: 'XIRIVELLA', name: 'BAR LOS CONCURSOS',
     mechanic: 'sorteos', mechanicLabel: 'SORTEOS CON BOLA',
     hint: 'Premio con interrogación: bueno o malo',
-    boss: 'EL PRESENTADOR DEL BINGO', bossType: 'lider', bossHp: 13,
+    boss: 'EL PRESENTADOR DEL BINGO', bossType: 'lider', bossArt: 'presentador-bingo', bossHp: 13,
     bossMinions: ['influencer', 'activista', 'baron'], bossShot: 'flash',
     color: '#4dd2ff', accent: '#b15eff',
     hours: ['mediodia', 'mediodia', 'atardecer', 'atardecer'],
@@ -38,7 +38,7 @@ export const BARS = Object.freeze([
     id: 'pols', town: 'BAR POLS', name: 'BAR POLS',
     mechanic: 'bandejas', mechanicLabel: 'BANDEJAS Y BARRA DESLIZANTE',
     hint: 'Esquiva las bandejas, sube a la barra',
-    boss: 'LA JEFA DE SALA', bossType: 'tertuliano', bossHp: 15,
+    boss: 'LA JEFA DE SALA', bossType: 'tertuliano', bossArt: 'jefa', bossHp: 15,
     bossMinions: ['tertuliano', 'asesor', 'activista', 'diputado'], bossShot: 'flash',
     color: '#ff8fa3', accent: '#3bceac',
     hours: ['atardecer', 'ocaso', 'ocaso', 'noche'],
@@ -47,7 +47,7 @@ export const BARS = Object.freeze([
     id: 'del-jefe', town: 'VALÈNCIA', name: 'BAR DEL JEFE',
     mechanic: 'mixto', mechanicLabel: 'TODO MEZCLADO · DE NOCHE',
     hint: 'Más esmorzars y las cuatro mecánicas',
-    boss: 'EL JEFE DEL BAR', bossType: 'lider', bossHp: 18,
+    boss: 'EL JEFE DEL BAR', bossType: 'lider', bossArt: 'jefe-bar', bossHp: 18,
     bossMinions: ['lider', 'baron', 'diputado', 'asesor', 'portavoz'], bossShot: 'shout',
     color: '#ffe14d', accent: '#ff3b5c',
     hours: ['noche', 'noche', 'noche', 'noche'],
@@ -125,7 +125,7 @@ export const CAMPAIGN_STAGES = Object.freeze(BARS.flatMap((bar, b) => ROUND_NAME
   };
   if (isBoss) {
     Object.assign(stage, {
-      boss: bar.bossType, bossName: bar.boss, bossHp: bar.bossHp,
+      boss: bar.bossType, bossArt: bar.bossArt, bossName: bar.boss, bossHp: bar.bossHp,
       bossMinions: bar.bossMinions, bossShot: bar.bossShot,
       bossScale: b === 3 ? 0.74 : 0.64,
     });

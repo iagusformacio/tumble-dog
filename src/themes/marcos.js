@@ -99,6 +99,22 @@ export const THEME = {
     'boss-lider-walkB': 'paella-walkB',
     'boss-lider-stun': 'paella-idle',
     'boss-lider-down': 'paella-down',
+    // Jefes de campaña (A5, A6, A7, A10): cada bar tiene su personaje dibujado y
+    // el motor pide `boss-<art>-*` (campaña → `bossArt` de cada bar). Se mapean
+    // a las poses que existen en disco; la jefa de sala ya usa los nombres
+    // canónicos (walkA/walkB/stun/down).
+    'boss-cocinero-plancha-walkA': 'boss-cocinero-plancha-idle',
+    'boss-cocinero-plancha-walkB': 'boss-cocinero-plancha-angry',
+    'boss-cocinero-plancha-stun': 'boss-cocinero-plancha-hurt',
+    'boss-cocinero-plancha-down': 'boss-cocinero-plancha-down',
+    'boss-presentador-bingo-walkA': 'boss-presentador-bingo-idle',
+    'boss-presentador-bingo-walkB': 'boss-presentador-bingo-attack',
+    'boss-presentador-bingo-stun': 'boss-presentador-bingo-hurt',
+    'boss-presentador-bingo-down': 'boss-presentador-bingo-down',
+    'boss-jefe-bar-walkA': 'boss-jefe-bar-idle',
+    'boss-jefe-bar-walkB': 'boss-jefe-bar-angry',
+    'boss-jefe-bar-stun': 'boss-jefe-bar-stun',
+    'boss-jefe-bar-down': 'boss-jefe-bar-down',
   },
   // Color de la chaqueta turquesa de Marcos para el provisional por código.
   playerSkin: { tint: '#2ec4b6' },
@@ -122,6 +138,14 @@ export const THEME = {
     aceite: 'proj-aceite',     // jefe Cocinero de la Plancha
     bola: 'proj-bola',         // jefe Presentador del Bingo
     cazo: 'proj-cazo',         // jefe del Bar (jefe final)
+  },
+  // Proyectil dibujado de cada jefe de campaña (arte A9): el motor lo consulta
+  // al disparar y lo pinta con `drawShot`. Sin entrada, dibujo por código.
+  bossShots: {
+    'cocinero-plancha': 'proj-tostada',
+    'presentador-bingo': 'proj-bola',
+    jefa: 'obj-bandeja',
+    'jefe-bar': 'proj-cazo',
   },
   // Mensajes al recibir daño.
   hurtMessages: ['¡INDIGESTIÓN!', '¡ESO NO ASIENTA!', '¡DEMASIADO PICANTE!', '¡REPITE!'],
