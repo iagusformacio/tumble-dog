@@ -47,6 +47,22 @@
   139,
   200
  ],
+ "bocata-down": [
+  351,
+  120
+ ],
+ "bocata-stun": [
+  305,
+  206
+ ],
+ "bocata-walkA": [
+  415,
+  200
+ ],
+ "bocata-walkB": [
+  406,
+  217
+ ],
  "boss-cocinero-plancha-angry": [
   246,
   306
@@ -127,6 +143,22 @@
   181,
   300
  ],
+ "cacahuete-down": [
+  382,
+  120
+ ],
+ "cacahuete-stun": [
+  138,
+  184
+ ],
+ "cacahuete-walkA": [
+  164,
+  200
+ ],
+ "cacahuete-walkB": [
+  161,
+  208
+ ],
  "camarero-grito": [
   215,
   209
@@ -138,6 +170,22 @@
  "camarero-walkB": [
   119,
   200
+ ],
+ "chupito-down": [
+  281,
+  120
+ ],
+ "chupito-stun": [
+  141,
+  202
+ ],
+ "chupito-walkA": [
+  187,
+  200
+ ],
+ "chupito-walkB": [
+  180,
+  199
  ],
  "diputado-down": [
   262,
@@ -230,6 +278,22 @@
  "marcos-win": [
   157,
   220
+ ],
+ "paella-down": [
+  394,
+  160
+ ],
+ "paella-idle": [
+  311,
+  300
+ ],
+ "paella-walkA": [
+  311,
+  300
+ ],
+ "paella-walkB": [
+  311,
+  300
  ],
  "portavoz-down": [
   333,
@@ -338,6 +402,22 @@
  "tertuliano-walkB": [
   127,
   198
+ ],
+ "tostada-down": [
+  420,
+  120
+ ],
+ "tostada-stun": [
+  148,
+  204
+ ],
+ "tostada-walkA": [
+  193,
+  200
+ ],
+ "tostada-walkB": [
+  186,
+  204
  ],
  "ui-bleeeh": [
   263,
