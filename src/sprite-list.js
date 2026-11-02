@@ -50,4 +50,15 @@ export const SPRITE_FILES = {
   'ui-gameover': ['./assets/sprites/ui-gameover.webp', 417, 300],
   'ui-life': ['./assets/sprites/ui-life.webp', 95, 96],
   'ui-stars': ['./assets/sprites/ui-stars.webp', 212, 90],
+  // Sprites propios de jefes (arte de sesión, norma 20)
+  'boss-tertuliano-walkA': ['./assets/enemigos/boss-tertuliano-walkA.png', 825, 450],
+  'boss-tertuliano-walkB': ['./assets/enemigos/boss-tertuliano-walkB.png', 825, 450],
+  'boss-tertuliano-stun': ['./assets/enemigos/boss-tertuliano-stun.png', 642, 350],
+  'boss-tertuliano-down': ['./assets/enemigos/boss-tertuliano-down.png', 404, 220],
+  'boss-tertuliano-shout': ['./assets/enemigos/boss-tertuliano-shout.png', 550, 300],
+  'boss-lider-walkA': ['./assets/enemigos/boss-lider-walkA.png', 642, 350],
+  'boss-lider-walkB': ['./assets/enemigos/boss-lider-walkB.png', 825, 450],
+  'boss-lider-stun': ['./assets/enemigos/boss-lider-stun.png', 550, 300],
+  'boss-lider-down': ['./assets/enemigos/boss-lider-down.png', 477, 260],
+  'boss-lider-shout': ['./assets/enemigos/boss-lider-shout.png', 642, 350],
 };

@@ -11,10 +11,10 @@ const BOSS = {
 
 export function createBoss(type) {
   const d = BOSS[type] || BOSS.tertuliano;
-  return { type, ...d, maxHp: CONFIG.bossHp[type], hp: CONFIG.bossHp[type], x: 1040, y: FLOOR_Y, vy: 0, t: 0, flash: 0, throwT: 2.5, shotT: 1.6, hopT: 4, dying: 0, dead: false, hitT: 0, s: 1.25 };
+  return { type, ...d, maxHp: CONFIG.bossHp[type], hp: CONFIG.bossHp[type], x: 1040, y: FLOOR_Y, vy: 0, t: 0, flash: 0, throwT: 2.5, shotT: 1.6, hopT: 4, dying: 0, dead: false, hitT: 0, s: 0.6 };
 }
 
-export function bossBox(b) { return { x: b.x - 85, y: b.y - 240, w: 170, h: 240 }; }
+export function bossBox(b) { return { x: b.x - 110, y: b.y - 280, w: 220, h: 280 }; }
 
 /** ctx: { player, spawnMinion(type, x, y, vx, vy), shots, fx } */
 export function updateBoss(b, dt, ctx) {
@@ -52,7 +52,8 @@ export function hitBoss(b, dmg, fx) {
 
 export function drawBoss(ctx, b, time) {
   const wob = Math.sin(time * 5) * 0.03;
-  const frame = b.hitT > 0 || b.dying ? b.type + '-stun' : (Math.floor(time * 4) % 2 ? b.type + '-walkA' : b.type + '-walkB');
+  const prefix = `boss-${b.type}`;
+  const frame = b.hitT > 0 || b.dying ? `${prefix}-stun` : (Math.floor(time * 4) % 2 ? `${prefix}-walkA` : `${prefix}-walkB`);
   ctx.fillStyle = 'rgba(10,5,30,0.35)'; ctx.beginPath(); ctx.ellipse(b.x, FLOOR_Y + 4, 110 * (1 - (FLOOR_Y - b.y) / 900), 16, 0, 0, Math.PI * 2); ctx.fill();
   drawSprite(ctx, frame, b.x + (b.hitT > 0 ? Math.sin(time * 90) * 6 : 0), b.y, {
     s: b.s, flip: true, sx: 1 + wob, sy: 1 - wob, flash: b.flash,
