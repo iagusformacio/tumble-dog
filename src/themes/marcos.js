@@ -13,15 +13,19 @@ const T = 18;
 const P = (x, y, w) => ({ x, y, w, h: T });
 
 // Mapeo tipo-de-mecánica → esmorzar (los 8 enemigos de la dieta).
+// A3 (ya en main) nombra sin prefijo bocata/cacahuete/tostada/chupito;
+// A2 (pendiente, PR #64) usa prefijo dm- para calamares/carajillo/café/tortilla.
 const ESMORZAR = {
-  portavoz: 'dm-calamares',   // bocadillo de calamares
-  tertuliano: 'dm-carajillo', // carajillo
-  asesor: 'dm-cafe',          // café con leche
-  influencer: 'dm-cacahuete', // cacahuete saltarín
-  activista: 'dm-bocata',     // bocata de lomo
-  lider: 'dm-tostada',        // tostada con tomate
-  baron: 'dm-chupito',        // chupito
-  diputado: 'dm-tortilla',    // tortilla de patatas
+  portavoz: 'dm-calamares',   // bocadillo de calamares (A2, pendiente)
+  tertuliano: 'dm-carajillo', // carajillo (A2, pendiente)
+  asesor: 'dm-cafe',          // café con leche (A2, pendiente)
+  diputado: 'dm-tortilla',    // tortilla de patatas (A2, pendiente)
+};
+const ESMORZAR_EN_MAIN = {
+  influencer: 'cacahuete',    // cacahuete saltarín (A3)
+  activista: 'bocata',        // bocata de lomo (A3)
+  lider: 'tostada',           // tostada con tomate (A3)
+  baron: 'chupito',           // chupito (A3)
 };
 
 export const THEME = {
@@ -84,9 +88,12 @@ export const THEME = {
     'item-pow': 'premio-antiacido',
     'item-clock': 'premio-tila',
     'item-life': 'premio-flan',
+    // A3 · Esmorzars 5-8 ya en main:
+    ...Object.fromEntries(Object.entries(ESMORZAR_EN_MAIN).flatMap(([type, spr]) =>
+      ['walkA', 'walkB', 'stun', 'down'].map((pose) => [`${type}-${pose}`, `${spr}-${pose}`]))),
   },
-  // Sprites del tema que llegarán con los PR de arte A2/A3 (los 8 esmorzars, aún
-  // no en main): mientras falten, el motor usa el provisional por código.
+  // Sprites del tema que llegarán con el PR de arte A2 (calamares, carajillo,
+  // café y tortilla, aún no en main): mientras falten, provisional por código.
   spritesWanted: {
     ...Object.fromEntries(Object.entries(ESMORZAR).flatMap(([type, spr]) =>
       ['walkA', 'walkB', 'stun', 'down'].map((pose) => [`${type}-${pose}`, `${spr}-${pose}`]))),

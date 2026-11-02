@@ -79,13 +79,23 @@ test('sprites de onomatopeyas declarados existen en disco', () => {
   }
 });
 
-test('spritesWanted: solo los esmorzars pendientes (A2/A3) usan prefijo dm-', () => {
+test('los esmorzars 5-8 de A3 (bocata, cacahuete, tostada, chupito) están conectados y existen en disco', () => {
+  const a3 = { influencer: 'cacahuete', activista: 'bocata', lider: 'tostada', baron: 'chupito' };
+  for (const [type, spr] of Object.entries(a3)) {
+    for (const pose of ['walkA', 'walkB', 'stun', 'down']) {
+      assert.equal(MARCOS.sprites[`${type}-${pose}`], `${spr}-${pose}`, `${type}-${pose} → ${spr}-${pose}`);
+      assert.ok(disk(SPRITE_FILES[`${spr}-${pose}`][0]), `falta en disco ${spr}-${pose}`);
+    }
+  }
+});
+
+test('spritesWanted: solo los esmorzars pendientes de A2 usan prefijo dm-', () => {
   const wanted = MARCOS.spritesWanted;
-  assert.ok(Object.keys(wanted).length > 0, 'debe quedar mapeo pendiente de los esmorzars');
-  for (const type of TYPE_KEYS) {
+  assert.equal(Object.keys(wanted).length, 16, '4 esmorzars × 4 poses pendientes de A2');
+  for (const type of ['portavoz', 'tertuliano', 'asesor', 'diputado']) {
     for (const pose of ['walkA', 'walkB', 'stun', 'down']) {
       assert.ok(wanted[`${type}-${pose}`], `falta mapeo pendiente de ${type}-${pose}`);
-      assert.ok(wanted[`${type}-${pose}`].startsWith('dm-'), 'los esmorzars usan el prefijo dm-');
+      assert.ok(wanted[`${type}-${pose}`].startsWith('dm-'), 'los esmorzars de A2 usan el prefijo dm-');
     }
   }
 });
