@@ -1,6 +1,5 @@
 // Estados del juego, reglas, colisiones y orden de dibujo.
 import { W, H, FLOOR_Y, CONFIG } from './config.js';
-import { STAGES } from './stages.js';
 import { createBackground, renderPlatforms } from './background.js';
 import { createFx, FONT, outlinedText, burst } from './fx.js';
 import { createPlayer, respawnPlayer, updatePlayer, drawPlayer, drawHeld, nozzle } from './player.js';
@@ -12,21 +11,26 @@ import { drawHud, drawVignette } from './hud.js';
 import { drawSprite } from './sprites.js';
 import { groundBelow } from './physics.js';
 import { rand, pick, clamp, lerp, overlap, easeOutBack, hsl } from './util.js';
-import { THEME } from './themes/tumbledog.js';
+import { getTheme, DEFAULT_THEME_ID, listThemes } from './themes/index.js';
 
 const V = CONFIG.vacuum;
 
 function loadHi() { try { return Number(globalThis.localStorage?.getItem('tumbledog-hi')) || 0; } catch { return 0; } }
 function saveHi(v) { try { globalThis.localStorage?.setItem('tumbledog-hi', String(v)); } catch { /* sin almacenamiento */ } }
 
-export function createGame({ input, audio }) {
+export function createGame({ input, audio, themeId = DEFAULT_THEME_ID }) {
   const bg = createBackground();
   const fx = createFx();
   let dark = null;
   if (typeof document !== 'undefined') { dark = document.createElement('canvas'); dark.width = W; dark.height = H; }
 
+  const t0 = getTheme(themeId);
+  let THEME = t0.theme;
+  let STAGES = t0.stages;
+
   const g = {
     state: 'title', stateT: 0, time: 0, score: 0, shownScore: 0, hi: loadHi(), lives: CONFIG.player.lives, nextLife: CONFIG.player.extraLifeEvery,
+    gameSel: 0, themeId: themeId,
     stageIndex: 0, loop: 0, stage: STAGES[0], plats: STAGES[0].plats, platLayer: null,
     player: createPlayer(), enemies: [], balls: [], shots: [], items: [], letterBubbles: [], letters: new Set(), letterPop: new Array(9).fill(0),
     boss: null, chaser: null, stageT: 0, hurried: false, freeze: 0, paused: false, bonusPending: false, trans: null, warnT: 0, tutorial: 0,
@@ -37,7 +41,11 @@ export function createGame({ input, audio }) {
   // ---------- Flujo
   function startTransition(cb) { g.trans = { t: 0, dur: 0.45, phase: 'out', cb }; }
 
-  function newGame() {
+  function newGame(selThemeId) {
+    if (selThemeId && selThemeId !== g.themeId) {
+      const t = getTheme(selThemeId);
+      THEME = t.theme; STAGES = t.stages; g.themeId = selThemeId;
+    }
     Object.assign(g, { score: 0, shownScore: 0, lives: CONFIG.player.lives, nextLife: CONFIG.player.extraLifeEvery, stageIndex: 0, loop: 0, letters: new Set() });
     g.player = createPlayer();
     audio.sfx('start');
@@ -351,7 +359,10 @@ export function createGame({ input, audio }) {
     switch (g.state) {
       case 'title':
         for (const d of g.parade) { d.x += 110 * dt; if (d.x > W + 140) d.x -= TYPE_KEYS.length * 150 + 140; }
-        if ((input.pressed.jump || input.pressed.start || input.pressed.shoot || (any && input.touch)) && g.stateT > 0.6 && !g.trans) { audio.unlock(); startTransition(newGame); }
+        const nTemas = listThemes().length;
+        if (input.pressed.left) { g.gameSel = (g.gameSel - 1 + nTemas) % nTemas; }
+        else if (input.pressed.right) { g.gameSel = (g.gameSel + 1) % nTemas; }
+        if ((input.pressed.jump || input.pressed.start || input.pressed.shoot || (any && input.touch)) && g.stateT > 0.6 && !g.trans) { audio.unlock(); startTransition(() => newGame(listThemes()[g.gameSel].id)); }
         else if (any) audio.unlock();
         if (g.stateT > 0.1 && !g.titleMusic) { g.titleMusic = true; audio.music('title'); }
         break;
@@ -482,6 +493,13 @@ export function createGame({ input, audio }) {
       x += widths[i] / 2;
     }
     outlinedText(ctx, THEME.tagline, W / 2, 270, 32, '#ffffff');
+    const temas = listThemes();
+    const nTemas = temas.length;
+    const sel = temas[g.gameSel];
+    const selX = W / 2;
+    outlinedText(ctx, 'JUEGO', selX - 140, 300, 24, '#ffb3d9');
+    const arrows = nTemas > 1 ? ((g.gameSel === 0 ? '' : '← ') + sel.theme.title + (g.gameSel === nTemas - 1 ? '' : ' →')) : sel.theme.title;
+    outlinedText(ctx, arrows, selX, 300, 40, '#ffe14d');
     if (Math.floor(t * 2) % 2 === 0) outlinedText(ctx, input.touch ? THEME.titleScreen.startTouch : THEME.titleScreen.startKeyboard, W / 2, 360, 46, '#fff35c');
     ctx.save(); ctx.fillStyle = 'rgba(20,10,50,0.7)'; ctx.beginPath(); ctx.roundRect(W / 2 - 290, 410, 580, 120, 18); ctx.fill(); ctx.strokeStyle = '#ffe14d'; ctx.lineWidth = 3; ctx.stroke(); ctx.restore();
     outlinedText(ctx, `${THEME.titleScreen.move}    ${THEME.titleScreen.jump}    ${THEME.titleScreen.down}`, W / 2, 440, 22, '#fff');
