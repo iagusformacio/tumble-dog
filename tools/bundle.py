@@ -11,7 +11,8 @@ import re
 import sys
 
 root, out_path = sys.argv[1], sys.argv[2]
-IMPORT = re.compile(r"import\s*\{([^}]*)\}\s*from\s*'(\./[^']+)';?[ \t]*\n?")
+IMPORT = re.compile(r"import\s*\{([^}]*)\}\s*from\s*'(\.{1,2}/[^']+)';?[ \t]*\n?")
+REEXPORT = re.compile(r"export\s*\{([^}]*)\}\s*from\s*'(\.{1,2}/[^']+)';?[ \t]*\n?")
 EXPORT = re.compile(r"\bexport\s+(?:async\s+)?(function\*?|const|let|class)\s+([A-Za-z_$][\w$]*)")
 
 order, seen = [], set()
@@ -22,7 +23,7 @@ def visit(rel):
         return
     seen.add(rel)
     src = open(os.path.join(root, rel), encoding='utf-8').read()
-    for m in IMPORT.finditer(src):
+    for m in list(IMPORT.finditer(src)) + list(REEXPORT.finditer(src)):
         visit(os.path.normpath(os.path.join(os.path.dirname(rel), m.group(2))))
     order.append(rel)
 
@@ -39,7 +40,16 @@ for rel in order:
         return 'const { ' + ', '.join(parts) + " } = __m['" + dep + "'];\n"
 
     src = IMPORT.sub(imp, src)
-    names = [m.group(2) for m in EXPORT.finditer(src)]
+    reexp = []
+
+    def rex(m, rel=rel):
+        dep = os.path.normpath(os.path.join(os.path.dirname(rel), m.group(2)))
+        names = [n.strip() for n in m.group(1).split(',') if n.strip()]
+        reexp.extend(names)
+        return 'const { ' + ', '.join(names) + " } = __m['" + dep + "'];\n"
+
+    src = REEXPORT.sub(rex, src)
+    names = [m.group(2) for m in EXPORT.finditer(src)] + reexp
     src = re.sub(r"\bexport\s+(?=(?:async\s+)?(?:function|const|let|class)\b)", '', src)
     mods.append(f"__m['{rel}'] = (() => {{\n{src}\nreturn {{ {', '.join(names)} }};\n}})();")
 
