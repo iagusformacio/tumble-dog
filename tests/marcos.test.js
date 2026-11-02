@@ -79,9 +79,14 @@ test('sprites de onomatopeyas declarados existen en disco', () => {
   }
 });
 
-test('los esmorzars 5-8 de A3 (bocata, cacahuete, tostada, chupito) están conectados y existen en disco', () => {
-  const a3 = { influencer: 'cacahuete', activista: 'bocata', lider: 'tostada', baron: 'chupito' };
-  for (const [type, spr] of Object.entries(a3)) {
+test('los 8 esmorzars (A2+A3) están conectados en sprites y existen en disco', () => {
+  const esmorzars = {
+    portavoz: 'dm-calamares', tertuliano: 'dm-carajillo', asesor: 'dm-cafe', diputado: 'dm-tortilla',
+    influencer: 'cacahuete', activista: 'bocata', lider: 'tostada', baron: 'chupito',
+  };
+  for (const type of TYPE_KEYS) {
+    const spr = esmorzars[type];
+    assert.ok(spr, `sin esmorzar asignado a ${type}`);
     for (const pose of ['walkA', 'walkB', 'stun', 'down']) {
       assert.equal(MARCOS.sprites[`${type}-${pose}`], `${spr}-${pose}`, `${type}-${pose} → ${spr}-${pose}`);
       assert.ok(disk(SPRITE_FILES[`${spr}-${pose}`][0]), `falta en disco ${spr}-${pose}`);
@@ -89,15 +94,21 @@ test('los esmorzars 5-8 de A3 (bocata, cacahuete, tostada, chupito) están conec
   }
 });
 
-test('spritesWanted: solo los esmorzars pendientes de A2 usan prefijo dm-', () => {
-  const wanted = MARCOS.spritesWanted;
-  assert.equal(Object.keys(wanted).length, 16, '4 esmorzars × 4 poses pendientes de A2');
-  for (const type of ['portavoz', 'tertuliano', 'asesor', 'diputado']) {
-    for (const pose of ['walkA', 'walkB', 'stun', 'down']) {
-      assert.ok(wanted[`${type}-${pose}`], `falta mapeo pendiente de ${type}-${pose}`);
-      assert.ok(wanted[`${type}-${pose}`].startsWith('dm-'), 'los esmorzars de A2 usan el prefijo dm-');
-    }
+test('los jefes del tema (bocata gigante y paella gigante) tienen sprites conectados', () => {
+  const jefes = {
+    'boss-tertuliano-walkA': 'dm-bocata-reposo', 'boss-tertuliano-walkB': 'dm-bocata-reposo',
+    'boss-tertuliano-stun': 'dm-bocata-reposo', 'boss-tertuliano-down': 'dm-bocata-down',
+    'boss-lider-walkA': 'paella-walkA', 'boss-lider-walkB': 'paella-walkB',
+    'boss-lider-stun': 'paella-idle', 'boss-lider-down': 'paella-down',
+  };
+  for (const [canon, spr] of Object.entries(jefes)) {
+    assert.equal(MARCOS.sprites[canon], spr);
+    assert.ok(disk(SPRITE_FILES[spr][0]), `falta en disco ${spr}`);
   }
+});
+
+test('no queda arte pendiente: spritesWanted vacío o ausente', () => {
+  assert.ok(!MARCOS.spritesWanted || Object.keys(MARCOS.spritesWanted).length === 0, 'todo el arte declarado de A1-A4/A8 está ya conectado');
 });
 
 test('fondos de bar del tema existen en disco y cubren los escenarios de las fases', () => {
@@ -156,11 +167,13 @@ test('canciones sintetizadas propias: title/stage/boss/bonus con lead, bass y ba
 
 test('resolución de sprites: setSpriteMap reasigna los nombres canónicos del motor', () => {
   assert.equal(spriteName('presi-idle'), 'presi-idle', 'sin mapeo es la identidad');
-  setSpriteMap({ ...MARCOS.spritesWanted, ...MARCOS.sprites });
+  setSpriteMap({ ...(MARCOS.spritesWanted || {}), ...MARCOS.sprites });
   assert.equal(spriteName('presi-idle'), 'marcos-idle');
   assert.equal(spriteName('ui-logo'), 'ui-logo-marcos');
   assert.equal(spriteName('ball'), 'ui-bola-vomito');
   assert.equal(spriteName('chaser-walkA'), 'camarero-walkA');
+  assert.equal(spriteName('portavoz-walkA'), 'dm-calamares-walkA');
+  assert.equal(spriteName('boss-lider-walkA'), 'paella-walkA');
   assert.equal(spriteName('ui-life'), 'ui-life', 'lo no mapeado queda igual');
   assert.deepEqual(getSpriteMap()['presi-throw'], 'marcos-vomit');
   setSpriteMap(null);
