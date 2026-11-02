@@ -47,6 +47,26 @@
   139,
   200
  ],
+ "boss-cocinero-plancha-angry": [
+  246,
+  306
+ ],
+ "boss-cocinero-plancha-attack": [
+  338,
+  221
+ ],
+ "boss-cocinero-plancha-down": [
+  325,
+  178
+ ],
+ "boss-cocinero-plancha-hurt": [
+  213,
+  222
+ ],
+ "boss-cocinero-plancha-idle": [
+  231,
+  300
+ ],
  "boss-jefa-angry": [
   178,
   320
@@ -86,6 +106,26 @@
  "boss-jefa-win": [
   149,
   320
+ ],
+ "boss-presentador-bingo-angry": [
+  184,
+  292
+ ],
+ "boss-presentador-bingo-attack": [
+  237,
+  143
+ ],
+ "boss-presentador-bingo-down": [
+  391,
+  197
+ ],
+ "boss-presentador-bingo-hurt": [
+  187,
+  289
+ ],
+ "boss-presentador-bingo-idle": [
+  181,
+  300
  ],
  "diputado-down": [
   262,
