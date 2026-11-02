@@ -124,7 +124,7 @@ export function createGame({ input, audio, themeId = DEFAULT_THEME_ID }) {
     if (!g.stage.boss) {
       g.stage.foes.forEach(([type, x, y], k) => g.enemies.push(createEnemy(type, x, y, { enter: true, delay: 0.35 + k * 0.28, speedMul: 1 })));
     } else {
-      g.boss = createBoss(g.stage.boss, THEME.bossHp);
+      g.boss = createBoss(g.stage.boss, THEME.bossHp, g.stage.bossArt);
       if (g.stage.bossName) {
         Object.assign(g.boss, {
           name: g.stage.bossName, minions: g.stage.bossMinions,
@@ -674,6 +674,17 @@ export function createGame({ input, audio, themeId = DEFAULT_THEME_ID }) {
       ctx.restore();
     }
     if (g.state === 'intro') banner(ctx, g.stage.boss ? THEME.banner.jefe : (g.campaign ? g.stage.shortName : `FASE ${g.stageIndex + 1}`), g.stage.name, g.stateT / 0.4, g.stage.boss ? 350 : 45);
+    // Retrato del jefe en la presentación (arte de sesión): entra rebotando.
+    if (g.state === 'intro' && g.boss) {
+      const portrait = `boss-${g.boss.art || g.boss.type}-portrait`;
+      if (hasSprite(portrait)) {
+        const k = easeOutBack(clamp(g.stateT / 0.5, 0, 1));
+        ctx.save();
+        ctx.globalAlpha = Math.min(1, g.stateT * 3);
+        drawSprite(ctx, portrait, 250, FLOOR_Y + 30, { s: 1.05 * k, rot: Math.sin(g.time * 3) * 0.04 });
+        ctx.restore();
+      }
+    }
     if (g.state === 'clear' && g.stateT < THEME.stage.clearDelay + 1.2) banner(ctx, THEME.banner.faseLimpia, g.clearBonus ? `BONUS TIEMPO +${g.clearBonus}` : THEME.banner.adios, g.stateT / 0.4, 140);
     if (g.state === 'bonus') {
       outlinedText(ctx, THEME.banner.bonus, W / 2, 140, 70, hsl(g.time * 120, 95, 62));

@@ -14,11 +14,17 @@ const BOSS = {
 let BOSS_NAMES = null;
 export function setBossNames(m) { BOSS_NAMES = m || null; }
 
-export function createBoss(type, hpMap) {
+/**
+ * Crea un jefe. `art` es el nombre del juego de sprites (`boss-<art>-*`): permite
+ * que dos bares compartan mecánica de jefe pero muestren a personajes distintos
+ * (p. ej. la campaña usa tertuliano/lider con cuatro jefes dibujados). Si no se
+ * indica, se usa el propio tipo.
+ */
+export function createBoss(type, hpMap, art) {
   const d = BOSS[type] || BOSS.tertuliano;
   const hp = (hpMap || CONFIG.bossHp)[type] ?? 10;
   const name = (BOSS_NAMES && BOSS_NAMES[type]) || d.name;
-  return { type, ...d, name, maxHp: hp, hp, x: 1040, y: FLOOR_Y, vy: 0, t: 0, flash: 0, throwT: 2.5, shotT: 1.6, hopT: 4, dying: 0, dead: false, hitT: 0, s: 0.6 };
+  return { type, art: art || type, ...d, name, maxHp: hp, hp, x: 1040, y: FLOOR_Y, vy: 0, t: 0, flash: 0, throwT: 2.5, shotT: 1.6, hopT: 4, dying: 0, dead: false, hitT: 0, s: 0.6 };
 }
 
 export function bossBox(b) { return { x: b.x - 110, y: b.y - 280, w: 220, h: 280 }; }
@@ -59,7 +65,7 @@ export function hitBoss(b, dmg, fx) {
 
 export function drawBoss(ctx, b, time) {
   const wob = Math.sin(time * 5) * 0.03;
-  const prefix = `boss-${b.type}`;
+  const prefix = `boss-${b.art || b.type}`;
   const frame = b.hitT > 0 || b.dying ? `${prefix}-stun` : (Math.floor(time * 4) % 2 ? `${prefix}-walkA` : `${prefix}-walkB`);
   ctx.fillStyle = 'rgba(10,5,30,0.35)'; ctx.beginPath(); ctx.ellipse(b.x, FLOOR_Y + 4, 110 * (1 - (FLOOR_Y - b.y) / 900), 16, 0, 0, Math.PI * 2); ctx.fill();
   drawSprite(ctx, frame, b.x + (b.hitT > 0 ? Math.sin(time * 90) * 6 : 0), b.y, {
