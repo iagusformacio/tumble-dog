@@ -112,3 +112,9 @@ test('el empaquetador genera un HTML autocontenido', () => {
   assert.ok(!html.includes('type="module"'));
   assert.ok(html.includes('data:image/webp;base64,'));
 });
+
+test('el empaquetador incrusta la canción del tema una sola vez (issue #95)', () => {
+  const html = readFileSync('/tmp/tumble-dog-test.html', 'utf8');
+  assert.equal(html.split('data:audio/mpeg;base64,').length - 1, 1, 'la canción va una sola vez como data URI');
+  assert.ok(html.includes("__media['assets/audio/dieta-de-marcos.mp3']"), 'el código referencia la canción incrustada');
+});

@@ -122,10 +122,13 @@ test('fondos de bar del tema existen en disco y cubren los escenarios de las fas
   }
 });
 
-test('la música mp3 del tema existe en disco y se usa en título y bonus', () => {
+test('la canción aportada es la música del tema en todas las pantallas (issue #95)', () => {
+  for (const name of ['title', 'stage', 'boss', 'bonus']) {
+    assert.equal(MARCOS.audio[name], MARCOS.audio.title, `${name} usa la misma canción`);
+  }
   assert.ok(MARCOS.audio.title.endsWith('.mp3'));
-  assert.ok(disk(MARCOS.audio.title), 'falta el mp3 del título');
-  assert.equal(MARCOS.audio.bonus, MARCOS.audio.title, 'el bonus reutiliza la canción del tema');
+  assert.ok(disk(MARCOS.audio.title), 'falta el mp3 de la canción');
+  assert.equal(MARCOS.audio.title, './assets/audio/dieta-de-marcos.mp3');
 });
 
 test('las fases del tema son válidas: 10 rondas, plataformas en pantalla y enemigos sobre plataforma', () => {

@@ -6,6 +6,7 @@ Reglas para el código: imports `import { a, b as c } from './x.js';` y exports
 `export function|const|let|class nombre`.
 """
 import base64
+import json
 import os
 import re
 import sys
@@ -65,6 +66,29 @@ def inline(m):
 
 
 js = re.sub(r"['\"]\./(assets/[^'\"]+\.(?:png|webp))['\"]", inline, js)
+
+# Música del tema (issue #95): los mp3 van incrustados como data URI una sola vez
+# (la misma canción se usa en el título, las fases, los jefes y la ronda bonus).
+MEDIA = re.compile(r"['\"](\./assets/[^'\"]+\.(?:mp3|ogg|wav|m4a))['\"]")
+MEDIA_MIME = {'.mp3': 'audio/mpeg', '.ogg': 'audio/ogg', '.wav': 'audio/wav', '.m4a': 'audio/mp4'}
+media = {}
+
+
+def inline_media(m):
+    rel = m.group(1)
+    path = os.path.join(root, rel)
+    if not os.path.exists(path):
+        return m.group(0)
+    if rel[2:] not in media:
+        mime = MEDIA_MIME[os.path.splitext(path)[1].lower()]
+        media[rel[2:]] = 'data:' + mime + ';base64,' + base64.b64encode(open(path, 'rb').read()).decode()
+    return "__media['" + rel[2:] + "']"
+
+
+js = MEDIA.sub(inline_media, js)
+if media:
+    js = js.replace("const __m = {};", "const __m = {};\nconst __media = " + json.dumps(media) + ";", 1)
+
 html = open(os.path.join(root, 'index.html'), encoding='utf-8').read()
 html = re.sub(r'<script type="module"[^>]*></script>', lambda _: '<script>' + js.replace('</script>', '<\\/script>') + '</script>', html)
 open(out_path, 'w', encoding='utf-8').write(html)

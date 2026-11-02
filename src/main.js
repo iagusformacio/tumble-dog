@@ -40,6 +40,7 @@ async function boot() {
   const audio = createAudio();
   const game = createGame({ input, audio });
   window.__tumbleDog = game.debug;
+  window.__tumbleDogAudio = audio; // comprobar en el navegador qué suena (issue #95)
   let last = performance.now(), acc = 0;
   const step = CONFIG.step;
   function frame(now) {
