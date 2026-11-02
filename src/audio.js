@@ -71,6 +71,7 @@ let musicEl = null; // <audio> para la canción MP3 del tema «marcos»
     get muted() { return muted; },
     toggleMute() { muted = !muted; if (master) master.gain.value = muted ? 0 : 0.55; if (musicEl) musicEl.volume = muted ? 0 : 0.32; return muted; },
     music(name, t = 1, themeId) {
+      if (name === songName && t === tempo && song) return;
       stopMusic();
       songName = name; song = null; tempo = t; step = 0; leadI = 0; bassI = 0; leadLeft = 0; bassLeft = 0;
       // Tema «marcos»: título y ronda bonus suenan con la canción MP3 aportada.
