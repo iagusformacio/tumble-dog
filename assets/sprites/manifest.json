@@ -47,6 +47,46 @@
   139,
   200
  ],
+ "boss-jefa-angry": [
+  178,
+  320
+ ],
+ "boss-jefa-down": [
+  100,
+  160
+ ],
+ "boss-jefa-idle": [
+  149,
+  320
+ ],
+ "boss-jefa-portrait": [
+  231,
+  360
+ ],
+ "boss-jefa-shout": [
+  163,
+  316
+ ],
+ "boss-jefa-stun": [
+  195,
+  314
+ ],
+ "boss-jefa-throw": [
+  206,
+  313
+ ],
+ "boss-jefa-walkA": [
+  154,
+  316
+ ],
+ "boss-jefa-walkB": [
+  170,
+  313
+ ],
+ "boss-jefa-win": [
+  149,
+  320
+ ],
  "diputado-down": [
   262,
   120
