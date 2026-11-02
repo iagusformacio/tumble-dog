@@ -12,6 +12,7 @@ import { CONFIG } from '../src/config.js';
 import { THEME as MARCOS } from '../src/themes/marcos.js';
 import { THEME as TUMBLEDOG } from '../src/themes/tumbledog.js';
 import { CAMPAIGN_STAGES, BARS, musicForStage, nextMusicForStage, CAMPAIGN_STAGE_COUNT } from '../src/campaign.js';
+import { createGame } from '../src/game.js';
 
 const DIR = 'assets/audio/dieta-de-marcos';
 const ORIGINAL = 'assets/audio/dieta-de-marcos.mp3';
@@ -81,6 +82,11 @@ test('cada trozo es corto y ligero: ~20 s y menos de 700 KB (carga rápida)', ()
   // El original completo se conserva (issue #101: no se borra).
   assert.ok(existsSync(ORIGINAL) && statSync(ORIGINAL).size > 100 * 1024, 'el mp3 original sigue en el repo');
   for (const f of readdirSync(DIR)) assert.match(f, /^\d\d-[a-z-]+\.mp3$/, `fichero inesperado en ${DIR}: ${f}`);
+});
+
+test('la figura del troceado (para el PR) existe y pesa poco', () => {
+  assert.ok(existsSync('docs/audio-trozos.png'), 'falta docs/audio-trozos.png');
+  assert.ok(statSync('docs/audio-trozos.png').size < 200 * 1024, 'la figura debe pesar menos de 200 KB');
 });
 
 test('tools/split_music.py --check valida el troceado sin ffmpeg', () => {
@@ -155,6 +161,7 @@ test('precargar la escena siguiente no la reproduce y luego se reutiliza el elem
   assert.equal(FakeAudio.created.length, n + 1, 'no se crea otro reproductor');
   assert.equal(last(), next);
   assert.equal(next.paused, false, 'ahora sí suena');
+  assert.equal(next.loads, 1, 'lo precargado no se vuelve a pedir al servidor');
 }));
 
 test('precargar no crea nada si la sección no es un fichero del tema', () => withAudio(() => {
@@ -333,3 +340,49 @@ test('el estado de la música es consultable (para probar en el navegador)', () 
   a.stopMusic();
   assert.equal(a.info().source, null);
 }));
+
+// ---- El motor pide la música de cada escena (issue #101)
+test('la campaña pide el trozo de su escena y precarga la siguiente; ARCADE no usa trozos', () => {
+  const noop = () => {};
+  const calls = [];
+  const audio = {
+    update: noop, setSongs: noop, sfx: noop, suck: noop, unlock: noop, stopMusic: noop,
+    music: (name, t) => calls.push(['music', name, t]),
+    preload: (name) => { calls.push(['preload', name]); return name; },
+  };
+  const input = { held: {}, pressed: {}, update: noop, takeAny: () => false };
+  const game = createGame({ input, audio, themeId: 'marcos' });
+  const since = () => { const out = calls.slice(); calls.length = 0; return out; };
+
+  game.debug.startCampaign(0);      // título + precarga del primer bar
+  assert.deepEqual(since(), [['music', 'title', undefined], ['preload', 'campaign-la-taca']]);
+
+  game.debug.startStage(0);         // Bar La Taca, ronda 1
+  assert.deepEqual(since().filter((c) => c[0] === 'music'), [['music', 'campaign-la-taca', undefined]]);
+
+  game.debug.startCampaign(5);      // Bar Los Concursos, ronda 2
+  since();
+  game.debug.startStage(5);
+  assert.ok(since().some((c) => c[0] === 'music' && c[1] === 'campaign-concursos'), 'trozo del segundo bar');
+  game.debug.startStage(6);         // última ronda del bar: la siguiente es el jefe
+  assert.ok(since().some((c) => c[0] === 'preload' && c[1] === 'campaign-jefes'), 'antes del jefe se precarga el suyo');
+
+  game.debug.startCampaign(3);      // jefe del primer bar
+  since();
+  game.debug.startStage(3);
+  assert.ok(since().some((c) => c[0] === 'music' && c[1] === 'campaign-jefes'), 'los jefes tienen su trozo');
+
+  game.debug.startCampaign(0);
+  since();
+  game.debug.startStage(0, true);   // ronda bonus
+  assert.deepEqual(since().filter((c) => c[0] === 'music'), [['music', 'campaign-bonus', undefined]]);
+
+  // Modo ARCADE del tema «marcos»: secciones clásicas, sin trozos ni precargas.
+  const arcade = createGame({ input, audio, themeId: 'marcos' });
+  arcade.state.campaign = false; // modo ARCADE
+  since();
+  arcade.debug.startStage(0);
+  const ca = since();
+  assert.ok(ca.some((c) => c[0] === 'music' && c[1] === 'stage'), 'ARCADE usa la sección clásica');
+  assert.ok(!ca.some((c) => c[0] === 'preload'), 'ARCADE no precarga trozos');
+});

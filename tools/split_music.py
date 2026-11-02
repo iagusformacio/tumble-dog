@@ -173,7 +173,62 @@ def check():
     return problems, spans
 
 
+def graph(path, cuts, samples):
+    """Dibuja la envolvente de la canción con los cortes (figura para el PR)."""
+    try:
+        from PIL import Image, ImageDraw
+    except Exception:
+        raise SystemExit('para --graph hace falta Pillow (pip install pillow)')
+    W, H = 1280, 460
+    img = Image.new('RGB', (W, H), '#140a32')
+    d = ImageDraw.Draw(img)
+    dur = len(samples) / SR
+    x0, x1, top, bottom = 60, W - 60, 60, H - 110
+    scale_x = (x1 - x0) / dur
+
+    def px(t):
+        return x0 + t * scale_x
+
+    # envolvente de volumen (0,05 s) escalada de -60..0 dB a bottom..top
+    def y_of(db):
+        db = max(-60.0, min(0.0, db))
+        return bottom - (db + 60) / 60 * (bottom - top)
+
+    pts = []
+    t = 0.0
+    while t < dur:
+        pts.append((px(t), y_of(db_at(samples, t))))
+        t += 0.05
+    if len(pts) > 1:
+        d.line(pts, fill='#4dd2ff', width=1)
+    d.rectangle([x0, top, px(cuts[0]), bottom], outline='#5a4a8a')
+    d.text((x0 + 4, top - 14), 'silencio inicial descartado (%.1f s)' % cuts[0], fill='#9b8ec4')
+    for i, (slug, label) in enumerate(SCENES):
+        a, b = cuts[i], cuts[i + 1]
+        d.rectangle([px(a), top, px(b), bottom], outline='#ffd23f')
+        d.line([(px(a), top - 14), (px(a), bottom + 14)], fill='#ff3b5c', width=2)
+        mid = (px(a) + px(b)) / 2
+        d.text((mid - 30, top + 8), '%s' % slug, fill='#ffffff')
+        d.text((mid - 40, bottom + 20), '%.1f s · %s' % (b - a, label), fill='#ffd23f')
+    d.line([(px(cuts[-1]), top - 14), (px(cuts[-1]), bottom + 14)], fill='#ff3b5c', width=2)
+    d.text((x0, 16), 'DIETA DE MARCOS · canción partida en 7 trozos (issue #101)', fill='#ffffff')
+    d.text((x0, 34), 'envolvente de volumen · cortes en valle · fundido de 0,3 s en cada extremo', fill='#9fe7ff')
+    d.text((x0, H - 40), 'bucle en el navegador: <audio loop> por escena, con carga bajo demanda y precarga de la siguiente',
+           fill='#9b8ec4')
+    img.save(path, optimize=True)
+    print('figura:', path)
+
+
 def main():
+    if '--graph' in sys.argv[1:]:
+        ffmpeg = ffmpeg_bin()
+        if not ffmpeg:
+            raise SystemExit('hace falta ffmpeg (o `pip install imageio-ffmpeg`)')
+        samples = decode(ffmpeg)
+        i = sys.argv.index('--graph')
+        path = sys.argv[i + 1] if len(sys.argv) > i + 1 else os.path.join(ROOT, 'docs/audio-trozos.png')
+        graph(path, cut_points(samples), samples)
+        return
     if '--check' in sys.argv[1:]:
         problems, spans = check()
         for slug, secs in spans:

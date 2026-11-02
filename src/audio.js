@@ -118,7 +118,7 @@ export function createAudio() {
       if (typeof Ctor !== 'function') return null;
       let el;
       try { el = new Ctor(url); } catch { return null; }
-      entry = { el, url, name, ready: false, broken: false };
+      entry = { el, url, name, ready: false, broken: false, requested: false };
       // Carga bajo demanda (issue #101): nada se descarga hasta que se pide.
       try { el.preload = 'none'; el.loop = true; el.muted = !!muted; } catch { /* sin audio */ }
       if (typeof el.addEventListener === 'function') {
@@ -128,7 +128,9 @@ export function createAudio() {
       }
       els.set(name, entry);
     }
-    if (load && !entry.broken) {
+    // Se pide una sola vez: si ya está descargándose o lista, no se reinicia.
+    if (load && !entry.broken && !entry.requested) {
+      entry.requested = true;
       try {
         entry.el.preload = 'auto';
         if (typeof entry.el.load === 'function') entry.el.load();
