@@ -249,6 +249,27 @@ for key, base in A7_BOSSES.items():
     })
 # --- Fin del bloque A7 ------------------------------------------------------
 
+# --- A10 · Poses pendientes de los jefes de campaña (issue #57) ---------------
+# A7 aporto 5 poses por jefe (reposo/atacar/herido/derrotado/enfadado). A10
+# completa el set de 10: andar A/B, grito, victoria y retrato, con el mismo
+# diseno. Se EXTIENDEN las familias A7 (no se sobreescriben) para conservar su
+# escala de referencia. El frame de andar B del presentador se derivo por codigo
+# del frame A: el generador agoto el cupo de 10 imagenes de la sesion (detalle
+# y prompt previsto en assets/PROMPTS.md, bloque A10).
+A10_POSES = {
+    'walkA': 'andar-a',
+    'walkB': 'andar-b',
+    'shout': 'grito',
+    'win': 'victoria',
+    'portrait': 'retrato',
+}
+for fam in ('boss-cocinero-plancha', 'boss-presentador-bingo'):
+    base = fam[len('boss-'):]
+    frames = FAMILIES[fam][2]
+    for pose, suf in A10_POSES.items():
+        frames[fam + '-' + pose] = (E + base + '-' + suf + '.png', None)
+# --- Fin del bloque A10 -----------------------------------------------------
+
 
 # Estos sprites se entregan como PNG ya preparados y los consume el juego directamente.
 # Se conservan aquí para que regenerar el manifiesto no los borre de src/sprite-list.js.
