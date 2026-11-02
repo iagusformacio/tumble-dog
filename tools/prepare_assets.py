@@ -118,6 +118,20 @@ for key, base in {'lider': 'lider-eterno-oposicion', 'baron': 'baron-regional'}.
         key + '-stun': (E + base + '-aspirado.png', None),
     })
 
+# Arte de Marcos para el tema Dieta de Marcos (A1): diez poses independientes.
+FAMILIES['marcos'] = (220, (P + 'marcos-quieto.png', None), {
+    'marcos-idle': (P + 'marcos-quieto.png', None),
+    'marcos-walkA': (P + 'marcos-andar-a.png', None),
+    'marcos-walkB': (P + 'marcos-andar-b.png', None),
+    'marcos-jump': (P + 'marcos-saltar.png', None),
+    'marcos-fall': (P + 'marcos-caer.png', None),
+    'marcos-swallow': (P + 'marcos-tragar.png', None),
+    'marcos-vomit': (P + 'marcos-vomitar.png', None),
+    'marcos-hurt': (P + 'marcos-herido.png', None),
+    'marcos-win': (P + 'marcos-victoria.png', None),
+    'marcos-intro': (P + 'marcos-presentacion.png', None),
+})
+
 SINGLES = {
     # nombre: (ruta, altura objetivo)
     **{k + '-down': (E + v + '-derrotada.png', 120) for k, v in {**SHEET_ENEMIES, 'lider': 'lider-eterno-oposicion', 'baron': 'baron-regional'}.items()},
@@ -183,6 +197,26 @@ def save_fondo(rel, name):
     return im.size
 
 
+# Estos sprites se entregan como PNG ya preparados y los consume el juego directamente.
+# Se conservan aquí para que regenerar el manifiesto no los borre de src/sprite-list.js.
+EXTERNAL_SPRITES = {
+    'fondo-barra': ('./assets/sprites/fondo-barra.png', 1280, 720),
+    'fondo-terraza': ('./assets/sprites/fondo-terraza.png', 1280, 720),
+    'fondo-mercado': ('./assets/sprites/fondo-mercado.png', 1280, 720),
+    'fondo-playa': ('./assets/sprites/fondo-playa.png', 1280, 720),
+    'boss-tertuliano-walkA': ('./assets/enemigos/boss-tertuliano-walkA.png', 825, 450),
+    'boss-tertuliano-walkB': ('./assets/enemigos/boss-tertuliano-walkB.png', 825, 450),
+    'boss-tertuliano-stun': ('./assets/enemigos/boss-tertuliano-stun.png', 642, 350),
+    'boss-tertuliano-down': ('./assets/enemigos/boss-tertuliano-down.png', 404, 220),
+    'boss-tertuliano-shout': ('./assets/enemigos/boss-tertuliano-shout.png', 550, 300),
+    'boss-lider-walkA': ('./assets/enemigos/boss-lider-walkA.png', 642, 350),
+    'boss-lider-walkB': ('./assets/enemigos/boss-lider-walkB.png', 825, 450),
+    'boss-lider-stun': ('./assets/enemigos/boss-lider-stun.png', 550, 300),
+    'boss-lider-down': ('./assets/enemigos/boss-lider-down.png', 477, 260),
+    'boss-lider-shout': ('./assets/enemigos/boss-lider-shout.png', 642, 350),
+}
+
+
 def main():
     manifest = {}
     for name, rel in FONDOS_MARCOS.items():
@@ -194,7 +228,11 @@ def main():
         ref_img = figure(*ref)
         scale = target / ref_img.size[1]
         for name, src in frames.items():
-            manifest[name] = save(figure(*src), name, scale)
+            img = figure(*src)
+            # Individual generated poses have different canvas padding; normalize
+            # Marcos by the visible figure height so the animation does not jump.
+            frame_scale = target / img.size[1] if fam == 'marcos' else scale
+            manifest[name] = save(img, name, frame_scale)
     for name, (rel, target) in SINGLES.items():
         img = figure(rel)
         manifest[name] = save(img, name, target / img.size[1])
@@ -204,6 +242,8 @@ def main():
     for k in sorted(manifest):
         w, h = manifest[k]
         lines.append(f"  '{k}': ['./assets/sprites/{k}.webp', {w}, {h}],")
+    for k, (path, w, h) in EXTERNAL_SPRITES.items():
+        lines.append(f"  '{k}': ['{path}', {w}, {h}],")
     lines.append('};')
     with open(os.path.join(ROOT, 'src', 'sprite-list.js'), 'w') as f:
         f.write('\n'.join(lines) + '\n')

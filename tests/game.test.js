@@ -93,6 +93,15 @@ test('premios conocidos y palabra de nueve letras', () => {
   assert.equal(CONFIG.letters.word.length, 9);
 });
 
+test('Marcos tiene diez poses registradas a una escala coherente', () => {
+  const poses = ['idle', 'walkA', 'walkB', 'jump', 'fall', 'swallow', 'vomit', 'hurt', 'win', 'intro'];
+  for (const pose of poses) {
+    const sprite = SPRITE_FILES[`marcos-${pose}`];
+    assert.ok(sprite, `falta la pose Marcos ${pose}`);
+    assert.equal(sprite[2], 220, `${pose}: escala vertical distinta`);
+  }
+});
+
 test('los sprites existen en disco', () => {
   for (const [, [src]] of Object.entries(SPRITE_FILES)) assert.ok(existsSync(src.replace('./', '')), `falta ${src}`);
 });
