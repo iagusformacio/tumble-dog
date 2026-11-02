@@ -52,12 +52,20 @@ export const THEME = {
     mercado: 'fondo-mercado',
     playa: 'fondo-playa',
   },
-  // Música: mp3 aportado por la persona suena en el título y la ronda bonus;
-  // stage/boss usan las canciones sintetizadas de abajo (melodías originales).
+  // Música (issue #95): la canción aportada por la persona ES la música del
+  // tema — título, todas las fases, jefes y ronda bonus —, en bucle y con
+  // fundido al cambiar de pantalla. Las canciones sintetizadas de abajo quedan
+  // solo como respaldo si el mp3 no carga; los efectos siguen siendo WebAudio.
   audio: {
     title: './assets/audio/dieta-de-marcos.mp3',
+    stage: './assets/audio/dieta-de-marcos.mp3',
+    boss: './assets/audio/dieta-de-marcos.mp3',
     bonus: './assets/audio/dieta-de-marcos.mp3',
   },
+  // Volumen de la canción respecto a los efectos y velocidad por sección
+  // (en los jefes va un poco más rápida, sin cambiar de canción).
+  audioVolume: 0.5,
+  audioRate: { title: 1, stage: 1, boss: 1.08, bonus: 1 },
   // Sprites del tema YA en main (assets/sprites/). Cada valor debe existir en
   // disco (lo comprueba tests/marcos.test.js). A4: logo, bola de vómito,
   // onomatopeyas y fondos. A1: las 10 poses de Marcos. A8: retrato de Marcos,

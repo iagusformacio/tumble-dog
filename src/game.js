@@ -47,7 +47,7 @@ export function createGame({ input, audio, themeId = DEFAULT_THEME_ID }) {
     setEnemyTypes(THEME.enemyTypes);
     setBossNames(THEME.bossNames || null);
     bg.setImageBackgrounds(THEME.backgrounds || null);
-    audio.setSongs(THEME.SONGS || null, THEME.audio || null);
+    audio.setSongs(THEME.SONGS || null, THEME.audio || null, { volume: THEME.audioVolume, rate: THEME.audioRate });
     setWords(THEME.onomatopeyas, THEME.onomatopeyaSprites || null);
     bg.setTheme(THEME.startTheme || 'manana');
   }
@@ -479,7 +479,7 @@ export function createGame({ input, audio, themeId = DEFAULT_THEME_ID }) {
         else if (input.pressed.right) { g.gameSel = (g.gameSel + 1) % nTemas; }
         if (input.pressed.left || input.pressed.right) {
           const selT = listThemes()[g.gameSel];
-          audio.setSongs(selT.theme.SONGS || null, selT.theme.audio || null);
+          audio.setSongs(selT.theme.SONGS || null, selT.theme.audio || null, { volume: selT.theme.audioVolume, rate: selT.theme.audioRate });
           if (g.titleMusic) audio.music('title');
         }
         if ((input.pressed.jump || input.pressed.start || input.pressed.shoot || (any && input.touch)) && g.stateT > 0.6 && !g.trans) {

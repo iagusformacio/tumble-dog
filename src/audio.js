@@ -10,7 +10,15 @@ const seq = (s) => s.trim().split(/\s+/).map((tok) => { const [n, d] = tok.split
 
 // Canciones sintetizadas por defecto (tema «tumbledog»); cada tema puede traer
 // las suyas con setSongs, y además ficheros de audio propios (mp3) por sección.
+// Si un tema trae un mp3 para una sección (title/stage/boss/bonus), esa canción
+// manda: el sintetizador queda solo para los efectos y como respaldo si el
+// fichero no carga (issue #95).
 import { SONGS } from './themes/tumbledog.js';
+import { CONFIG } from './config.js';
+
+const AX = CONFIG.audio;
+const clamp01 = (v) => (v < 0 ? 0 : v > 1 ? 1 : v);
+const nowSec = () => (globalThis.performance && typeof performance.now === 'function' ? performance.now() : Date.now()) / 1000;
 
 export function createAudio() {
   let ctx = null, master = null, musicGain = null, sfxGain = null, noiseBuf = null;
@@ -18,7 +26,11 @@ export function createAudio() {
   let suckNode = null;
   let songs = SONGS;      // canciones sintetizadas del tema activo
   let files = null;       // { sección: './assets/audio/x.mp3' } del tema activo
-  let media = null;       // HTMLAudioElement en curso (música mp3 del tema)
+  let media = null;       // { el, vol, maxVol, rate, name }: canción mp3 en curso
+  let fading = [];        // canciones mp3 que se están apagando (fundido de salida)
+  let lastTick = 0;       // reloj del último update (segundos)
+  let pending = false;    // el navegador bloqueó el autoplay: se reintenta al desbloquear
+  let opts = { volume: AX.mediaVolume, rate: {} }; // volumen y velocidad por sección del tema
 
   function init() {
     if (ctx) return ctx;
@@ -66,35 +78,150 @@ export function createAudio() {
     }
   }
 
-  function stopMedia() {
-    if (media) { try { media.pause(); } catch { /* sin audio */ } media = null; }
+  function stopMedia(el, keep = false) {
+    if (!el) return;
+    try { el.pause(); } catch { /* sin audio */ }
+    if (!keep) { try { el.currentTime = 0; } catch { /* sin audio */ } }
+  }
+
+  // ---------- Música con fichero (mp3 del tema)
+  function applyVolume(m) {
+    try { m.el.volume = clamp01(m.vol * m.maxVol); } catch { /* sin audio */ }
+  }
+  function setRate(m, rate) {
+    m.rate = rate;
+    try { m.el.playbackRate = rate; } catch { /* sin audio */ }
+  }
+  /** Velocidad del fichero: la del tema (p. ej. jefes) × el tempo pedido. */
+  function rateFor(name, t) {
+    const base = (opts.rate && opts.rate[name]) || 1;
+    const r = base * (t || 1);
+    return Math.min(AX.rateMax, Math.max(AX.rateMin, r));
+  }
+  /** Arranca el mp3 con fundido de entrada. Devuelve false si no hay Audio. */
+  function playMedia(url, name, rate) {
+    const Ctor = globalThis.Audio;
+    if (typeof Ctor !== 'function') return false;
+    let el;
+    try { el = new Ctor(url); } catch { return false; }
+    const m = { el, vol: 0, maxVol: opts.volume == null ? AX.mediaVolume : clamp01(opts.volume), rate: 1, name };
+    try { el.loop = true; el.preload = 'auto'; el.muted = !!muted; } catch { /* sin audio */ }
+    setRate(m, rate);
+    applyVolume(m);
+    if (typeof el.addEventListener === 'function') {
+      // Si el fichero no carga, se cae a la música sintetizada (respaldo).
+      el.addEventListener('error', () => onMediaError(m));
+    }
+    const p = el.play ? el.play() : null;
+    if (p && typeof p.catch === 'function') p.catch(() => { pending = true; }); // autoplay bloqueado
+    if (media) { fading.push(media); } // la anterior se apaga con fundido
+    media = m;
+    return true;
+  }
+  function onMediaError(m) {
+    const i = fading.indexOf(m); if (i >= 0) fading.splice(i, 1);
+    stopMedia(m.el);
+    if (media !== m) return;
+    media = null;
+    startSynth(m.name, 1); // respaldo: melodía sintetizada del tema
+  }
+  /** Apaga con fundido la canción mp3 en curso (o todas). */
+  function fadeMedia(m) {
+    if (!m) return;
+    if (m.vol > 0) fading.push(m); else stopMedia(m.el);
+  }
+  function startSynth(name, t) {
+    songName = name; tempo = t; step = 0; leadI = 0; bassI = 0; leadLeft = 0; bassLeft = 0;
+    song = songs[name] || null;
+    if (ctx) nextTime = ctx.currentTime + 0.05;
+  }
+  /** Fundidos: entrada de la canción en curso y salida de las anteriores.
+   *  `forced` es el paso de tiempo de las pruebas; en el juego se usa el reloj. */
+  function tick(forced) {
+    const t = nowSec();
+    const dt = forced != null ? Math.max(0, forced)
+      : lastTick ? Math.min(0.25, Math.max(0, t - lastTick)) : AX.fadeIn / 2;
+    lastTick = t;
+    if (media && media.vol < 1) { media.vol = Math.min(1, media.vol + dt / AX.fadeIn); applyVolume(media); }
+    for (let i = fading.length - 1; i >= 0; i--) {
+      const m = fading[i];
+      m.vol = Math.max(0, m.vol - dt / AX.fadeOut);
+      applyVolume(m);
+      if (m.vol <= 0) { stopMedia(m.el); fading.splice(i, 1); }
+    }
   }
 
   const api = {
-    unlock() { init(); if (ctx && ctx.state === 'suspended') ctx.resume().catch(() => {}); },
+    unlock() {
+      init();
+      if (ctx && ctx.state === 'suspended') ctx.resume().catch(() => {});
+      // Autoplay bloqueado hasta el primer gesto: se arranca la canción ahora.
+      if (pending && media) {
+        pending = false;
+        const p = media.el.play ? media.el.play() : null;
+        if (p && typeof p.catch === 'function') p.catch(() => { pending = true; });
+      }
+    },
     get muted() { return muted; },
-    toggleMute() { muted = !muted; if (master) master.gain.value = muted ? 0 : 0.55; if (media) media.muted = muted; return muted; },
+    toggleMute() {
+      muted = !muted;
+      if (master) master.gain.value = muted ? 0 : 0.55;
+      for (const m of (media ? [media] : []).concat(fading)) { try { m.el.muted = muted; } catch { /* sin audio */ } }
+      return muted;
+    },
     // Fija las canciones y ficheros del tema activo (game.js al cambiar de tema).
-    setSongs(s, f) { songs = s || SONGS; files = f || null; },
+    // opts: { volume: 0-1, rate: { sección: playbackRate } } del tema.
+    setSongs(s, f, o) {
+      songs = s || SONGS; files = f || null;
+      opts = { volume: o && o.volume != null ? o.volume : AX.mediaVolume, rate: (o && o.rate) || {} };
+      // La sección que está sonando se reaplica con la fuente nueva: al pasar de
+      // Tumble Dog a Dieta de Marcos con el título sonando, el sintetizador se
+      // calla y entra la canción (issue #95).
+      if (songName) {
+        const name = songName, t = tempo;
+        songName = null; song = null;
+        if (media) { fadeMedia(media); media = null; }
+        api.music(name, t);
+      }
+    },
     music(name, t = 1) {
-      if (name === songName && t === tempo) return;
-      stopMedia();
-      songName = name; tempo = t; step = 0; leadI = 0; bassI = 0; leadLeft = 0; bassLeft = 0;
-      if (files && files[name] && typeof Audio !== 'undefined') {
-        // Música aportada por el tema (p. ej. dieta-de-marcos.mp3 en título y bonus).
-        song = null;
-        try {
-          media = new Audio(files[name]);
-          media.loop = true; media.volume = 0.45; media.muted = muted;
-          const p = media.play(); if (p && p.catch) p.catch(() => {});
-        } catch { media = null; }
+      const file = files && files[name] ? files[name] : null;
+      if (file) {
+        const rate = rateFor(name, t);
+        if (media && media.name === name) { // misma pantalla: solo cambia la velocidad
+          songName = name; tempo = t;
+          if (Math.abs(media.rate - rate) > 0.001) setRate(media, rate);
+          return;
+        }
+        songName = name; song = null; tempo = t; // manda el fichero del tema
+        if (!playMedia(file, name, rate)) startSynth(name, t); // sin Audio: respaldo
         return;
       }
-      song = songs[name] || null;
-      if (ctx) nextTime = ctx.currentTime + 0.05;
+      if (songName === name && t === tempo && !media) return;
+      if (media) { fadeMedia(media); media = null; }
+      startSynth(name, t);
     },
-    stopMusic() { song = null; songName = null; stopMedia(); },
-    update() { if (ctx && song && nextTime < ctx.currentTime) nextTime = ctx.currentTime + 0.02; schedule(); },
+    stopMusic() {
+      song = null; songName = null;
+      if (media) { fadeMedia(media); media = null; }
+    },
+    update(dt) {
+      tick(dt);
+      if (ctx && song && nextTime < ctx.currentTime) nextTime = ctx.currentTime + 0.02;
+      schedule();
+    },
+    /** Estado de la música, para pruebas y depuración en el navegador. */
+    info() {
+      const el = media ? media.el : null;
+      return {
+        section: songName, source: media ? 'file' : (song ? 'synth' : null),
+        file: media ? media.name : null, muted,
+        rate: media ? media.rate : tempo,
+        playing: media ? !el.paused : !!song,
+        volume: media ? clamp01(media.vol * media.maxVol) : 0,
+        time: el ? (el.currentTime || 0) : 0, // avance real de la canción (navegador)
+      };
+    },
     suck(on) {
       if (!ctx || muted) return;
       if (on && !suckNode) {
