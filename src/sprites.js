@@ -77,3 +77,11 @@ export function drawSprite(ctx, name, x, y, o = {}) {
   ctx.restore();
   return true;
 }
+
+// Solo para herramientas sin navegador (tools/shot.mjs): inyecta imágenes ya
+// decodificadas (p. ej. de @napi-rs/canvas) en la caché del juego. En el
+// navegador no se usa.
+export function __setImagesForNode(source) {
+  images.clear();
+  for (const [name, img] of source) images.set(name, img);
+}
