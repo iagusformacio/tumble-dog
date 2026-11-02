@@ -2,9 +2,10 @@ import { W, H, FLOOR_Y, CONFIG } from './config.js';
 import { FONT, outlinedText } from './fx.js';
 import { drawSprite } from './sprites.js';
 import { hsl, clamp } from './util.js';
-import { THEME } from './themes/tumbledog.js';
+import { getTheme } from './themes/index.js';
 
 export function drawHud(ctx, g, time) {
+  const THEME = getTheme(g.themeId);
   // Barra superior
   const gr = ctx.createLinearGradient(0, 0, 0, 64);
   gr.addColorStop(0, 'rgba(20,10,50,0.85)'); gr.addColorStop(1, 'rgba(20,10,50,0)');
@@ -45,8 +46,8 @@ export function drawHud(ctx, g, time) {
     ctx.fillStyle = bg; ctx.beginPath(); ctx.roundRect(x + 2, y + 18, (w - 4) * (b.hp / b.maxHp), 14, 7); ctx.fill();
     ctx.strokeStyle = '#1a1030'; ctx.lineWidth = 3; ctx.beginPath(); ctx.roundRect(x, y + 16, w, 18, 9); ctx.stroke();
   }
-  // Letras T-U-M-B-L-E-D-O-G sobre la terraza
-  const word = CONFIG.letters.word;
+  // Letras de la palabra del tema activo sobre la terraza (TUMBLEDOG o ESMORZAR).
+  const word = THEME.letters.word || CONFIG.letters.word;
   const lw = 46, x0 = W / 2 - (word.length * lw) / 2 + lw / 2, ly = FLOOR_Y + 48;
   ctx.font = `40px ${FONT}`;
   for (let i = 0; i < word.length; i++) {

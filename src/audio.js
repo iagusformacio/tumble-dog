@@ -15,6 +15,7 @@ export function createAudio() {
   let ctx = null, master = null, musicGain = null, sfxGain = null, noiseBuf = null;
   let muted = false, song = null, songName = null, step = 0, nextTime = 0, leadI = 0, leadLeft = 0, bassI = 0, bassLeft = 0, tempo = 1;
   let suckNode = null;
+let musicEl = null; // <audio> para la canción MP3 del tema «marcos»
 
   function init() {
     if (ctx) return ctx;
@@ -63,15 +64,28 @@ export function createAudio() {
   }
 
   const api = {
-    unlock() { init(); if (ctx && ctx.state === 'suspended') ctx.resume().catch(() => {}); },
+    unlock() {
+      init(); if (ctx && ctx.state === 'suspended') ctx.resume().catch(() => {});
+      if (musicEl && (songName === 'title' || songName === 'bonus')) musicEl.play().catch(() => {});
+    },
     get muted() { return muted; },
-    toggleMute() { muted = !muted; if (master) master.gain.value = muted ? 0 : 0.55; return muted; },
-    music(name, t = 1) {
-      if (name === songName && t === tempo) return;
-      songName = name; song = SONGS[name] || null; tempo = t; step = 0; leadI = 0; bassI = 0; leadLeft = 0; bassLeft = 0;
+    toggleMute() { muted = !muted; if (master) master.gain.value = muted ? 0 : 0.55; if (musicEl) musicEl.volume = muted ? 0 : 0.32; return muted; },
+    music(name, t = 1, themeId) {
+      stopMusic();
+      songName = name; song = null; tempo = t; step = 0; leadI = 0; bassI = 0; leadLeft = 0; bassLeft = 0;
+      // Tema «marcos»: título y ronda bonus suenan con la canción MP3 aportada.
+      if (themeId === 'marcos' && (name === 'title' || name === 'bonus') && typeof Audio !== 'undefined') {
+        const el = new Audio('assets/audio/dieta-de-marcos.mp3');
+        el.loop = true;
+        el.volume = muted ? 0 : 0.32;
+        el.play().catch(() => {}); // se reintenta al desbloquear el audio tras el primer gesto
+        musicEl = el;
+        return;
+      }
+      song = SONGS[name] || null;
       if (ctx) nextTime = ctx.currentTime + 0.05;
     },
-    stopMusic() { song = null; songName = null; },
+    stopMusic() { song = null; songName = null; if (musicEl) { musicEl.pause(); musicEl.src = ''; musicEl = null; } },
     update() { if (ctx && song && nextTime < ctx.currentTime) nextTime = ctx.currentTime + 0.02; schedule(); },
     suck(on) {
       if (!ctx || muted) return;

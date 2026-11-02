@@ -2,7 +2,7 @@
 import { CONFIG, W, FLOOR_Y } from './config.js';
 import { stepBody } from './physics.js';
 import { approach, clamp } from './util.js';
-import { drawSprite } from './sprites.js';
+import { drawSprite, hasSprite } from './sprites.js';
 
 const C = CONFIG.player;
 
@@ -69,6 +69,29 @@ export function updatePlayer(p, dt, inp, plats, fx) {
   return ev;
 }
 
+/** Dibujo provisional por código de Marcos cuando su sprite aún no se ha integrado (A1).
+ * Siempre visible, nunca un bloque negro ni un hueco invisible. */
+function drawPlayerFallback(ctx, cx, by, s, p, time) {
+  const shake = p.held.length && p.heldT > CONFIG.vacuum.warnAt ? Math.sin(time * 80) * 3 : 0;
+  const breathe = 1 + Math.sin(time * 3) * 0.015;
+  const rot = p.onGround && Math.abs(p.vx) > 30 ? Math.sin(p.anim * 18) * 0.04 : 0;
+  ctx.save(); ctx.translate(cx + shake, by);
+  if (rot) { ctx.translate(0, -92 * s * 0.5); ctx.rotate(rot); ctx.translate(0, 92 * s * 0.5); }
+  if (p.facing < 0) ctx.scale(-1, 1);
+  // Chaqueta turquesa de Marcos.
+  ctx.fillStyle = '#1e9ad6'; ctx.strokeStyle = '#1a1030'; ctx.lineWidth = 3 * s;
+  ctx.beginPath(); ctx.roundRect(-16 * s, -80 * s * breathe, 32 * s, 66 * s * breathe, 10 * s); ctx.fill(); ctx.stroke();
+  // Cabeza calva y redonda, nariz pequeña.
+  ctx.fillStyle = '#f0c080'; ctx.beginPath(); ctx.ellipse(0, -54 * s * breathe, 18 * s, 17 * s * breathe, 0, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+  ctx.fillStyle = '#e5a060'; ctx.beginPath(); ctx.arc(7 * s, -50 * s * breathe, 3 * s, 0, Math.PI * 2); ctx.fill();
+  // Sonrisa de comilón y ojos.
+  ctx.strokeStyle = '#1a1030'; ctx.lineWidth = 2 * s; ctx.beginPath(); ctx.arc(3 * s, -46 * s * breathe, 5 * s, 0, Math.PI); ctx.stroke();
+  ctx.fillStyle = '#1a1030'; ctx.beginPath(); ctx.arc(-5 * s, -51 * s * breathe, 2 * s, 0, Math.PI * 2); ctx.arc(5 * s, -51 * s * breathe, 2 * s, 0, Math.PI * 2); ctx.fill();
+  // Corbata roja.
+  ctx.fillStyle = '#e53935'; ctx.fillRect(-2.5 * s, -42 * s * breathe, 5 * s, 10 * s);
+  ctx.restore();
+}
+
 export function drawPlayer(ctx, p, time) {
   if (p.invul > 0 && p.alive && Math.floor(time * 20) % 2 === 0) return;
   const cx = p.x + p.w / 2, by = p.y + p.h;
@@ -78,10 +101,12 @@ export function drawPlayer(ctx, p, time) {
   else if (p.sucking) f = 'presi-suck';
   else if (!p.onGround) f = p.vy < 0 ? 'presi-jump' : 'presi-fall';
   else if (Math.abs(p.vx) > 30) f = Math.floor(p.anim * 9) % 2 ? 'presi-walkA' : 'presi-walkB';
+  const s = C.scale;
+  if (!hasSprite(f)) { drawPlayerFallback(ctx, cx, by, s, p, time); return; }
   const breathe = f === 'presi-idle' ? 1 + Math.sin(time * 3) * 0.015 : 1;
   const shake = p.held.length && p.heldT > CONFIG.vacuum.warnAt ? Math.sin(time * 80) * 3 : 0;
   drawSprite(ctx, f, cx + shake, by, {
-    s: C.scale, flip: p.facing < 0, sx: p.sx, sy: p.sy * breathe,
+    s, flip: p.facing < 0, sx: p.sx, sy: p.sy * breathe,
     rot: !p.alive ? p.hurtT * 6 : (p.onGround && Math.abs(p.vx) > 30 ? Math.sin(p.anim * 18) * 0.04 : 0),
     tint: p.speedUp > 0 ? '#4dd2ff' : null, tintA: p.speedUp > 0 ? 0.18 : 0,
   });

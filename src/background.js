@@ -173,6 +173,7 @@ export function createBackground() {
   const birds = Array.from({ length: 5 }, () => ({ x: rand(-200, W), y: rand(80, 220), v: rand(40, 70), p: rand(0, 6) }));
   const drops = [];
   let theme = 'manana';
+  let backdrop = null; // imagen de fondo opaca de un tema (p. ej. barra de bar), a pantalla completa
 
   function cloud(ctx, x, y, s, color, alpha) {
     ctx.save(); ctx.translate(x, y); ctx.scale(s, s); ctx.globalAlpha = alpha;
@@ -201,6 +202,7 @@ export function createBackground() {
   return {
     get theme() { return theme; },
     setTheme(name) { theme = THEMES[name] ? name : 'manana'; if (!cache.has(theme)) cache.set(theme, renderTheme(theme)); },
+    setBackdrop(img) { backdrop = img && img.complete ? img : null; },
     nightLevel() { return THEMES[theme].night; },
     update(dt) {
       for (const c of clouds) { c.x += c.v * dt; if (c.x > W + 160) { c.x = -160; c.y = rand(40, 250); } }
@@ -209,6 +211,7 @@ export function createBackground() {
       for (let i = drops.length - 1; i >= 0; i--) { const d = drops[i]; d.t += dt; d.vy += 700 * dt; d.x += d.vx * dt; d.y += d.vy * dt; if (d.y > 545) drops.splice(i, 1); }
     },
     draw(ctx, t) {
+      if (backdrop) { ctx.drawImage(backdrop, 0, 0, W, H); return; }
       const th = THEMES[theme];
       const base = cache.get(theme);
       if (base) ctx.drawImage(base, 0, 0);

@@ -21,6 +21,8 @@ export function spriteSize(name) {
 
 export function hasSprite(name) { return images.has(name); }
 
+export function spriteImage(name) { return images.get(name); }
+
 function tinted(name, color) {
   const key = name + '|' + color;
   let c = tints.get(key);

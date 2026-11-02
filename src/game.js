@@ -8,7 +8,7 @@ import { createBall, updateBall, drawBall } from './ball.js';
 import { createItem, updateItem, drawItem, randomItemKind, ITEM_KINDS, createLetter, updateLetter, drawLetter } from './items.js';
 import { createBoss, updateBoss, drawBoss, bossBox, hitBoss, createChaser, updateChaser, drawChaser, chaserHits } from './boss.js';
 import { drawHud, drawVignette } from './hud.js';
-import { drawSprite } from './sprites.js';
+import { drawSprite, spriteImage } from './sprites.js';
 import { groundBelow } from './physics.js';
 import { rand, pick, clamp, lerp, overlap, easeOutBack, hsl } from './util.js';
 import { getTheme, DEFAULT_THEME_ID, listThemes } from './themes/index.js';
@@ -58,12 +58,15 @@ export function createGame({ input, audio, themeId = DEFAULT_THEME_ID }) {
     g.stageIndex = i; g.stage = STAGES[i];
     const theme = bonus ? 'mediodia' : g.stage.theme;
     bg.setTheme(theme);
+    // Fondo propio del tema (barra/terraza/mercado/playa) en lugar de La Moncloa.
+    const fondo = g.themeId === 'marcos' ? spriteImage(g.stage.fondo) : null;
+    bg.setBackdrop(fondo);
     g.plats = bonus ? STAGES[0].plats : g.stage.plats;
     g.platLayer = renderPlatforms(g.plats, theme);
     g.enemies = []; g.balls = []; g.shots = []; g.items = []; g.letterBubbles = []; g.boss = null; g.chaser = null;
     g.stageT = 0; g.hurried = false; g.freeze = 0; fx.clear();
     const p = g.player; respawnPlayer(p); p.invul = 2.2; p.x = 120; p.y = FLOOR_Y - p.h; p.onGround = true;
-    if (bonus) { g.state = 'bonus'; g.stateT = 0; audio.music('bonus'); return; }
+    if (bonus) { g.state = 'bonus'; g.stateT = 0; audio.music('bonus', 1, g.themeId); return; }
     if (!g.stage.boss) {
       g.stage.foes.forEach(([type, x, y], k) => g.enemies.push(createEnemy(type, x, y, { enter: true, delay: 0.35 + k * 0.28, speedMul: 1 })));
     } else {
@@ -72,13 +75,13 @@ export function createGame({ input, audio, themeId = DEFAULT_THEME_ID }) {
     }
     g.state = 'intro'; g.stateT = 0;
     g.tutorial = i === 0 && g.loop === 0 ? 7 : 0;
-    audio.music(g.stage.boss ? 'boss' : 'stage');
+    audio.music(g.stage.boss ? 'boss' : 'stage', 1, g.themeId);
   }
 
   function nextStage() {
     if (g.bonusPending) { g.bonusPending = false; startTransition(() => startStage(g.stageIndex, true)); return; }
     const n = g.stageIndex + 1;
-    if (n >= STAGES.length) { startTransition(() => { g.state = 'ending'; g.stateT = 0; bg.setTheme('noche'); audio.music('title'); }); return; }
+    if (n >= STAGES.length) { startTransition(() => { g.state = 'ending'; g.stateT = 0; bg.setTheme('noche'); audio.music('title', 1, g.themeId); }); return; }
     startTransition(() => startStage(n));
   }
 
@@ -164,12 +167,14 @@ export function createGame({ input, audio, themeId = DEFAULT_THEME_ID }) {
     p.held = []; p.heldT = 0; p.vx -= p.facing * 220;
     fx.ring(n.x, n.y, '#ffe14d', 90, 0.35, 8); fx.spark(n.x, n.y, 18, { hue: 50 }); fx.shake(0.22);
     audio.sfx('shoot');
+    if (THEME.juice.vomit) fx.text(n.x, n.y - 45, THEME.juice.vomit, { size: 30, color: '#b7ff66', burst: true, life: 0.7 });
   }
 
   function dropLoot(x, y, chain) {
     g.items.push(createItem(randomItemKind(chain), x, y));
+    const lettersWord = THEME.letters.word || CONFIG.letters.word;
     if (Math.random() < CONFIG.letters.dropChance + chain * 0.05) {
-      const missing = [...CONFIG.letters.word].map((c, i) => i).filter((i) => !g.letters.has(i) && !g.letterBubbles.some((l) => l.i === i));
+      const missing = [...lettersWord].map((c, i) => i).filter((i) => !g.letters.has(i) && !g.letterBubbles.some((l) => l.i === i));
       if (missing.length) { const i = pick(missing); const l = createLetter(CONFIG.letters.word[i], x, y - 40); l.i = i; g.letterBubbles.push(l); }
     }
   }
@@ -275,7 +280,8 @@ export function createGame({ input, audio, themeId = DEFAULT_THEME_ID }) {
         if (overlap(pb, { x: l.x - l.r, y: l.y - l.r, w: l.r * 2, h: l.r * 2 })) {
           g.letterBubbles.splice(i, 1); g.letters.add(l.i); g.letterPop[l.i] = 1;
           audio.sfx('letter'); addScore(500, l.x, l.y - 20, '#ffffff'); fx.ring(l.x, l.y, hsl(g.time * 200, 100, 70), 80, 0.4, 6);
-          if (g.letters.size === CONFIG.letters.word.length) { g.bonusPending = true; fx.text(W / 2, 300, '¡TUMBLE DOG!', { size: 90, burst: true, life: 2, color: '#fff35c' }); fx.confetti(W / 2, 300, 80, 2); audio.sfx('oneup'); }
+          const lettersWord = THEME.letters.word || CONFIG.letters.word;
+          if (g.letters.size === lettersWord.length) { g.bonusPending = true; fx.text(W / 2, 300, THEME.banner.bonus, { size: 90, burst: true, life: 2, color: '#fff35c' }); fx.confetti(W / 2, 300, 80, 2); audio.sfx('oneup'); }
         }
       }
       if (p.invul <= 0 && g.state === 'play') {
@@ -291,7 +297,7 @@ export function createGame({ input, audio, themeId = DEFAULT_THEME_ID }) {
     // Prisa y perseguidor
     if (!g.stage.boss && g.state === 'play') {
       if (!g.hurried && g.stageT > CONFIG.stage.hurryAt) {
-        g.hurried = true; audio.sfx('hurry'); audio.music('stage', 1.3);
+        g.hurried = true; audio.sfx('hurry'); audio.music('stage', 1.3, g.themeId);
         fx.text(W / 2, 330, THEME.hud.datePrisa, { size: 80, burst: true, life: 1.6, color: '#ff6b6b' });
         for (const e of g.enemies) e.angry = true;
       }
@@ -302,7 +308,7 @@ export function createGame({ input, audio, themeId = DEFAULT_THEME_ID }) {
     if (!p.alive) {
       g.deadT += dt;
       if (g.deadT > 1.7) {
-        if (g.lives > 0) { respawnPlayer(p); audio.music(g.stage.boss ? 'boss' : 'stage', g.hurried ? 1.3 : 1); }
+        if (g.lives > 0) { respawnPlayer(p); audio.music(g.stage.boss ? 'boss' : 'stage', g.hurried ? 1.3 : 1, g.themeId); }
         else { g.state = 'gameover'; g.stateT = 0; audio.stopMusic(); audio.sfx('gameover'); if (g.score >= g.hi) saveHi(g.hi); }
       }
     }
@@ -364,7 +370,7 @@ export function createGame({ input, audio, themeId = DEFAULT_THEME_ID }) {
         else if (input.pressed.right) { g.gameSel = (g.gameSel + 1) % nTemas; }
         if ((input.pressed.jump || input.pressed.start || input.pressed.shoot || (any && input.touch)) && g.stateT > 0.6 && !g.trans) { audio.unlock(); startTransition(() => newGame(listThemes()[g.gameSel].id)); }
         else if (any) audio.unlock();
-        if (g.stateT > 0.1 && !g.titleMusic) { g.titleMusic = true; audio.music('title'); }
+        if (g.stateT > 0.1 && !g.titleMusic) { g.titleMusic = true; audio.music('title', 1, g.themeId); }
         break;
       case 'intro':
         for (const e of g.enemies) updateEnemy(e, dt, { plats: g.plats, player: g.player, shots: [], fx, freeze: 0, difficulty: 1 });
