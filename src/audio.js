@@ -71,11 +71,16 @@ let musicEl = null; // <audio> para la canción MP3 del tema «marcos»
     get muted() { return muted; },
     toggleMute() { muted = !muted; if (master) master.gain.value = muted ? 0 : 0.55; if (musicEl) musicEl.volume = muted ? 0 : 0.32; return muted; },
     music(name, t = 1, themeId) {
-      if (name === songName && t === tempo && song) return;
-      stopMusic();
+      const esMusicaMP3 = themeId === 'marcos' && (name === 'title' || name === 'bonus');
+      // Si ya suena la misma canción, no se reinicia (salvo la MP3, que se controla por musicEl).
+      if (!esMusicaMP3 && name === songName && t === tempo && song) return;
+      if (esMusicaMP3 && name === songName && musicEl) return;
+      // Detener la canción anterior (sintetizada o MP3).
+      song = null; songName = null;
+      if (musicEl) { musicEl.pause(); musicEl.src = ''; musicEl = null; }
       songName = name; song = null; tempo = t; step = 0; leadI = 0; bassI = 0; leadLeft = 0; bassLeft = 0;
       // Tema «marcos»: título y ronda bonus suenan con la canción MP3 aportada.
-      if (themeId === 'marcos' && (name === 'title' || name === 'bonus') && typeof Audio !== 'undefined') {
+      if (esMusicaMP3 && typeof Audio !== 'undefined') {
         const el = new Audio('assets/audio/dieta-de-marcos.mp3');
         el.loop = true;
         el.volume = muted ? 0 : 0.32;

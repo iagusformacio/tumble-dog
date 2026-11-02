@@ -5,7 +5,7 @@ import { hsl, clamp } from './util.js';
 import { getTheme } from './themes/index.js';
 
 export function drawHud(ctx, g, time) {
-  const THEME = getTheme(g.themeId);
+  const THEME = getTheme(g.themeId).theme;
   // Barra superior
   const gr = ctx.createLinearGradient(0, 0, 0, 64);
   gr.addColorStop(0, 'rgba(20,10,50,0.85)'); gr.addColorStop(1, 'rgba(20,10,50,0)');
