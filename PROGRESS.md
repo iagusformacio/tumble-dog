@@ -46,3 +46,4 @@
 | T13 smoke test CI | hecho |
 - A5 (arte, sesión 2026-11-02): Jefa de Sala del Bar Pols con 10 poses (reposo, andar A/B, bandeja, grito, herida, derrotada, enfadada, victoria, retrato) en `assets/enemigos/jefa-sala-*.png` + hoja derivada; sprites `boss-jefa-*` en `assets/sprites/`.
 - A3 (arte, 2026-11-02): cuatro esmorzars y paella con 10 imágenes, sprites preparados; andar B y aspirado son transformaciones provisionales, pendientes de poses originales.
+- A2 (integración, 2026-11-02): rescate del arte del PR #64 congelado (4 esmorzars + jefe bocata) reaplicado sobre main con conflictos resueltos, y nuevo PNG del jefe bocata **derrotado** (antes era un vaso de café provisional); `dm-*` en `src/sprite-list.js`.

@@ -39,7 +39,7 @@ export const SPRITE_FILES = {
   'diputado-stun': ['./assets/sprites/diputado-stun.webp', 118, 162],
   'diputado-walkA': ['./assets/sprites/diputado-walkA.webp', 143, 200],
   'diputado-walkB': ['./assets/sprites/diputado-walkB.webp', 142, 200],
-  'dm-bocata-down': ['./assets/sprites/dm-bocata-down.webp', 286, 190],
+  'dm-bocata-down': ['./assets/sprites/dm-bocata-down.webp', 342, 190],
   'dm-bocata-reposo': ['./assets/sprites/dm-bocata-reposo.webp', 519, 300],
   'dm-cafe-down': ['./assets/sprites/dm-cafe-down.webp', 162, 110],
   'dm-cafe-stun': ['./assets/sprites/dm-cafe-stun.webp', 115, 152],
