@@ -139,6 +139,46 @@
   155,
   199
  ],
+ "marcos-fall": [
+  247,
+  220
+ ],
+ "marcos-hurt": [
+  214,
+  220
+ ],
+ "marcos-idle": [
+  146,
+  220
+ ],
+ "marcos-intro": [
+  182,
+  220
+ ],
+ "marcos-jump": [
+  166,
+  220
+ ],
+ "marcos-swallow": [
+  181,
+  220
+ ],
+ "marcos-vomit": [
+  190,
+  220
+ ],
+ "marcos-walkA": [
+  175,
+  220
+ ],
+ "marcos-walkB": [
+  181,
+  220
+ ],
+ "marcos-win": [
+  157,
+  220
+ ],
  "portavoz-down": [
   333,
   120
