@@ -4,7 +4,7 @@ import { defineConfig, devices } from '@playwright/test';
 
 export default defineConfig({
   testDir: './tests',
-  testMatch: 'smoke.spec.js', // no interferir con los tests de `node --test` (tests/*.test.js)
+  testMatch: '*.spec.js', // no interferir con los tests de `node --test` (tests/*.test.js)
   timeout: 60_000,
   expect: { timeout: 5_000 },
   retries: process.env.CI ? 1 : 0,
