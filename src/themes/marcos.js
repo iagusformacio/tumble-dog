@@ -55,15 +55,13 @@ export const THEME = {
     title: './assets/audio/dieta-de-marcos.mp3',
     bonus: './assets/audio/dieta-de-marcos.mp3',
   },
-  // Sprites del tema YA en main (assets/sprites/, bloque A4). Cada valor debe
-  // existir en disco (lo comprueba tests/marcos.test.js).
+  // Sprites del tema YA en main (assets/sprites/). Cada valor debe existir en
+  // disco (lo comprueba tests/marcos.test.js). A4: logo, bola de vómito,
+  // onomatopeyas y fondos. A1: las 10 poses de Marcos. A8: retrato de Marcos,
+  // camarero con la cuenta y los 6 premios del bar.
   sprites: {
     'ui-logo': 'ui-logo-marcos',
     'ball': 'ui-bola-vomito',
-  },
-  // Sprites del tema que llegarán con los PR de arte A1/A2/A3 (no están aún en
-  // main): mientras falten, el motor usa el provisional por código.
-  spritesWanted: {
     'presi-idle': 'marcos-idle',
     'presi-walkA': 'marcos-walkA',
     'presi-walkB': 'marcos-walkB',
@@ -74,7 +72,22 @@ export const THEME = {
     'presi-hurt': 'marcos-hurt',
     'presi-win': 'marcos-win',
     'presi-intro': 'marcos-intro',
-    'portrait-presi': 'marcos-intro',
+    'portrait-presi': 'retrato-marcos',
+    'chaser-walkA': 'camarero-walkA',
+    'chaser-walkB': 'camarero-walkB',
+    'chaser-shout': 'camarero-grito',
+    'item-coin': 'premio-zumo',
+    'item-gemB': 'premio-ensaimada',
+    'item-gemR': 'premio-flan',
+    'item-gemG': 'premio-tila',
+    'item-shoes': 'premio-cafe',
+    'item-pow': 'premio-antiacido',
+    'item-clock': 'premio-tila',
+    'item-life': 'premio-flan',
+  },
+  // Sprites del tema que llegarán con los PR de arte A2/A3 (los 8 esmorzars, aún
+  // no en main): mientras falten, el motor usa el provisional por código.
+  spritesWanted: {
     ...Object.fromEntries(Object.entries(ESMORZAR).flatMap(([type, spr]) =>
       ['walkA', 'walkB', 'stun', 'down'].map((pose) => [`${type}-${pose}`, `${spr}-${pose}`]))),
   },

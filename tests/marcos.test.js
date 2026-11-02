@@ -4,7 +4,6 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { existsSync } from 'node:fs';
 import { W, CONFIG } from '../src/config.js';
-import { FLOOR } from '../src/physics.js';
 import { listThemes, getTheme, THEMES } from '../src/themes/index.js';
 import { THEME as MARCOS, STAGES, STAGE_COUNT, SONGS } from '../src/themes/marcos.js';
 import { THEME as TUMBLEDOG } from '../src/themes/tumbledog.js';
@@ -39,14 +38,38 @@ test('textos del tema: TRAGAR/VOMITAR, ¡BLEEEH!, ESMORZAR y el camarero con la 
 
 test('cada sprite que el tema declara (THEME.sprites) existe en el manifiesto y en disco', () => {
   const declared = Object.entries(MARCOS.sprites);
-  assert.ok(declared.length >= 2, 'el tema debe declarar al menos logo y bola');
+  assert.ok(declared.length >= 20, 'el tema declara logo, bola, poses de Marcos, camarero y premios');
   for (const [canon, target] of declared) {
     assert.ok(SPRITE_FILES[target], `el sprite declarado ${target} (de ${canon}) no está en sprite-list.js`);
     assert.ok(disk(SPRITE_FILES[target][0]), `falta en disco ${SPRITE_FILES[target][0]}`);
   }
-  // Logo y bola de vómito conect déclareados de verdad:
   assert.equal(MARCOS.sprites['ui-logo'], 'ui-logo-marcos');
   assert.equal(MARCOS.sprites['ball'], 'ui-bola-vomito');
+});
+
+test('las 10 poses de Marcos (A1) están conectadas y existen en disco', () => {
+  const poses = { idle: 'idle', walkA: 'walkA', walkB: 'walkB', jump: 'jump', fall: 'fall', suck: 'swallow', throw: 'vomit', hurt: 'hurt', win: 'win', intro: 'intro' };
+  for (const [canon, pose] of Object.entries(poses)) {
+    assert.equal(MARCOS.sprites[`presi-${canon}`], `marcos-${pose}`, `presi-${canon} → marcos-${pose}`);
+    assert.ok(disk(SPRITE_FILES[`marcos-${pose}`][0]), `falta en disco marcos-${pose}`);
+  }
+  assert.equal(MARCOS.sprites['portrait-presi'], 'retrato-marcos');
+  assert.ok(disk(SPRITE_FILES['retrato-marcos'][0]));
+});
+
+test('el camarero con la cuenta (A8) tiene sprites conectados como perseguidor', () => {
+  for (const [canon, spr] of [['chaser-walkA', 'camarero-walkA'], ['chaser-walkB', 'camarero-walkB'], ['chaser-shout', 'camarero-grito']]) {
+    assert.equal(MARCOS.sprites[canon], spr);
+    assert.ok(disk(SPRITE_FILES[spr][0]), `falta en disco ${spr}`);
+  }
+});
+
+test('los premios del bar (A8) tienen sprite por tipo de premio', () => {
+  for (const kind of ['coin', 'gemB', 'gemR', 'gemG', 'shoes', 'pow', 'clock', 'life']) {
+    const spr = MARCOS.sprites['item-' + kind];
+    assert.ok(spr && spr.startsWith('premio-'), `falta sprite del premio ${kind}`);
+    assert.ok(disk(SPRITE_FILES[spr][0]), `falta en disco ${spr}`);
+  }
 });
 
 test('sprites de onomatopeyas declarados existen en disco', () => {
@@ -56,15 +79,12 @@ test('sprites de onomatopeyas declarados existen en disco', () => {
   }
 });
 
-test('spritesWanted: claves canónicas del motor y valores con prefijo propio (A1/A2/A3 pendientes)', () => {
+test('spritesWanted: solo los esmorzars pendientes (A2/A3) usan prefijo dm-', () => {
   const wanted = MARCOS.spritesWanted;
-  for (const pose of ['idle', 'walkA', 'walkB', 'jump', 'fall', 'suck', 'throw', 'hurt', 'win', 'intro']) {
-    assert.ok(wanted[`presi-${pose}`], `falta mapeo de la pose presi-${pose}`);
-    assert.ok(wanted[`presi-${pose}`].startsWith('marcos-'), 'las poses de Marcos usan el prefijo marcos-');
-  }
+  assert.ok(Object.keys(wanted).length > 0, 'debe quedar mapeo pendiente de los esmorzars');
   for (const type of TYPE_KEYS) {
     for (const pose of ['walkA', 'walkB', 'stun', 'down']) {
-      assert.ok(wanted[`${type}-${pose}`], `falta mapeo de ${type}-${pose}`);
+      assert.ok(wanted[`${type}-${pose}`], `falta mapeo pendiente de ${type}-${pose}`);
       assert.ok(wanted[`${type}-${pose}`].startsWith('dm-'), 'los esmorzars usan el prefijo dm-');
     }
   }
@@ -130,6 +150,7 @@ test('resolución de sprites: setSpriteMap reasigna los nombres canónicos del m
   assert.equal(spriteName('presi-idle'), 'marcos-idle');
   assert.equal(spriteName('ui-logo'), 'ui-logo-marcos');
   assert.equal(spriteName('ball'), 'ui-bola-vomito');
+  assert.equal(spriteName('chaser-walkA'), 'camarero-walkA');
   assert.equal(spriteName('ui-life'), 'ui-life', 'lo no mapeado queda igual');
   assert.deepEqual(getSpriteMap()['presi-throw'], 'marcos-vomit');
   setSpriteMap(null);

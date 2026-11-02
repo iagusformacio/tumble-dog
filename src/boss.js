@@ -1,7 +1,7 @@
 // Jefes (versiones gigantes) y el perseguidor invencible: el Inspector de Hacienda.
 import { FLOOR_Y, W, CONFIG } from './config.js';
 import { rand, pick } from './util.js';
-import { drawSprite } from './sprites.js';
+import { drawSprite, hasSprite } from './sprites.js';
 import { skin } from './skin.js';
 import { makeShot } from './enemies.js';
 
@@ -77,6 +77,13 @@ function drawCamarero(ctx, c, time) {
   const g = ctx.createRadialGradient(0, 0, 10, 0, 0, 110); g.addColorStop(0, 'rgba(255,170,60,0.5)'); g.addColorStop(1, 'rgba(160,80,0,0)');
   ctx.fillStyle = g; ctx.fillRect(-110, -110, 220, 220);
   ctx.globalCompositeOperation = 'source-over';
+  // Sprite del tema (A8) si está; si no, provisional por código.
+  const frame = c.t < 1 ? 'chaser-shout' : (Math.floor(time * 6) % 2 ? 'chaser-walkA' : 'chaser-walkB');
+  if (hasSprite(frame)) {
+    drawSprite(ctx, frame, 0, 58, { s: 0.62, flip: false, rot: Math.sin(time * 8) * 0.04 });
+    ctx.restore();
+    return;
+  }
   ctx.strokeStyle = '#1a1030'; ctx.lineWidth = 4; ctx.lineJoin = 'round';
   // Cuerpo: camisa blanca y chaleco negro de camarero
   ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.moveTo(-34, -8);
