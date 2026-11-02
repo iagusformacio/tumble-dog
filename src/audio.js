@@ -10,9 +10,14 @@ const seq = (s) => s.trim().split(/\s+/).map((tok) => { const [n, d] = tok.split
 
 // Canciones sintetizadas por defecto (tema «tumbledog»); cada tema puede traer
 // las suyas con setSongs, y además ficheros de audio propios (mp3) por sección.
-// Si un tema trae un mp3 para una sección (title/stage/boss/bonus), esa canción
-// manda: el sintetizador queda solo para los efectos y como respaldo si el
-// fichero no carga (issue #95).
+// Si un tema trae un mp3 para una sección, esa canción manda: el sintetizador
+// queda solo para los efectos y como respaldo si el fichero no carga (#95).
+//
+// Trozos por escena (issue #101): la canción de «Dieta de Marcos» viene partida
+// en un fichero por escena de la campaña. Cada sección tiene su elemento
+// <audio> en caché, con `preload='none'` hasta que hace falta; se carga solo el
+// trozo que toca y la escena siguiente se precarga mientras se juega
+// (`api.preload`), así que el título suena en cuanto se desbloquea el audio.
 import { SONGS } from './themes/tumbledog.js';
 import { CONFIG } from './config.js';
 
@@ -26,8 +31,9 @@ export function createAudio() {
   let suckNode = null;
   let songs = SONGS;      // canciones sintetizadas del tema activo
   let files = null;       // { sección: './assets/audio/x.mp3' } del tema activo
-  let media = null;       // { el, vol, maxVol, rate, name }: canción mp3 en curso
-  let fading = [];        // canciones mp3 que se están apagando (fundido de salida)
+  let media = null;       // { el, entry, vol, maxVol, rate, name }: trozo en curso
+  let fading = [];        // trozos que se están apagando (fundido de salida)
+  const els = new Map();  // sección → { el, url, ready, broken }: caché de <audio>
   const failed = new Set(); // secciones cuyo mp3 no ha cargado: respaldo sintetizado
   let lastTick = 0;       // reloj del último update (segundos)
   let pending = false;    // el navegador bloqueó el autoplay: se reintenta al desbloquear
@@ -99,43 +105,97 @@ export function createAudio() {
     const r = base * (t || 1);
     return Math.min(AX.rateMax, Math.max(AX.rateMin, r));
   }
-  /** Arranca el mp3 con fundido de entrada. Devuelve false si no hay Audio. */
+  /** Elemento <audio> de una sección (caché). `load` fuerza la descarga. */
+  function elementFor(name, url, { load = false } = {}) {
+    let entry = els.get(name);
+    if (entry && entry.url !== url) { // el tema cambió el fichero de esa sección
+      stopMedia(entry.el);
+      els.delete(name);
+      entry = null;
+    }
+    if (!entry) {
+      const Ctor = globalThis.Audio;
+      if (typeof Ctor !== 'function') return null;
+      let el;
+      try { el = new Ctor(url); } catch { return null; }
+      entry = { el, url, name, ready: false, broken: false, requested: false };
+      // Carga bajo demanda (issue #101): nada se descarga hasta que se pide.
+      try { el.preload = 'none'; el.loop = true; el.muted = !!muted; } catch { /* sin audio */ }
+      if (typeof el.addEventListener === 'function') {
+        el.addEventListener('error', () => onMediaError(entry));
+        el.addEventListener('canplay', () => { entry.ready = true; });
+        el.addEventListener('loadeddata', () => { entry.ready = true; });
+      }
+      els.set(name, entry);
+    }
+    // Se pide una sola vez: si ya está descargándose o lista, no se reinicia.
+    if (load && !entry.broken && !entry.requested) {
+      entry.requested = true;
+      try {
+        entry.el.preload = 'auto';
+        if (typeof entry.el.load === 'function') entry.el.load();
+      } catch { /* sin audio */ }
+    }
+    return entry;
+  }
+
+  /** Descarga un trozo sin reproducirlo (precarga de la escena siguiente). */
+  function preload(name) {
+    if (!name || !files || !files[name] || failed.has(name) || muted) return null;
+    const entry = elementFor(name, files[name], { load: true });
+    return entry ? entry.el : null;
+  }
+
+  /** Arranca el trozo con fundido de entrada. Devuelve false si no hay Audio. */
   function playMedia(url, name, rate) {
-    const Ctor = globalThis.Audio;
-    if (typeof Ctor !== 'function') return false;
-    let el;
-    try { el = new Ctor(url); } catch { return false; }
-    const m = { el, vol: 0, maxVol: opts.volume == null ? AX.mediaVolume : clamp01(opts.volume), rate: 1, name };
-    try { el.loop = true; el.preload = 'auto'; el.muted = !!muted; } catch { /* sin audio */ }
+    const entry = elementFor(name, url, { load: true });
+    if (!entry) return false;
+    const el = entry.el;
+    const m = { el, entry, vol: 0, maxVol: opts.volume == null ? AX.mediaVolume : clamp01(opts.volume), rate: 1, name };
+    // Si ese mismo trozo se estaba apagando, se reutiliza: deja de apagarse.
+    fading = fading.filter((f) => f.entry !== entry);
+    // El elemento está en caché: se reutiliza desde el principio.
+    try { el.loop = true; el.muted = !!muted; el.currentTime = 0; } catch { /* sin audio */ }
     setRate(m, rate);
     applyVolume(m);
-    if (typeof el.addEventListener === 'function') {
-      // Si el fichero no carga, se cae a la música sintetizada (respaldo).
-      el.addEventListener('error', () => onMediaError(m));
-    }
     const p = el.play ? el.play() : null;
     if (p && typeof p.catch === 'function') p.catch(() => { pending = true; }); // autoplay bloqueado
-    if (media) { fading.push(media); } // la anterior se apaga con fundido
+    if (media) fading.push(media); // la anterior se apaga con fundido
     media = m;
     return true;
   }
-  function onMediaError(m) {
-    const i = fading.indexOf(m); if (i >= 0) fading.splice(i, 1);
-    stopMedia(m.el);
-    failed.add(m.name); // no se reintenta el fichero roto en cada pantalla
-    if (media !== m) return;
+  function onMediaError(entry) {
+    entry.broken = true;
+    failed.add(entry.name); // no se reintenta el fichero roto en cada pantalla
+    const i = fading.findIndex((f) => f.entry === entry);
+    if (i >= 0) fading.splice(i, 1);
+    stopMedia(entry.el);
+    if (!media || media.entry !== entry) return; // ese trozo no era el que sonaba ahora
     media = null;
-    startSynth(m.name, 1); // respaldo: melodía sintetizada del tema
+    startSynth(entry.name, 1); // respaldo: melodía sintetizada del tema
   }
   /** Apaga con fundido la canción mp3 en curso (o todas). */
   function fadeMedia(m) {
     if (!m) return;
     if (m.vol > 0) fading.push(m); else stopMedia(m.el);
   }
+  /** Melodía sintetizada que respalda a una sección con fichero (o a su familia). */
+  function songFor(name) {
+    if (!name) return null;
+    if (songs[name]) return songs[name];
+    // 'campaign-jefes' → 'boss', 'campaign-bonus' → 'bonus', 'campaign-*' → 'stage'
+    if (name.startsWith('campaign-')) {
+      for (const k of ['boss', 'bonus', 'stage']) {
+        if (name.includes(k) && songs[k]) return songs[k];
+      }
+      return songs.stage || songs.title || null;
+    }
+    return null;
+  }
   function startSynth(name, t) {
     if (songName === name && tempo === t && song && !media) return; // ya está sonando
     songName = name; tempo = t; step = 0; leadI = 0; bassI = 0; leadLeft = 0; bassLeft = 0;
-    song = songs[name] || null;
+    song = songFor(name);
     if (ctx) nextTime = ctx.currentTime + 0.05;
   }
   /** Fundidos: entrada de la canción en curso y salida de las anteriores.
@@ -170,6 +230,8 @@ export function createAudio() {
       muted = !muted;
       if (master) master.gain.value = muted ? 0 : 0.55;
       for (const m of (media ? [media] : []).concat(fading)) { try { m.el.muted = muted; } catch { /* sin audio */ } }
+      // Los trozos precargados (en caché, sin sonar) también se silencian.
+      for (const entry of els.values()) { try { entry.el.muted = muted; } catch { /* sin audio */ } }
       return muted;
     },
     // Fija las canciones y ficheros del tema activo (game.js al cambiar de tema).
@@ -177,6 +239,9 @@ export function createAudio() {
     setSongs(s, f, o) {
       songs = s || SONGS; files = f || null;
       failed.clear(); // tema nuevo: se vuelve a intentar el fichero
+      for (const [name, entry] of els) { // tema nuevo: fuera los trozos del anterior
+        if (!files || files[name] !== entry.url) { stopMedia(entry.el); els.delete(name); }
+      }
       opts = { volume: o && o.volume != null ? o.volume : AX.mediaVolume, rate: (o && o.rate) || {} };
       // La sección que está sonando se reaplica con la fuente nueva: al pasar de
       // Tumble Dog a Dieta de Marcos con el título sonando, el sintetizador se
@@ -210,6 +275,8 @@ export function createAudio() {
       song = null; songName = null;
       if (media) { fadeMedia(media); media = null; }
     },
+    /** Precarga un trozo sin reproducirlo (issue #101): la escena siguiente. */
+    preload(name) { return preload(name) ? name : null; },
     update(dt) {
       tick(dt);
       if (ctx && song && nextTime < ctx.currentTime) nextTime = ctx.currentTime + 0.02;
@@ -225,6 +292,9 @@ export function createAudio() {
         playing: media ? !el.paused : !!song,
         volume: media ? clamp01(media.vol * media.maxVol) : 0,
         time: el ? (el.currentTime || 0) : 0, // avance real de la canción (navegador)
+        cached: [...els.keys()],   // trozos ya pedidos (el que suena y los precargados)
+        ready: media ? !!media.entry.ready : false, // el trozo ya puede sonar
+        readyState: el ? (el.readyState || 0) : 0,  // estado real del <audio>
       };
     },
     suck(on) {

@@ -20,6 +20,7 @@ Homenaje a **Tumblepop** (Data East, 1991): plataformas de pantalla fija donde a
 - Sprites del tebeo procesados (recorte del verde, sin halo, escalas coherentes) en `assets/sprites/` con `tools/prepare_assets.py`.
 - «Juice»: partículas, confeti, estrellas, ondas, temblor de cámara, hit-stop, squash & stretch, onomatopeyas (¡PAF!, ¡ZAS!, ¡CRAC!), rastro arcoíris de la bola, transición en iris, viñeta, luz nocturna.
 - Música y efectos sintetizados (WebAudio), melodías originales.
+- **Canción de «Dieta de Marcos» partida en 7 trozos** (título, 4 bares, jefes y ronda bonus) de ~20 s y ~230 KB: se descarga solo el trozo de la escena y se precarga el siguiente, así el título suena enseguida. El modo Arcade no usa trozos (sigue el sintetizador). Cortes, fundidos y ficheros: `tools/split_music.py`; figura: `docs/audio-trozos.png`.
 - Controles: teclado, mando y táctil (botones en pantalla al tocar).
 
 ## Personajes (todos inventados)
@@ -27,6 +28,7 @@ Don Presi (protagonista) y 8 enemigos: La Portavoz Airada (grito), El Tertuliano
 
 ## Dónde se toca cada cosa
 - Números del juego: `src/config.js`. Fases: `src/stages.js`. Enemigos: `src/enemies.js`.
+- Música por escena: `src/audio.js` (un `<audio>` en caché por sección) y `musicForStage` en `src/campaign.js`; trozos en `assets/audio/dieta-de-marcos/`.
 - Reglas y estados: `src/game.js`. Efectos: `src/fx.js`. Fondo: `src/background.js`. HUD: `src/hud.js`.
 - Arte nuevo: PNG con fondo verde en `assets/` → añadirlo a `tools/prepare_assets.py` → ejecutar el script.
 - Enlace jugable: `python3 tools/bundle.py . salida.html`.

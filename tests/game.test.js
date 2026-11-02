@@ -113,8 +113,15 @@ test('el empaquetador genera un HTML autocontenido', () => {
   assert.ok(html.includes('data:image/webp;base64,'));
 });
 
-test('el empaquetador incrusta la canción del tema una sola vez (issue #95)', () => {
+test('el empaquetador incrusta cada trozo de la canción una sola vez (#95 y #101)', () => {
   const html = readFileSync('/tmp/tumble-dog-test.html', 'utf8');
-  assert.equal(html.split('data:audio/mpeg;base64,').length - 1, 1, 'la canción va una sola vez como data URI');
-  assert.ok(html.includes("__media['assets/audio/dieta-de-marcos.mp3']"), 'el código referencia la canción incrustada');
+  const uris = html.split('data:audio/mpeg;base64,').length - 1;
+  assert.equal(uris, 7, 'los 7 trozos van una sola vez cada uno como data URI');
+  assert.ok(html.includes("__media['assets/audio/dieta-de-marcos/01-titulo.mp3']"), 'el código referencia el trozo del título');
+  assert.ok(!html.includes("__media['assets/audio/dieta-de-marcos.mp3']"), 'el original completo no entra en el paquete');
+  // La música incrustada pesa menos que la canción completa de antes (~3,2 MB): #101.
+  const audio = [...html.matchAll(/data:audio\/mpeg;base64,([A-Za-z0-9+/=]+)/g)];
+  assert.equal(audio.length, 7, 'siete trozos incrustados');
+  const bytes = audio.reduce((n, m) => n + Math.round(m[1].length * 3 / 4), 0);
+  assert.ok(bytes < 2.2 * 1024 * 1024, `la música del paquete pesa ${Math.round(bytes / 1024)} KB`);
 });
