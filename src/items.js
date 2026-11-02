@@ -70,8 +70,8 @@ export function drawItem(ctx, it, time) {
   ctx.restore();
 }
 
-export function createLetter(letter, x, y) {
-  return { letter, x, y, vx: (x < W / 2 ? 1 : -1) * CONFIG.letters.bubbleSpeed, vy: -40, t: 0, life: 12, r: 30 };
+export function createLetter(letter, x, y, speed = CONFIG.letters.bubbleSpeed) {
+  return { letter, x, y, vx: (x < W / 2 ? 1 : -1) * speed, vy: -40, t: 0, life: 12, r: 30 };
 }
 
 export function updateLetter(l, dt) {

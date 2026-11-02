@@ -2,6 +2,7 @@
 import { FLOOR_Y, W, CONFIG } from './config.js';
 import { rand, pick } from './util.js';
 import { drawSprite } from './sprites.js';
+import { skin } from './skin.js';
 import { makeShot } from './enemies.js';
 
 const BOSS = {
@@ -9,9 +10,15 @@ const BOSS = {
   lider: { name: 'EL LÍDER ETERNO', shot: 'shout', minions: ['diputado', 'baron', 'asesor', 'activista'] },
 };
 
-export function createBoss(type) {
+// Nombres de jefe propios del tema activo (game.js los fija con setBossNames).
+let BOSS_NAMES = null;
+export function setBossNames(m) { BOSS_NAMES = m || null; }
+
+export function createBoss(type, hpMap) {
   const d = BOSS[type] || BOSS.tertuliano;
-  return { type, ...d, maxHp: CONFIG.bossHp[type], hp: CONFIG.bossHp[type], x: 1040, y: FLOOR_Y, vy: 0, t: 0, flash: 0, throwT: 2.5, shotT: 1.6, hopT: 4, dying: 0, dead: false, hitT: 0, s: 0.6 };
+  const hp = (hpMap || CONFIG.bossHp)[type] ?? 10;
+  const name = (BOSS_NAMES && BOSS_NAMES[type]) || d.name;
+  return { type, ...d, name, maxHp: hp, hp, x: 1040, y: FLOOR_Y, vy: 0, t: 0, flash: 0, throwT: 2.5, shotT: 1.6, hopT: 4, dying: 0, dead: false, hitT: 0, s: 0.6 };
 }
 
 export function bossBox(b) { return { x: b.x - 110, y: b.y - 280, w: 220, h: 280 }; }
@@ -46,7 +53,7 @@ export function updateBoss(b, dt, ctx) {
 export function hitBoss(b, dmg, fx) {
   if (b.dying) return;
   b.hp -= dmg; b.flash = 1; b.hitT = 0.4;
-  fx.shake(0.5); fx.stop(0.08); fx.stars(b.x - 60, b.y - 140, 10); fx.text(b.x - 40, b.y - 260, pick(['¡AY!', '¡OUCH!', '¡MI ESCAÑO!', '¡CENSURA!']), { size: 44, color: '#ffef5c' });
+  fx.shake(0.5); fx.stop(0.08); fx.stars(b.x - 60, b.y - 140, 10); fx.text(b.x - 40, b.y - 260, pick(skin.hitWords || ['¡AY!', '¡OUCH!', '¡MI ESCAÑO!', '¡CENSURA!']), { size: 44, color: '#ffef5c' });
   if (b.hp <= 0) { b.hp = 0; b.dying = 0.001; fx.flash(0.9); fx.confetti(b.x, b.y - 120, 80, 1.6); }
 }
 
@@ -60,6 +67,36 @@ export function drawBoss(ctx, b, time) {
     tint: b.hp < b.maxHp / 2 ? '#ff2a2a' : null, tintA: b.hp < b.maxHp / 2 ? 0.18 + 0.1 * Math.sin(time * 8) : 0,
     rot: b.dying ? Math.sin(time * 30) * 0.12 : 0, alpha: b.dying > 1.6 ? Math.max(0, 1 - (b.dying - 1.6) / 0.6) : 1,
   });
+}
+
+// ---- Camarero con la cuenta (perseguidor del tema «marcos», provisional por código)
+function drawCamarero(ctx, c, time) {
+  ctx.save(); ctx.translate(c.x, c.y); ctx.globalAlpha = c.alpha * 0.95;
+  if (c.vx < 0) ctx.scale(-1, 1);
+  ctx.globalCompositeOperation = 'lighter';
+  const g = ctx.createRadialGradient(0, 0, 10, 0, 0, 110); g.addColorStop(0, 'rgba(255,170,60,0.5)'); g.addColorStop(1, 'rgba(160,80,0,0)');
+  ctx.fillStyle = g; ctx.fillRect(-110, -110, 220, 220);
+  ctx.globalCompositeOperation = 'source-over';
+  ctx.strokeStyle = '#1a1030'; ctx.lineWidth = 4; ctx.lineJoin = 'round';
+  // Cuerpo: camisa blanca y chaleco negro de camarero
+  ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.moveTo(-34, -8);
+  ctx.quadraticCurveTo(-38, -58, 0, -62); ctx.quadraticCurveTo(38, -58, 34, -8);
+  for (let i = 0; i <= 6; i++) { const x = 34 - i * 11.3; ctx.lineTo(x, 46 + Math.sin(time * 8 + i) * 8 + (i % 2 ? 9 : 0)); }
+  ctx.closePath(); ctx.fill(); ctx.stroke();
+  ctx.fillStyle = '#16102b'; ctx.beginPath(); ctx.moveTo(-24, -6); ctx.quadraticCurveTo(0, -18, 24, -6); ctx.lineTo(20, 40); ctx.lineTo(-20, 40); ctx.closePath(); ctx.fill(); ctx.stroke();
+  // Pajarita
+  ctx.fillStyle = '#c62f4a'; ctx.beginPath(); ctx.moveTo(0, -52); ctx.lineTo(-10, -44); ctx.lineTo(0, -38); ctx.lineTo(10, -44); ctx.closePath(); ctx.fill(); ctx.stroke();
+  // Cabeza y bigote
+  ctx.fillStyle = '#f4c89a'; ctx.beginPath(); ctx.ellipse(0, -40, 23, 21, 0, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+  ctx.fillStyle = '#5a3a1a'; ctx.beginPath(); ctx.ellipse(-8, -32, 8, 4, -0.2, 0, Math.PI * 2); ctx.ellipse(8, -32, 8, 4, 0.2, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = '#1a1030'; ctx.beginPath(); ctx.arc(-8, -44, 3.4, 0, Math.PI * 2); ctx.arc(8, -44, 3.4, 0, Math.PI * 2); ctx.fill();
+  // Bandeja con la cuenta
+  ctx.save(); ctx.translate(40, 6 + Math.sin(time * 4) * 3); ctx.rotate(0.12);
+  ctx.fillStyle = '#8a8f9e'; ctx.beginPath(); ctx.ellipse(0, 0, 30, 7, 0, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+  ctx.fillStyle = '#fff'; ctx.fillRect(-12, -16, 24, 15); ctx.strokeRect(-12, -16, 24, 15);
+  ctx.fillStyle = '#c62f4a'; ctx.font = '9px Impact, sans-serif'; ctx.textAlign = 'center'; ctx.fillText('CUENTA', 0, -5);
+  ctx.restore();
+  ctx.restore();
 }
 
 // ---- Inspector de Hacienda (invencible, aparece si tardas demasiado)
@@ -78,6 +115,7 @@ export function updateChaser(c, dt, player) {
 export function chaserHits(c, p) { return Math.abs(c.x - (p.x + p.w / 2)) < 44 && Math.abs(c.y - (p.y + 40)) < 56; }
 
 export function drawChaser(ctx, c, time) {
+  if (skin.chaser === 'camarero') { drawCamarero(ctx, c, time); return; }
   ctx.save(); ctx.translate(c.x, c.y); ctx.globalAlpha = c.alpha * 0.92;
   if (c.vx < 0) ctx.scale(-1, 1);
   ctx.globalCompositeOperation = 'lighter';

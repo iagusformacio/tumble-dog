@@ -3,6 +3,14 @@ import { SPRITE_FILES } from './sprite-list.js';
 const images = new Map();
 const tints = new Map();
 
+// Mapeo canónico → sprite del tema activo (p. ej. 'presi-idle' → 'marcos-idle').
+// Lo fija el tema en curso (game.js llama a setSpriteMap al cambiar de tema);
+// por defecto es la identidad y el tema «tumbledog» no se ve afectado.
+let nameMap = {};
+export function setSpriteMap(m) { nameMap = m || {}; }
+export function getSpriteMap() { return nameMap; }
+export function spriteName(name) { return nameMap[name] || name; }
+
 export function loadSprites(timeoutMs = 8000) {
   const jobs = Object.entries(SPRITE_FILES).map(([name, [src]]) => new Promise((resolve) => {
     if (typeof Image === 'undefined') { resolve(); return; }
@@ -15,11 +23,14 @@ export function loadSprites(timeoutMs = 8000) {
 }
 
 export function spriteSize(name) {
-  const f = SPRITE_FILES[name];
+  const f = SPRITE_FILES[spriteName(name)];
   return f ? { w: f[1], h: f[2] } : { w: 0, h: 0 };
 }
 
-export function hasSprite(name) { return images.has(name); }
+export function hasSprite(name) { return images.has(spriteName(name)); }
+
+/** Imagen cargada de un sprite (resolviendo el mapeo del tema), o null. */
+export function getSpriteImage(name) { return images.get(spriteName(name)) || null; }
 
 function tinted(name, color) {
   const key = name + '|' + color;
@@ -43,7 +54,8 @@ function tinted(name, color) {
  * o: { s escala, flip, sx/sy squash, rot (rad, sobre el centro), alpha, flash (0..1 blanco), tint color, tintA }
  */
 export function drawSprite(ctx, name, x, y, o = {}) {
-  const img = images.get(name);
+  const key = spriteName(name);
+  const img = images.get(key);
   if (!img) return false;
   const s = o.s ?? 1;
   const w = img.width * s * (o.sx ?? 1);
@@ -55,11 +67,11 @@ export function drawSprite(ctx, name, x, y, o = {}) {
   if (o.alpha !== undefined) ctx.globalAlpha *= o.alpha;
   ctx.drawImage(img, -w / 2, -h, w, h);
   if (o.tint && o.tintA > 0) {
-    const t = tinted(name, o.tint);
+    const t = tinted(key, o.tint);
     if (t) { ctx.globalAlpha *= o.tintA; ctx.drawImage(t, -w / 2, -h, w, h); }
   }
   if (o.flash > 0) {
-    const t = tinted(name, '#ffffff');
+    const t = tinted(key, '#ffffff');
     if (t) { ctx.globalAlpha = (o.alpha ?? 1) * o.flash; ctx.drawImage(t, -w / 2, -h, w, h); }
   }
   ctx.restore();

@@ -1,6 +1,7 @@
 # PROGRESS
 
 - A7 (#57, 2026-11-02): 10 imágenes de los jefes de campaña (Cocinero de la Plancha y Presentador del Bingo: reposo/atacar/herido/derrotado/enfadado), chroma #00FF00, ≤200 KB, sprites WebP registrados en `tools/prepare_assets.py` (bloque A7) y `src/sprite-list.js`, prompts en `assets/PROMPTS.md`.
+- I1 (arena/a1349008, #77): tema «marcos» (Dieta de Marcos) en src/themes/marcos.js conectado al motor — textos TRAGAR/VOMITAR/ESMORZAR/¡BLEEEH!, camarero con la cuenta como perseguidor, mapeo canónico→sprites del tema (setSpriteMap en sprites.js), fondos de bar (A4), mp3 dieta-de-marcos.mp3 en título y bonus, provisionales por código mientras falte A2/A3; tests en tests/marcos.test.js.
 - A4 (arena/79932f6e, #57): escenario y UI de «Dieta de Marcos» — 4 fondos de bar valenciano 1280×720 (barra, terraza, mercado, chiringuito), bola de vómito, logo del título y onomatopeyas ¡BLEEEH! ¡GLUP! ¡PLAF! en assets/ + bloque propio en tools/prepare_assets.py (fondos sin croma, UI recortada) y sprites en assets/sprites/; 9 imágenes ≤200 KB.
 - A1 (#56): diez poses originales de Marcos en `assets/personajes/`, sprites normalizados en `assets/sprites/`, prompts registrados y generación reproducible; 12/12 tests de `npm test`.
 

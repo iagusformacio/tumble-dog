@@ -3,11 +3,16 @@ import { CONFIG, W } from './config.js';
 import { stepBody } from './physics.js';
 import { rand, pick, clamp } from './util.js';
 import { drawSprite, hasSprite } from './sprites.js';
+import { skin } from './skin.js';
 import { FONT } from './fx.js';
 import { enemyTypes, enemyColors } from './themes/tumbledog.js';
 
 export const TYPES = enemyTypes;
 export const TYPE_KEYS = Object.keys(TYPES);
+
+// Tipos activos del tema en curso (mismas claves; game.js los fija con setEnemyTypes).
+let ACTIVE_TYPES = enemyTypes;
+export function setEnemyTypes(t) { ACTIVE_TYPES = t || enemyTypes; }
 
 // Colores de dibujo provisional por código (nunca negro: siempre visibles y diferenciados).
 export const ENEMY_COLORS = enemyColors;
@@ -17,8 +22,8 @@ export const ENEMY_COLORS = enemyColors;
  * Garantiza que el enemigo se vea (silueta cabezona estilo tebeo) y nunca como un
  * bloque negro ni como un hueco invisible.
  */
-function drawEnemyFallback(ctx, e, cx, by, s, angry = false) {
-  const color = ENEMY_COLORS[e.type] || '#ff6b6b';
+export function drawEnemyFallback(ctx, e, cx, by, s, angry = false) {
+  const color = (skin.enemyColors && skin.enemyColors[e.type]) || ENEMY_COLORS[e.type] || '#ff6b6b';
   const bw = e.w * 0.8 * s;
   const bh = e.h * 0.9 * s;
   ctx.save();
@@ -59,7 +64,7 @@ function drawEnemyFallback(ctx, e, cx, by, s, angry = false) {
 let nextId = 1;
 
 export function createEnemy(type, x, y, o = {}) {
-  const t = TYPES[type] || TYPES.portavoz;
+  const t = ACTIVE_TYPES[type] || ACTIVE_TYPES.portavoz;
   const e = {
     id: nextId++, type, t, x: x - CONFIG.enemy.w / 2, y: o.enter ? -120 - rand(0, 200) : y - CONFIG.enemy.h, w: CONFIG.enemy.w, h: CONFIG.enemy.h,
     vx: 0, vy: o.vy ?? 0, dir: o.dir ?? pick([-1, 1]), onGround: false,
