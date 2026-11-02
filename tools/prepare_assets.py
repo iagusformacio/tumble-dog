@@ -132,8 +132,42 @@ SINGLES = {
 }
 
 
+# --- Bloque A4 (arena/79932f6e · issue #57): Dieta de Marcos, escenario y UI ---
+# Los fondos de bar NO llevan croma: se copian tal cual (ya son 1280×720) a sprites/.
+FONDOS_MARCOS = {
+    'fondo-barra': 'escenario/barra-bar-valenciano.png',
+    'fondo-terraza': 'escenario/terraza-bar-valenciano.png',
+    'fondo-mercado': 'escenario/mercado-valenciano.png',
+    'fondo-playa': 'escenario/chiringuito-playa.png',
+}
+
+UI_MARCOS = {
+    # nombre: (ruta, altura objetivo) — con recorte de croma.
+    'ui-bola-vomito': (U + 'bola-vomito.png', 160),
+    'ui-logo-marcos': (U + 'logo-dieta-de-marcos.png', 240),
+    'ui-bleeeh': (U + 'onomatopeya-bleeeh.png', 220),
+    'ui-glup': (U + 'onomatopeya-glup.png', 220),
+    'ui-plaf': (U + 'onomatopeya-plaf.png', 220),
+}
+
+
+def save_fondo(rel, name):
+    """Fondo de escenario: sin croma, se copia a PNG (los fondos son opacos)."""
+    src = os.path.join(SRC, rel)
+    im = Image.open(src).convert('RGB')
+    os.makedirs(OUT, exist_ok=True)
+    dst = os.path.join(OUT, name + '.png')
+    im.save(dst, 'PNG', optimize=True)
+    return im.size
+
+
 def main():
     manifest = {}
+    for name, rel in FONDOS_MARCOS.items():
+        save_fondo(rel, name)
+    for name, (rel, target) in UI_MARCOS.items():
+        img = figure(rel)
+        manifest[name] = save(img, name, target / img.size[1])
     for fam, (target, ref, frames) in FAMILIES.items():
         ref_img = figure(*ref)
         scale = target / ref_img.size[1]
