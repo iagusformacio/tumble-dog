@@ -35,9 +35,10 @@ export const CONFIG = {
     oilSpeed: 360, oilUpSpeed: 420, oilGravity: 1250, oilRadius: 22, oilLife: 3.5, oilScale: 0.52,
     stainWidth: 120, stainLife: 8, maxOilStains: 4,
   },
-  // Música con fichero propio del tema (issue #95): volumen, fundidos y la
-  // horquilla de velocidad (playbackRate) para jefes y «¡date prisa!».
-  audio: { mediaVolume: 0.5, fadeIn: 0.8, fadeOut: 0.45, rateMin: 0.75, rateMax: 1.35 },
+  // Música con fichero propio del tema (issues #95 y #101): volumen, fundidos,
+  // la horquilla de velocidad (playbackRate) para jefes y «¡date prisa!» y el
+  // fundido cruzado con el que un trozo de canción enlaza con su repetición.
+  audio: { mediaVolume: 0.5, fadeIn: 0.8, fadeOut: 0.45, rateMin: 0.75, rateMax: 1.35, loopCross: 0.55 },
   letters: { word: 'TUMBLEDOG', dropChance: 0.3, bubbleSpeed: 70 },
   bonus: { time: 12, rain: 0.09 },
   fx: { maxParticles: 900 },

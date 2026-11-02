@@ -33,7 +33,7 @@ test('continuar en La Taca carga el cocinero, sus proyectiles y el aceite', asyn
     await loadSprites();
     const noop = () => {};
     const input = { held: {}, pressed: {}, update: noop, takeAny: () => false };
-    const audio = { update: noop, setSongs: noop, music: noop, sfx: noop, suck: noop, unlock: noop, stopMusic: noop };
+    const audio = { update: noop, setSongs: noop, music: noop, preloadMusic: noop, sfx: noop, suck: noop, unlock: noop, stopMusic: noop };
     const game = createGame({ input, audio, themeId: 'marcos' });
     game.debug.startCampaign({ stageIndex: 3, score: 0, lives: 3 });
     game.debug.startStage(3);

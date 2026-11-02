@@ -13,7 +13,8 @@ import { setSkin } from './skin.js';
 import { groundBelow } from './physics.js';
 import { rand, pick, clamp, lerp, overlap, easeOutBack, hsl } from './util.js';
 import { getTheme, DEFAULT_THEME_ID, listThemes } from './themes/index.js';
-import { CAMPAIGN_STAGES, ROUNDS_PER_BAR, readProgress, writeProgress, clearProgress, progressForStage, modeList, drawRoute, drawCampaignMenu, drawCampaignHud, drawCampaignEnding, barOfStage } from './campaign.js';
+import { CAMPAIGN_STAGES, BARS, ROUNDS_PER_BAR, readProgress, writeProgress, clearProgress, progressForStage, modeList, drawRoute, drawCampaignMenu, drawCampaignHud, drawCampaignEnding, barOfStage, roundOfStage } from './campaign.js';
+import { pieceForBar } from './themes/marcos.js';
 import { createBarMechanic } from './bar_mechanics.js';
 
 const V = CONFIG.vacuum;
@@ -32,6 +33,25 @@ export function createGame({ input, audio, themeId = DEFAULT_THEME_ID }) {
   let STAGES = t0.stages;
   let mech = null; // mecánica del bar activo (solo campaña)
 
+  // ---------- Música por escena (issue #101)
+  // Los trozos de la canción son del título y de la campaña de Dieta de Marcos;
+  // el modo ARCADE de ese tema (y Tumble Dog) sigue con la música sintetizada.
+  let piecesOn = true;
+  function musicFiles() {
+    if (piecesOn) return THEME.audio || null;
+    return THEME.arcadeAudio === undefined ? (THEME.audio || null) : (THEME.arcadeAudio || null);
+  }
+  function syncMusic() {
+    audio.setSongs(THEME.SONGS || null, musicFiles(), { volume: THEME.audioVolume, rate: THEME.audioRate });
+  }
+  /** Trozo que toca ahora: el del bar en curso (solo campaña). */
+  function musicPiece() {
+    if (!g.campaign || !piecesOn) return null;
+    const bar = BARS[barOfStage(g.stageIndex)];
+    return bar ? pieceForBar(bar.id) : null;
+  }
+  function music(name, t = 1) { audio.music(name, t, musicPiece()); }
+
   // Conecta el tema activo con el motor: mapeo de sprites canónicos → sprites del
   // tema, skin provisional por código, fondos, música, tipos de enemigo y textos.
   function applyTheme() {
@@ -47,7 +67,7 @@ export function createGame({ input, audio, themeId = DEFAULT_THEME_ID }) {
     setEnemyTypes(THEME.enemyTypes);
     setBossNames(THEME.bossNames || null);
     bg.setImageBackgrounds(THEME.backgrounds || null);
-    audio.setSongs(THEME.SONGS || null, THEME.audio || null, { volume: THEME.audioVolume, rate: THEME.audioRate });
+    syncMusic();
     setWords(THEME.onomatopeyas, THEME.onomatopeyaSprites || null);
     bg.setTheme(THEME.startTheme || 'manana');
   }
@@ -79,6 +99,7 @@ export function createGame({ input, audio, themeId = DEFAULT_THEME_ID }) {
     const saved = typeof from === 'object' && from ? from : null;
     const i = clamp(saved ? saved.stageIndex : (Number(from) || 0), 0, CAMPAIGN_STAGES.length - 1);
     const marcos = listThemes().find((t) => ['marcos', 'dieta-marcos', 'dieta-de-marcos'].includes(t.id));
+    piecesOn = true; // la campaña sí usa los trozos de la canción (issue #101)
     switchTheme(marcos ? marcos.id : g.themeId, true);
     g.campaign = true;
     Object.assign(g, {
@@ -91,13 +112,16 @@ export function createGame({ input, audio, themeId = DEFAULT_THEME_ID }) {
     if (!saved) clearProgress();
     g.routeBar = barOfStage(i); g.routeNext = i;
     g.state = 'route'; g.stateT = 0; g.titleMusic = false;
-    bg.setTheme('atardecer'); audio.music('title'); audio.sfx('start');
+    syncMusic();
+    bg.setTheme('atardecer'); music('title'); audio.sfx('start');
     writeProgress(progressForStage(i, { score: g.score, lives: g.lives, themeId: g.themeId }));
   }
 
   function newGame(selThemeId) {
-    switchTheme(selThemeId);
     g.campaign = false;
+    piecesOn = false; // arcade: música sintetizada, sin trozos de canción (#101)
+    switchTheme(selThemeId);
+    syncMusic(); // por si el tema no ha cambiado (switchTheme sale antes)
     Object.assign(g, { score: 0, shownScore: 0, lives: CONFIG.player.lives, nextLife: CONFIG.player.extraLifeEvery, stageIndex: 0, loop: 0, letters: new Set(), tutorial: 0 });
     g.player = createPlayer();
     audio.sfx('start');
@@ -105,6 +129,18 @@ export function createGame({ input, audio, themeId = DEFAULT_THEME_ID }) {
   }
 
   function difficulty() { return 1 + g.loop * 0.18 + g.stageIndex * 0.025; }
+
+  /** Baja el trozo de la escena siguiente mientras se juega (issue #101). */
+  function preloadNext() {
+    if (!g.campaign || !piecesOn) return;
+    const n = g.stageIndex + 1;
+    if (n < CAMPAIGN_STAGES.length) {
+      const bar = BARS[barOfStage(n)];
+      const boss = roundOfStage(n) === ROUNDS_PER_BAR - 1;
+      audio.preloadMusic(boss ? 'boss' : 'stage', pieceForBar(bar.id));
+    }
+    audio.preloadMusic('bonus', null); // la ronda bonus puede caer en cualquier ronda
+  }
 
   function startStage(i, bonus = false) {
     const list = stages();
@@ -121,7 +157,7 @@ export function createGame({ input, audio, themeId = DEFAULT_THEME_ID }) {
     g.enemies = []; g.balls = []; g.shots = []; g.items = []; g.letterBubbles = []; g.boss = null; g.chaser = null;
     g.stageT = 0; g.hurried = false; g.freeze = 0; fx.clear();
     const p = g.player; respawnPlayer(p); p.invul = 2.2; p.x = 120; p.y = FLOOR_Y - p.h; p.onGround = true;
-    if (bonus) { g.state = 'bonus'; g.stateT = 0; audio.music('bonus'); return; }
+    if (bonus) { g.state = 'bonus'; g.stateT = 0; music('bonus'); return; }
     if (!g.stage.boss) {
       g.stage.foes.forEach(([type, x, y], k) => g.enemies.push(createEnemy(type, x, y, { enter: true, delay: 0.35 + k * 0.28, speedMul: 1 })));
     } else {
@@ -137,7 +173,8 @@ export function createGame({ input, audio, themeId = DEFAULT_THEME_ID }) {
     }
     g.state = 'intro'; g.stateT = 0;
     g.tutorial = !g.campaign && g.stageIndex === 0 && g.loop === 0 ? 7 : 0;
-    audio.music(g.stage.boss ? 'boss' : 'stage');
+    music(g.stage.boss ? 'boss' : 'stage');
+    preloadNext();
     if (g.campaign) writeProgress(progressForStage(g.stageIndex, { score: g.score, lives: g.lives, themeId: g.themeId }));
   }
 
@@ -149,13 +186,13 @@ export function createGame({ input, audio, themeId = DEFAULT_THEME_ID }) {
       startTransition(() => {
         g.routeBar = n / ROUNDS_PER_BAR; g.routeNext = n;
         g.state = 'route'; g.stateT = 0;
-        bg.setTheme('atardecer'); audio.music('title');
+        bg.setTheme('atardecer'); music('title');
         writeProgress(progressForStage(n, { score: g.score, lives: g.lives, themeId: g.themeId }));
       });
       return;
     }
     if (n >= stages().length) {
-      startTransition(() => { g.state = 'ending'; g.stateT = 0; bg.setTheme(THEME.nightTheme || 'noche'); audio.music('title'); if (g.campaign) clearProgress(); });
+      startTransition(() => { g.state = 'ending'; g.stateT = 0; bg.setTheme(THEME.nightTheme || 'noche'); music('title'); if (g.campaign) clearProgress(); });
       return;
     }
     startTransition(() => startStage(n));
@@ -303,7 +340,7 @@ export function createGame({ input, audio, themeId = DEFAULT_THEME_ID }) {
       g.hurried = true;
       for (const e of g.enemies) e.angry = true;
       fx.text(W / 2, 330, '¡DATE PRISA!', { size: 70, burst: true, life: 1.4, color: '#ff6b6b' });
-      audio.sfx('hurry'); audio.music('stage', 1.3);
+      audio.sfx('hurry'); music('stage', 1.3);
     },
   };
 
@@ -400,7 +437,7 @@ export function createGame({ input, audio, themeId = DEFAULT_THEME_ID }) {
     // Prisa y perseguidor
     if (!g.stage.boss && g.state === 'play') {
       if (!g.hurried && g.stageT > THEME.stage.hurryAt) {
-        g.hurried = true; audio.sfx('hurry'); audio.music('stage', 1.3);
+        g.hurried = true; audio.sfx('hurry'); music('stage', 1.3);
         fx.text(W / 2, 330, THEME.hud.datePrisa, { size: 80, burst: true, life: 1.6, color: '#ff6b6b' });
         for (const e of g.enemies) e.angry = true;
       }
@@ -411,7 +448,7 @@ export function createGame({ input, audio, themeId = DEFAULT_THEME_ID }) {
     if (!p.alive) {
       g.deadT += dt;
       if (g.deadT > 1.7) {
-        if (g.lives > 0) { respawnPlayer(p); audio.music(g.stage.boss ? 'boss' : 'stage', g.hurried ? 1.3 : 1); }
+        if (g.lives > 0) { respawnPlayer(p); music(g.stage.boss ? 'boss' : 'stage', g.hurried ? 1.3 : 1); }
         else { g.state = 'gameover'; g.stateT = 0; audio.stopMusic(); audio.sfx('gameover'); if (g.score >= g.hi) saveHi(g.hi); }
       }
     }
@@ -480,7 +517,7 @@ export function createGame({ input, audio, themeId = DEFAULT_THEME_ID }) {
         if (input.pressed.left || input.pressed.right) {
           const selT = listThemes()[g.gameSel];
           audio.setSongs(selT.theme.SONGS || null, selT.theme.audio || null, { volume: selT.theme.audioVolume, rate: selT.theme.audioRate });
-          if (g.titleMusic) audio.music('title');
+          if (g.titleMusic) music('title');
         }
         if ((input.pressed.jump || input.pressed.start || input.pressed.shoot || (any && input.touch)) && g.stateT > 0.6 && !g.trans) {
           audio.unlock();
@@ -492,7 +529,7 @@ export function createGame({ input, audio, themeId = DEFAULT_THEME_ID }) {
           });
         }
         else if (any) audio.unlock();
-        if (g.stateT > 0.1 && !g.titleMusic) { g.titleMusic = true; audio.music('title'); }
+        if (g.stateT > 0.1 && !g.titleMusic) { g.titleMusic = true; music('title'); }
         break;
       case 'route':
         if (!g.trans && ((g.stateT > 0.8 && (input.pressed.jump || input.pressed.start || input.pressed.shoot || (any && input.touch))) || g.stateT > 9)) {
@@ -514,7 +551,7 @@ export function createGame({ input, audio, themeId = DEFAULT_THEME_ID }) {
         if (g.stateT > 1.5 && (input.pressed.jump || input.pressed.start || (any && input.touch)) && !g.trans) {
           startTransition(() => { g.lives = CONFIG.player.lives; g.score = 0; g.shownScore = 0; g.player = createPlayer(); startStage(g.stageIndex); });
         }
-        if (g.stateT > 12 && !g.trans) startTransition(() => { g.state = 'title'; g.stateT = 0; g.titleMusic = false; bg.setTheme(THEME.startTheme || 'manana'); });
+        if (g.stateT > 12 && !g.trans) startTransition(() => { g.state = 'title'; g.stateT = 0; g.titleMusic = false; piecesOn = true; syncMusic(); bg.setTheme(THEME.startTheme || 'manana'); });
         break;
       case 'ending':
         if (Math.random() < dt * 4) fx.confetti(rand(200, W - 200), -10, 20, 1);

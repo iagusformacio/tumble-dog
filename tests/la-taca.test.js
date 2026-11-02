@@ -92,7 +92,7 @@ test('las manchas de aceite son temporales, limitadas y provocan resbalones', ()
 
 test('el motor crea el jefe al continuar en la ronda y transforma su aceite al tocar suelo', () => {
   const input = { held: {}, pressed: {}, update: noop, takeAny: () => false };
-  const audio = { update: noop, setSongs: noop, music: noop, sfx: noop, suck: noop, unlock: noop, stopMusic: noop };
+  const audio = { update: noop, setSongs: noop, music: noop, preloadMusic: noop, sfx: noop, suck: noop, unlock: noop, stopMusic: noop };
   const game = createGame({ input, audio });
   game.debug.startCampaign(3);
   game.debug.startStage(3);
@@ -127,7 +127,7 @@ test('vencer al cocinero abre la ruta al siguiente bar y guarda el progreso', ()
   };
   try {
     const input = { held: {}, pressed: {}, update: noop, takeAny: () => false };
-    const audio = { update: noop, setSongs: noop, music: noop, sfx: noop, suck: noop, unlock: noop, stopMusic: noop };
+    const audio = { update: noop, setSongs: noop, music: noop, preloadMusic: noop, sfx: noop, suck: noop, unlock: noop, stopMusic: noop };
     const game = createGame({ input, audio });
     game.debug.startCampaign(3);
     game.debug.startStage(3);

@@ -12,6 +12,32 @@ import { FLOOR } from '../physics.js';
 const T = 18;
 const P = (x, y, w) => ({ x, y, w, h: T });
 
+// Trozos de la canción aportada (issue #101): uno por escena de la campaña. Los
+// genera `python3 tools/split_song.py` a partir de assets/audio/dieta-de-marcos.mp3
+// (cortes en valles de volumen y fundido de 0,3 s). Cada trozo pesa 200-330 KB,
+// así que suena enseguida en vez de esperar los 2,4 MB de la canción entera.
+// Las rutas van como literal para que tools/bundle.py las incruste.
+export const SONG_PIECES = {
+  titulo: './assets/audio/dieta-de-marcos/01-titulo.mp3',
+  taca: './assets/audio/dieta-de-marcos/02-bar-la-taca.mp3',
+  concursos: './assets/audio/dieta-de-marcos/03-bar-los-concursos.mp3',
+  pols: './assets/audio/dieta-de-marcos/04-bar-pols.mp3',
+  delJefe: './assets/audio/dieta-de-marcos/05-bar-del-jefe.mp3',
+  jefes: './assets/audio/dieta-de-marcos/06-jefes.mp3',
+  bonus: './assets/audio/dieta-de-marcos/07-bonus.mp3',
+};
+
+// Qué trozo suena en cada bar de la campaña (las claves son los `id` de BARS).
+export const PIECE_BY_BAR = {
+  'la-taca': 'taca',
+  concursos: 'concursos',
+  pols: 'pols',
+  'del-jefe': 'delJefe',
+};
+
+/** Trozo de canción de un bar (null si el bar no tiene: suena el del título). */
+export function pieceForBar(barId) { return PIECE_BY_BAR[barId] || null; }
+
 // Mapeo tipo-de-mecánica → esmorzar (los 8 enemigos de la dieta).
 // A3 (PR #80): bocata/cacahuete/tostada/chupito sin prefijo.
 // A2 (PR #85): dm-calamares/dm-carajillo/dm-cafe/dm-tortilla.
@@ -52,16 +78,27 @@ export const THEME = {
     mercado: 'fondo-mercado',
     playa: 'fondo-playa',
   },
-  // Música (issue #95): la canción aportada por la persona ES la música del
-  // tema — título, todas las fases, jefes y ronda bonus —, en bucle y con
-  // fundido al cambiar de pantalla. Las canciones sintetizadas de abajo quedan
-  // solo como respaldo si el mp3 no carga; los efectos siguen siendo WebAudio.
+  // Música (issues #95 y #101): la canción aportada por la persona ES la música
+  // del juego, pero partida en trozos: al cambiar de escena se baja solo el
+  // trozo que toca (y se precarga el siguiente). Cada sección acepta varios
+  // trozos y `audio.music(sección, tempo, trozo)` elige uno; `default` es el que
+  // suena si no se pide ninguno. El modo ARCADE de este tema no usa la canción:
+  // `arcadeAudio: null` lo deja con la música sintetizada de abajo (igual que
+  // Tumble Dog). Las melodías sintetizadas siguen siendo el respaldo si un
+  // trozo no carga; los efectos son siempre WebAudio.
   audio: {
-    title: './assets/audio/dieta-de-marcos.mp3',
-    stage: './assets/audio/dieta-de-marcos.mp3',
-    boss: './assets/audio/dieta-de-marcos.mp3',
-    bonus: './assets/audio/dieta-de-marcos.mp3',
+    title: { default: SONG_PIECES.titulo, titulo: SONG_PIECES.titulo },
+    stage: {
+      default: SONG_PIECES.taca,
+      taca: SONG_PIECES.taca,
+      concursos: SONG_PIECES.concursos,
+      pols: SONG_PIECES.pols,
+      delJefe: SONG_PIECES.delJefe,
+    },
+    boss: { default: SONG_PIECES.jefes, jefes: SONG_PIECES.jefes },
+    bonus: { default: SONG_PIECES.bonus, bonus: SONG_PIECES.bonus },
   },
+  arcadeAudio: null,
   // Volumen de la canción respecto a los efectos y velocidad por sección
   // (en los jefes va un poco más rápida, sin cambiar de canción).
   audioVolume: 0.5,

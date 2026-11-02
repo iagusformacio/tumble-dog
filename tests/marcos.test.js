@@ -5,7 +5,7 @@ import assert from 'node:assert/strict';
 import { existsSync } from 'node:fs';
 import { W, CONFIG } from '../src/config.js';
 import { listThemes, getTheme, THEMES } from '../src/themes/index.js';
-import { THEME as MARCOS, STAGES, STAGE_COUNT, SONGS } from '../src/themes/marcos.js';
+import { THEME as MARCOS, STAGES, STAGE_COUNT, SONGS, SONG_PIECES, PIECE_BY_BAR, pieceForBar } from '../src/themes/marcos.js';
 import { THEME as TUMBLEDOG } from '../src/themes/tumbledog.js';
 import { SPRITE_FILES } from '../src/sprite-list.js';
 import { setSpriteMap, getSpriteMap, spriteName } from '../src/sprites.js';
@@ -122,13 +122,25 @@ test('fondos de bar del tema existen en disco y cubren los escenarios de las fas
   }
 });
 
-test('la canción aportada es la música del tema en todas las pantallas (issue #95)', () => {
+test('la canción partida es la música del juego y cada bar tiene su trozo (#95, #101)', () => {
+  // Cada sección declara sus trozos y todos existen en disco.
   for (const name of ['title', 'stage', 'boss', 'bonus']) {
-    assert.equal(MARCOS.audio[name], MARCOS.audio.title, `${name} usa la misma canción`);
+    for (const url of new Set(Object.values(MARCOS.audio[name]))) {
+      assert.ok(url.endsWith('.mp3'), `${name}: ${url}`);
+      assert.ok(disk(url), `falta el trozo ${url}`);
+    }
   }
-  assert.ok(MARCOS.audio.title.endsWith('.mp3'));
-  assert.ok(disk(MARCOS.audio.title), 'falta el mp3 de la canción');
-  assert.equal(MARCOS.audio.title, './assets/audio/dieta-de-marcos.mp3');
+  // Un trozo por escena de la campaña (título, 4 bares, jefes, bonus).
+  assert.equal(Object.keys(SONG_PIECES).length, 7);
+  assert.deepEqual(Object.keys(PIECE_BY_BAR), ['la-taca', 'concursos', 'pols', 'del-jefe']);
+  for (const bar of Object.keys(PIECE_BY_BAR)) {
+    const piece = pieceForBar(bar);
+    assert.ok(SONG_PIECES[piece], `${bar} → ${piece}`);
+    assert.equal(MARCOS.audio.stage[piece], SONG_PIECES[piece], `la fase de ${bar} usa su trozo`);
+  }
+  assert.equal(pieceForBar('no-existe'), null, 'un bar sin trozo cae en el del título');
+  // El modo arcade de este tema sigue con la música sintetizada.
+  assert.equal(MARCOS.arcadeAudio, null);
 });
 
 test('las fases del tema son válidas: 10 rondas, plataformas en pantalla y enemigos sobre plataforma', () => {

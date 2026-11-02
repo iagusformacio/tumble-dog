@@ -1,6 +1,6 @@
-// I2 (#95) · Música del tema: en «Dieta de Marcos» suena la canción aportada
-// (assets/audio/dieta-de-marcos.mp3) en todas las pantallas, con fundidos, y el
-// sintetizador queda para los efectos y como respaldo. Audio falso: sin sonido.
+// I2 (#95) · Música del tema: en «Dieta de Marcos» suena la canción aportada,
+// partida en trozos por escena (#101), con fundidos, y el sintetizador queda
+// para los efectos y como respaldo. Audio falso: sin sonido.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { existsSync, statSync } from 'node:fs';
@@ -37,14 +37,21 @@ function withAudio(fn, { Ctor = FakeAudio } = {}) {
 const marcosAudio = () => { const a = createAudio(); a.setSongs(MARCOS.SONGS, MARCOS.audio, { volume: MARCOS.audioVolume, rate: MARCOS.audioRate }); return a; };
 const tumblesAudio = () => { const a = createAudio(); a.setSongs(TUMBLEDOG.SONGS, TUMBLEDOG.audio || null, null); return a; };
 
-test('el tema «marcos» declara la canción aportada en todas las pantallas y el mp3 existe', () => {
+test('el tema «marcos» declara los trozos de la canción en todas las pantallas y existen', () => {
   for (const name of ['title', 'stage', 'boss', 'bonus']) {
-    assert.equal(MARCOS.audio[name], MP3, `la sección ${name} debe usar la canción aportada`);
+    const map = MARCOS.audio[name];
+    assert.ok(map && typeof map === 'object', `${name} declara sus trozos`);
+    assert.ok(typeof map.default === 'string' && map.default.endsWith('.mp3'), `${name} tiene trozo por defecto`);
+    for (const url of new Set(Object.values(map))) {
+      assert.ok(existsSync(url.replace(/^\.\//, '')), `falta el trozo ${url} en disco`);
+      assert.ok(statSync(url.replace(/^\.\//, '')).size < 400 * 1024, `${url}: los trozos son cortos (cargan enseguida)`);
+    }
   }
-  assert.ok(existsSync(MP3.replace(/^\.\//, '')), 'falta assets/audio/dieta-de-marcos.mp3 en disco');
+  assert.ok(existsSync(MP3.replace(/^\.\//, '')), 'el original no se borra');
   assert.ok(statSync(MP3.replace(/^\.\//, '')).size > 100 * 1024, 'el mp3 debe ser la canción completa');
   assert.ok(MARCOS.audioVolume > 0 && MARCOS.audioVolume <= 1, 'volumen del tema entre 0 y 1');
   assert.ok(MARCOS.audioRate.boss > 1, 'los jefes van algo más rápidos, sin cambiar de canción');
+  assert.equal(MARCOS.arcadeAudio, null, 'el modo arcade no usa la canción (#101)');
   // El resto de temas no cambia: Tumble Dog sigue con música sintetizada.
   assert.ok(!TUMBLEDOG.audio || !Object.values(TUMBLEDOG.audio).some((f) => f && f.endsWith('.mp3')));
 });
@@ -58,8 +65,8 @@ test('«Dieta de Marcos» suena con la canción (no con el sintetizador) en tít
     assert.equal(info.section, name);
     assert.equal(info.playing, true, `${name} debe estar sonando`);
     const el = FakeAudio.created[FakeAudio.created.length - 1];
-    assert.equal(el.src, MP3);
-    assert.equal(el.loop, true, 'la canción va en bucle');
+    assert.equal(el.src, MARCOS.audio[name].default, `${name} arranca su trozo`);
+    assert.equal(el.loop, true, 'el trozo va en bucle');
   }
   // Ninguna llamada ha arrancado el sintetizador: el fichero manda.
   assert.ok(!Object.values(MARCOS.audio).includes(undefined));
@@ -103,7 +110,7 @@ test('cambio de tema con el título sonando: el sintetizador se calla y entra la
   assert.equal(info.source, 'file', 'en Dieta de Marcos ya no debe oírse el sintetizador');
   assert.equal(info.section, 'title');
   assert.equal(FakeAudio.created.length, 1);
-  assert.equal(FakeAudio.created[0].src, MP3);
+  assert.equal(FakeAudio.created[0].src, MARCOS.audio.title.default);
   // Y al volver a Tumble Dog, vuelve el sintetizador.
   a.setSongs(TUMBLEDOG.SONGS, TUMBLEDOG.audio || null, null);
   assert.equal(a.info().source, 'synth');
@@ -200,7 +207,7 @@ test('el autoplay bloqueado se reintenta en el primer gesto (unlock)', async () 
 
 test('el nombre de la sección y la fuente son consultables (para probar en el navegador)', () => withAudio(() => {
   const a = marcosAudio();
-  assert.deepEqual(Object.keys(a.info()).sort(), ['file', 'muted', 'playing', 'rate', 'section', 'source', 'time', 'volume'].sort());
+  assert.deepEqual(Object.keys(a.info()).sort(), ['file', 'muted', 'piece', 'playing', 'rate', 'section', 'source', 'time', 'url', 'volume'].sort());
   a.music('bonus');
   assert.equal(a.info().source, 'file');
   assert.equal(a.info().file, 'bonus');

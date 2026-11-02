@@ -1,5 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import * as MARCOS_AUDIO from '../src/themes/marcos.js';
 import { execFileSync } from 'node:child_process';
 import { readFileSync, existsSync } from 'node:fs';
 import { CONFIG, W, FLOOR_Y } from '../src/config.js';
@@ -113,8 +114,15 @@ test('el empaquetador genera un HTML autocontenido', () => {
   assert.ok(html.includes('data:image/webp;base64,'));
 });
 
-test('el empaquetador incrusta la canción del tema una sola vez (issue #95)', () => {
+test('el empaquetador incrusta los trozos de la canción una sola vez cada uno (#95, #101)', () => {
   const html = readFileSync('/tmp/tumble-dog-test.html', 'utf8');
-  assert.equal(html.split('data:audio/mpeg;base64,').length - 1, 1, 'la canción va una sola vez como data URI');
-  assert.ok(html.includes("__media['assets/audio/dieta-de-marcos.mp3']"), 'el código referencia la canción incrustada');
+  const { SONG_PIECES } = MARCOS_AUDIO;
+  const urls = Object.values(SONG_PIECES);
+  assert.equal(html.split('data:audio/mpeg;base64,').length - 1, urls.length, 'un data URI por trozo');
+  for (const url of urls) {
+    const key = url.replace(/^\.\//, '');
+    assert.ok(html.includes(`__media['${key}']`), `el código referencia el trozo ${key}`);
+  }
+  // La canción entera ya no va dentro: se carga por trozos (y pesa menos).
+  assert.ok(!html.includes("__media['assets/audio/dieta-de-marcos.mp3']"), 'el original no se incrusta');
 });

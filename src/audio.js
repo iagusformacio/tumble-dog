@@ -25,10 +25,12 @@ export function createAudio() {
   let muted = false, song = null, songName = null, step = 0, nextTime = 0, leadI = 0, leadLeft = 0, bassI = 0, bassLeft = 0, tempo = 1;
   let suckNode = null;
   let songs = SONGS;      // canciones sintetizadas del tema activo
-  let files = null;       // { sección: './assets/audio/x.mp3' } del tema activo
-  let media = null;       // { el, vol, maxVol, rate, name }: canción mp3 en curso
-  let fading = [];        // canciones mp3 que se están apagando (fundido de salida)
-  const failed = new Set(); // secciones cuyo mp3 no ha cargado: respaldo sintetizado
+  let files = null;       // { sección: url | { default: url, trozo: url } } del tema
+  let media = null;       // { el, vol, maxVol, rate, name, piece, url }: canción en curso
+  let fading = [];        // canciones que se están apagando (fundido de salida)
+  const failed = new Set(); // urls que no han cargado: respaldo sintetizado
+  const preloaded = new Map(); // url → <audio> precargado sin reproducir (issue #101)
+  let curPiece = null;    // trozo de canción en curso (se reaplica al cambiar de tema)
   let lastTick = 0;       // reloj del último update (segundos)
   let pending = false;    // el navegador bloqueó el autoplay: se reintenta al desbloquear
   let opts = { volume: AX.mediaVolume, rate: {} }; // volumen y velocidad por sección del tema
@@ -99,13 +101,48 @@ export function createAudio() {
     const r = base * (t || 1);
     return Math.min(AX.rateMax, Math.max(AX.rateMin, r));
   }
-  /** Arranca el mp3 con fundido de entrada. Devuelve false si no hay Audio. */
-  function playMedia(url, name, rate) {
+  /** Url de un trozo: la sección puede dar una url o un mapa { trozo: url } (#101). */
+  function resolve(name, piece) {
+    const f = files && files[name];
+    if (!f) return null;
+    if (typeof f === 'string') return f;
+    return (piece && f[piece]) || f.default || null;
+  }
+  /** Elemento de audio: el precargado si ya lo hay, si no uno nuevo. */
+  function mediaElement(url) {
     const Ctor = globalThis.Audio;
-    if (typeof Ctor !== 'function') return false;
-    let el;
-    try { el = new Ctor(url); } catch { return false; }
-    const m = { el, vol: 0, maxVol: opts.volume == null ? AX.mediaVolume : clamp01(opts.volume), rate: 1, name };
+    if (typeof Ctor !== 'function') return null;
+    const cached = preloaded.get(url);
+    if (cached) {
+      preloaded.delete(url);
+      try { cached.currentTime = 0; } catch { /* sin audio */ }
+      return cached;
+    }
+    try { return new Ctor(url); } catch { return null; }
+  }
+  /** Precarga el trozo de una sección sin reproducirlo (issue #101): el cambio
+   *  de escena no espera a la red. Devuelve el elemento o null. */
+  function preloadMedia(name, piece) {
+    const url = resolve(name, piece);
+    if (!url || failed.has(url) || preloaded.has(url)) return null;
+    if (media && media.url === url) return null;
+    const el = mediaElement(url);
+    if (!el) return null;
+    try { el.preload = 'auto'; el.muted = true; } catch { /* sin audio */ }
+    preloaded.set(url, el);
+    return el;
+  }
+  /** Arranca el mp3 con fundido de entrada. Devuelve false si no hay Audio. */
+  function playMedia(url, name, rate, piece, fade) {
+    const el = mediaElement(url);
+    if (!el) return false;
+    const m = {
+      el, vol: 0, maxVol: opts.volume == null ? AX.mediaVolume : clamp01(opts.volume),
+      rate: 1, name, piece: piece || null, url, crossed: false,
+      fade: fade || AX.fadeIn, fadeOut: AX.fadeOut,
+    };
+    // `loop` es la red de seguridad: si el reloj no llegara a tiempo para el
+    // fundido cruzado, el trozo vuelve a empezar solo en vez de callarse.
     try { el.loop = true; el.preload = 'auto'; el.muted = !!muted; } catch { /* sin audio */ }
     setRate(m, rate);
     applyVolume(m);
@@ -122,7 +159,8 @@ export function createAudio() {
   function onMediaError(m) {
     const i = fading.indexOf(m); if (i >= 0) fading.splice(i, 1);
     stopMedia(m.el);
-    failed.add(m.name); // no se reintenta el fichero roto en cada pantalla
+    failed.add(m.url); // no se reintenta el trozo roto en cada pantalla
+    preloaded.delete(m.url);
     if (media !== m) return;
     media = null;
     startSynth(m.name, 1); // respaldo: melodía sintetizada del tema
@@ -138,6 +176,21 @@ export function createAudio() {
     song = songs[name] || null;
     if (ctx) nextTime = ctx.currentTime + 0.05;
   }
+  /** Bucle con fundido cruzado (issue #101): los trozos son cortos y se repiten,
+   *  así que la repetición se arranca un poco antes del final y se cruzan los
+   *  dos elementos. Sin esto, cada vuelta del trozo sonaría a corte. */
+  function loopTick() {
+    if (!media || media.crossed) return;
+    const el = media.el;
+    const dur = Number(el.duration);
+    if (!isFinite(dur) || dur <= AX.loopCross * 2) return; // metadatos sin cargar aún
+    const left = (dur - Number(el.currentTime || 0)) / Math.max(0.25, media.rate || 1);
+    if (left > AX.loopCross) return;
+    media.crossed = true;
+    media.fadeOut = AX.loopCross;            // la copia vieja se apaga a la vez
+    try { el.loop = false; } catch { /* sin audio */ } // y no vuelve a empezar
+    playMedia(media.url, media.name, media.rate, media.piece, AX.loopCross);
+  }
   /** Fundidos: entrada de la canción en curso y salida de las anteriores.
    *  `forced` es el paso de tiempo de las pruebas; en el juego se usa el reloj. */
   function tick(forced) {
@@ -145,13 +198,14 @@ export function createAudio() {
     const dt = forced != null ? Math.max(0, forced)
       : lastTick ? Math.min(0.25, Math.max(0, t - lastTick)) : AX.fadeIn / 2;
     lastTick = t;
-    if (media && media.vol < 1) { media.vol = Math.min(1, media.vol + dt / AX.fadeIn); applyVolume(media); }
+    if (media && media.vol < 1) { media.vol = Math.min(1, media.vol + dt / media.fade); applyVolume(media); }
     for (let i = fading.length - 1; i >= 0; i--) {
       const m = fading[i];
-      m.vol = Math.max(0, m.vol - dt / AX.fadeOut);
+      m.vol = Math.max(0, m.vol - dt / m.fadeOut);
       applyVolume(m);
       if (m.vol <= 0) { stopMedia(m.el); fading.splice(i, 1); }
     }
+    loopTick();
   }
 
   const api = {
@@ -182,24 +236,29 @@ export function createAudio() {
       // Tumble Dog a Dieta de Marcos con el título sonando, el sintetizador se
       // calla y entra la canción (issue #95).
       if (songName) {
-        const name = songName, t = tempo;
+        const name = songName, t = tempo, piece = curPiece;
         songName = null; song = null;
         if (media) { fadeMedia(media); media = null; }
-        api.music(name, t);
+        api.music(name, t, piece);
       }
     },
-    music(name, t = 1) {
-      const file = files && files[name] ? files[name] : null;
+    // Precarga el trozo que tocará en la escena siguiente (solo baja el fichero).
+    preloadMusic(name, piece = null) { return preloadMedia(name, piece); },
+    /** Música de una sección. `piece` elige el trozo (issue #101); sin él, `default`. */
+    music(name, t = 1, piece = null) {
+      const file = resolve(name, piece);
+      curPiece = piece || null;
       if (file) {
         const rate = rateFor(name, t);
-        if (media && media.name === name) { // misma pantalla: solo cambia la velocidad
+        // Misma pantalla y mismo trozo: solo cambia la velocidad.
+        if (media && media.name === name && media.url === file) {
           songName = name; tempo = t;
           if (Math.abs(media.rate - rate) > 0.001) setRate(media, rate);
           return;
         }
-        if (failed.has(name)) { startSynth(name, t); return; } // respaldo ya en marcha
+        if (failed.has(file)) { startSynth(name, t); return; } // respaldo ya en marcha
         songName = name; song = null; tempo = t; // manda el fichero del tema
-        if (!playMedia(file, name, rate)) startSynth(name, t); // sin Audio: respaldo
+        if (!playMedia(file, name, rate, piece)) startSynth(name, t); // sin Audio: respaldo
         return;
       }
       if (songName === name && t === tempo && !media) return;
@@ -207,7 +266,7 @@ export function createAudio() {
       startSynth(name, t);
     },
     stopMusic() {
-      song = null; songName = null;
+      song = null; songName = null; curPiece = null;
       if (media) { fadeMedia(media); media = null; }
     },
     update(dt) {
@@ -220,7 +279,8 @@ export function createAudio() {
       const el = media ? media.el : null;
       return {
         section: songName, source: media ? 'file' : (song ? 'synth' : null),
-        file: media ? media.name : null, muted,
+        file: media ? media.name : null, piece: media ? media.piece : null,
+        url: media ? media.url : null, muted,
         rate: media ? media.rate : tempo,
         playing: media ? !el.paused : !!song,
         volume: media ? clamp01(media.vol * media.maxVol) : 0,
