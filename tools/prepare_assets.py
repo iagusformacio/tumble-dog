@@ -265,6 +265,25 @@ EXTERNAL_SPRITES = {
     'boss-lider-shout': ('./assets/enemigos/boss-lider-shout.png', 642, 350),
 }
 
+# ---- A8 · Dieta de Marcos: Camarero de la Cuenta y premios (arena/5e565596) ----
+# Perseguidor invencible de la prisa del tema «Dieta de Marcos» (Refs #56/#57)
+# y premios del tema (café=moneda, flan=gema, antiácido=POW, tila=pausa,
+# zumo=turbo, ensaimada=1UP) + retrato de Marcos para HUD/título.
+FAMILIES['camarero'] = (200, (P + 'camarero-cuenta-andar-a.png', None), {
+    'camarero-walkA': (P + 'camarero-cuenta-andar-a.png', None),
+    'camarero-walkB': (P + 'camarero-cuenta-andar-b.png', None),
+    'camarero-grito': (P + 'camarero-cuenta-grito.png', None),
+})
+SINGLES.update({
+    'retrato-marcos': (U + 'retrato-marcos.png', 360),
+    'premio-cafe': (U + 'premio-cafe.png', 96),
+    'premio-flan': (U + 'premio-flan.png', 96),
+    'premio-antiacido': (U + 'premio-antiacido.png', 96),
+    'premio-tila': (U + 'premio-tila.png', 96),
+    'premio-zumo': (U + 'premio-zumo.png', 96),
+    'premio-ensaimada': (U + 'premio-ensaimada.png', 96),
+})
+
 
 def main():
     manifest = {}
