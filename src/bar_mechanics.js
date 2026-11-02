@@ -8,6 +8,7 @@ import { W, FLOOR_Y, CONFIG } from './config.js';
 import { FONT, outlinedText } from './fx.js';
 import { TYPE_KEYS } from './enemies.js';
 import { drawSprite, hasSprite, spriteSize } from './sprites.js';
+import { drawFurniturePlatform } from './background.js';
 import { clamp } from './util.js';
 
 const INK = '#1a1030';
@@ -58,7 +59,9 @@ export function createBarMechanic(stage, rng = Math.random) {
     if (has('bandejas') && !s.bar) {
       // Plataforma móvil: se añade a la copia de g.plats de esta fase y NO a la
       // definición de la fase, para que las repeticiones no acumulen barras.
-      s.bar = { x: 300, y: 430, w: 280, h: 18, vx: mixed ? 75 : 115, sliding: true };
+      // `kind` = mueble de bar: la barra deslizante se dibuja como las demás
+      // plataformas del tema (E1, issue #96).
+      s.bar = { x: 300, y: 430, w: 280, h: 18, vx: mixed ? 75 : 115, sliding: true, kind: 'barra' };
       g.plats.push(s.bar);
     }
   }
@@ -223,17 +226,17 @@ export function createBarMechanic(stage, rng = Math.random) {
       ctx.beginPath(); ctx.ellipse(st.w * 0.2, 3, st.w * 0.08, 2, 0, 0, Math.PI * 2); ctx.fill();
       ctx.restore();
     }
-    // Barra deslizante: mostrada aquí porque la capa de plataformas es estática.
+    // Barra deslizante: se dibuja aquí porque la capa de plataformas es estática,
+    // con el mismo mueble de bar que el resto (E1, issue #96).
     if (s.bar) {
-      const b = s.bar;
-      ctx.save();
-      ctx.fillStyle = 'rgba(10,5,30,0.3)'; ctx.fillRect(b.x + 8, b.y + 10, b.w, b.h + 8);
-      ctx.fillStyle = '#ecd9b0'; ctx.strokeStyle = INK; ctx.lineWidth = 4;
-      ctx.beginPath(); ctx.roundRect(b.x, b.y, b.w, b.h + 8, 7); ctx.fill(); ctx.stroke();
-      ctx.fillStyle = '#e2b443'; ctx.fillRect(b.x + 4, b.y + 4, b.w - 8, 4);
-      ctx.fillStyle = '#b15eff';
-      for (let i = 0; i < 3; i++) ctx.fillRect(b.x + 40 + i * 80, b.y + 14, 16, 5);
-      ctx.restore();
+      if (!drawFurniturePlatform(ctx, s.bar)) {
+        const b = s.bar;
+        ctx.save();
+        ctx.fillStyle = 'rgba(10,5,30,0.3)'; ctx.fillRect(b.x + 8, b.y + 10, b.w, b.h + 8);
+        ctx.fillStyle = '#ecd9b0'; ctx.strokeStyle = INK; ctx.lineWidth = 4;
+        ctx.beginPath(); ctx.roundRect(b.x, b.y, b.w, b.h + 8, 7); ctx.fill(); ctx.stroke();
+        ctx.restore();
+      }
     }
     // Bolas de sorteo.
     for (const b of s.balls) {

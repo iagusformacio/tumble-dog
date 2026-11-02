@@ -68,33 +68,89 @@ const T = 18;
 const P = (x, y, w) => ({ x, y, w, h: T });
 const foe = (i, x, y) => [TYPE_KEYS[i % TYPE_KEYS.length], x, y];
 
-const LAYOUTS = [
-  {
-    name: 'LA BARRA', scene: 'barra',
-    plats: [[80, 520, 340], [860, 520, 340], [380, 400, 520], [80, 280, 380], [820, 280, 380], [480, 160, 320]],
-    spots: [[200, 520], [1050, 520], [620, 400], [200, 280], [1000, 280], [640, 160]],
-  },
-  {
-    name: 'LA TERRAZA', scene: 'terraza',
-    plats: [[0, 520, 300], [980, 520, 300], [240, 400, 300], [740, 400, 300], [470, 280, 340], [60, 190, 300], [920, 190, 300]],
-    spots: [[120, 520], [1100, 520], [380, 400], [880, 400], [620, 280], [180, 190], [1060, 190]],
-  },
-  {
-    name: 'EL MERCADO', scene: 'mercado',
-    plats: [[160, 520, 960], [0, 400, 360], [920, 400, 360], [300, 280, 680], [120, 160, 260], [900, 160, 260]],
-    spots: [[640, 520], [150, 400], [1100, 400], [640, 280], [250, 160], [1030, 160]],
-  },
-  {
-    name: 'LA PLAYA', scene: 'playa',
-    plats: [[60, 520, 260], [510, 520, 260], [960, 520, 260], [280, 400, 260], [740, 400, 260], [60, 280, 260], [510, 280, 260], [960, 280, 260], [380, 160, 520]],
-    spots: [[180, 520], [640, 520], [1090, 520], [400, 400], [860, 400], [180, 280], [640, 280], [1090, 280], [640, 160]],
-  },
+// Layout de plataformas propio de cada bar (issue #96): muebles de bar como
+// plataformas, escalones irregulares, barra larga arriba y hueco central para
+// los combos de la bola. El cuarto valor de cada plataforma es el tipo de mueble
+// que dibuja src/background.js. Todo dentro de pantalla y alcanzable con el
+// salto del motor (lo verifican tests/campaign.test.js y tests/escenarios.test.js).
+const BAR_LAYOUTS = [
+  [ // 0 · BAR LA TACA (Vila-real) — la barra, los taburetes y la trastienda
+    {
+      name: 'LA BARRA', scene: 'barra',
+      plats: [[70, 540, 250, 'taburete'], [960, 540, 250, 'taburete'], [300, 460, 240, 'mesa'], [740, 460, 240, 'mesa'], [330, 340, 620, 'barra'], [500, 200, 280, 'estante']],
+      spots: [[180, 540], [1060, 540], [410, 460], [860, 460], [640, 340], [640, 200]],
+    },
+    {
+      name: 'LOS TABURETES', scene: 'barra',
+      plats: [[60, 540, 190, 'taburete'], [300, 480, 190, 'taburete-alto'], [540, 420, 190, 'taburete'], [780, 480, 190, 'taburete-alto'], [1020, 540, 190, 'taburete'], [380, 300, 520, 'barra'], [60, 200, 300, 'estante'], [920, 200, 300, 'estante']],
+      spots: [[150, 540], [390, 480], [630, 420], [870, 480], [1110, 540], [640, 300], [200, 200]],
+    },
+    {
+      name: 'LA TRASTIENDA', scene: 'barra',
+      plats: [[40, 540, 300, 'nevera'], [940, 540, 300, 'nevera'], [380, 540, 300, 'caja'], [200, 430, 320, 'caja'], [760, 430, 320, 'caja'], [60, 320, 260, 'estante'], [960, 320, 260, 'estante'], [400, 210, 480, 'barril']],
+      spots: [[190, 540], [1090, 540], [530, 540], [360, 430], [920, 430], [190, 320], [1090, 320], [640, 210]],
+    },
+  ],
+  [ // 1 · BAR LOS CONCURSOS (Xirivella) — el mercado, las cajas y el sorteo
+    {
+      name: 'EL PUESTO', scene: 'mercado',
+      plats: [[110, 540, 420, 'mostrador'], [750, 540, 420, 'mostrador'], [60, 430, 300, 'caja'], [920, 430, 300, 'caja'], [420, 340, 440, 'mostrador'], [520, 220, 240, 'caja']],
+      spots: [[320, 540], [960, 540], [210, 430], [1070, 430], [640, 340], [640, 220]],
+    },
+    {
+      name: 'LAS CAJAS', scene: 'mercado',
+      plats: [[40, 540, 240, 'caja'], [330, 540, 240, 'caja'], [900, 540, 340, 'mostrador'], [100, 430, 260, 'caja'], [420, 430, 240, 'caja'], [820, 430, 260, 'caja'], [300, 320, 300, 'caja'], [700, 320, 300, 'caja'], [420, 210, 440, 'toldo']],
+      spots: [[160, 540], [1090, 540], [230, 430], [540, 430], [950, 430], [450, 320], [850, 320], [640, 210]],
+    },
+    {
+      name: 'EL SORTEO', scene: 'mercado',
+      plats: [[60, 540, 300, 'mesa'], [920, 540, 300, 'mesa'], [280, 440, 320, 'mesa'], [700, 440, 320, 'mesa'], [500, 340, 280, 'mostrador'], [80, 240, 280, 'caja'], [920, 240, 280, 'caja'], [480, 150, 320, 'toldo']],
+      spots: [[210, 540], [1070, 540], [440, 440], [860, 440], [640, 340], [220, 240], [1060, 240]],
+    },
+  ],
+  [ // 2 · BAR POLS — la terraza, las mesas y el toldo
+    {
+      name: 'LA TERRAZA', scene: 'terraza',
+      plats: [[0, 540, 320, 'toldo'], [960, 540, 320, 'toldo'], [120, 430, 260, 'mesa'], [900, 430, 260, 'mesa'], [420, 380, 440, 'mesa'], [60, 270, 280, 'silla'], [940, 270, 280, 'silla'], [440, 160, 400, 'toldo']],
+      spots: [[160, 540], [1120, 540], [250, 430], [1030, 430], [640, 380], [200, 270], [1080, 270], [640, 160]],
+    },
+    {
+      name: 'LAS MESAS', scene: 'terraza',
+      plats: [[70, 540, 240, 'mesa'], [520, 540, 240, 'mesa'], [970, 540, 240, 'mesa'], [240, 440, 240, 'silla'], [700, 440, 240, 'silla'], [360, 340, 560, 'mesa'], [90, 230, 280, 'mesa'], [910, 230, 280, 'mesa'], [480, 140, 320, 'toldo']],
+      spots: [[190, 540], [640, 540], [1090, 540], [360, 440], [820, 440], [640, 340], [230, 230], [1050, 230]],
+    },
+    {
+      name: 'EL TOLDO', scene: 'terraza',
+      plats: [[60, 500, 360, 'toldo'], [860, 500, 360, 'toldo'], [60, 360, 300, 'mesa'], [880, 360, 300, 'mesa'], [420, 300, 440, 'silla'], [60, 210, 300, 'mesa'], [920, 210, 300, 'mesa'], [500, 120, 280, 'toldo']],
+      spots: [[240, 500], [1040, 500], [210, 360], [1030, 360], [640, 300], [210, 210], [1070, 210]],
+    },
+  ],
+  [ // 3 · BAR DEL JEFE (València) — de noche, con todos los muebles mezclados
+    {
+      name: 'LA BARRA DEL JEFE', scene: 'barra',
+      plats: [[0, 540, 400, 'mostrador'], [880, 540, 400, 'mostrador'], [340, 440, 600, 'barra'], [0, 330, 300, 'nevera'], [980, 330, 300, 'nevera'], [380, 240, 520, 'estante'], [120, 150, 300, 'caja'], [860, 150, 300, 'caja']],
+      spots: [[200, 540], [1080, 540], [640, 440], [150, 330], [1130, 330], [640, 240], [270, 150], [1010, 150]],
+    },
+    {
+      name: 'TODO MEZCLADO', scene: 'barra',
+      plats: [[60, 540, 240, 'taburete'], [380, 540, 240, 'mesa'], [700, 540, 240, 'taburete'], [1020, 540, 240, 'mesa'], [150, 440, 300, 'caja'], [560, 430, 320, 'barril'], [940, 440, 300, 'nevera'], [300, 330, 300, 'toldo'], [760, 330, 300, 'toldo'], [440, 220, 420, 'barra']],
+      spots: [[180, 540], [500, 540], [820, 540], [1140, 540], [300, 440], [720, 430], [1090, 440], [450, 330], [910, 330], [650, 220]],
+    },
+    {
+      name: 'LA NOCHE DEL JEFE', scene: 'barra',
+      plats: [[40, 540, 380, 'mostrador'], [860, 540, 380, 'mostrador'], [260, 430, 760, 'barra'], [40, 320, 280, 'nevera'], [960, 320, 280, 'nevera'], [360, 320, 560, 'estante'], [120, 210, 280, 'caja'], [880, 210, 280, 'barril'], [420, 110, 440, 'toldo']],
+      spots: [[230, 540], [1050, 540], [640, 430], [180, 320], [1100, 320], [640, 320], [260, 210], [1020, 210], [640, 110]],
+    },
+  ],
 ];
-const BOSS_LAYOUT = {
-  name: 'EL JEFE', scene: 'jefe',
-  plats: [[60, 500, 380], [60, 360, 300], [60, 220, 380], [520, 430, 200]],
-  spots: [],
-};
+
+// Escenario del jefe de cada bar: mismo lenguaje de muebles, sitio para la bola.
+const BOSS_LAYOUTS = [
+  { name: 'EL JEFE', scene: 'jefe', plats: [[60, 500, 380, 'barra'], [60, 360, 300, 'estante'], [60, 220, 380, 'barra'], [520, 430, 200, 'taburete']], spots: [] },
+  { name: 'EL JEFE', scene: 'jefe', plats: [[80, 520, 420, 'mostrador'], [80, 380, 340, 'caja'], [80, 240, 420, 'mostrador'], [700, 440, 220, 'barril']], spots: [] },
+  { name: 'EL JEFE', scene: 'jefe', plats: [[60, 500, 360, 'toldo'], [60, 350, 320, 'mesa'], [60, 200, 360, 'toldo'], [700, 440, 220, 'silla']], spots: [] },
+  { name: 'EL JEFE', scene: 'jefe', plats: [[40, 500, 380, 'mostrador'], [40, 360, 300, 'nevera'], [40, 220, 380, 'barra'], [560, 440, 220, 'barril']], spots: [] },
+];
 
 const ROUND_NAMES = ['PRIMER ESMORZAR', 'SEGUNDO ESMORZAR', 'TERCER ESMORZAR', 'JEFE DE BAR'];
 
@@ -111,8 +167,8 @@ function foesFor(bar, round, layout) {
 
 export const CAMPAIGN_STAGES = Object.freeze(BARS.flatMap((bar, b) => ROUND_NAMES.map((label, r) => {
   const isBoss = r === ROUNDS_PER_BAR - 1;
-  const layout = isBoss ? BOSS_LAYOUT : LAYOUTS[(b * 3 + r) % LAYOUTS.length];
-  const plats = [FLOOR, ...layout.plats.map(([x, y, w]) => P(x, y, w))];
+  const layout = isBoss ? BOSS_LAYOUTS[b] : BAR_LAYOUTS[b][r];
+  const plats = [FLOOR, ...layout.plats.map(([x, y, w, kind]) => ({ ...P(x, y, w), kind: kind || 'barra' }))];
   const stage = {
     bar: b, round: r, bossStage: isBoss,
     name: isBoss ? bar.boss : `${label} · ${layout.name}`,

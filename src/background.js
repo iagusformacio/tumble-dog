@@ -273,13 +273,302 @@ export function createBackground() {
   };
 }
 
-/** Dibuja las plataformas de una fase en una capa cacheada (cornisas de piedra con remate dorado). */
+/* ---------------------------------------------------------------------------
+ * E1 · Muebles de bar como plataformas (issue #96)
+ * Las plataformas del tema «Dieta de Marcos» llevan un `kind` (taburete, barra,
+ * mesa…). Aquí se dibujan con el arte E1 (WebP con alfa) si está cargado y, si
+ * no, con un provisional por código con las mismas formas y colores (nunca
+ * bloques negros). El alto de cada mueble es fijo y las piezas se repiten a lo
+ * ancho de la plataforma, así un taburete no se estira como una barra.
+ * Raíz del sistema de colisiones (src/physics.js) sin tocar: sigue siendo de un
+ * solo sentido y la superficie de apoyo es `p.y`.
+ * ------------------------------------------------------------------------- */
+export const FURNITURE = {
+  barra: { art: 'mueble-barra', h: 118, aspect: 0.46, maxUnits: 3, stretch: 3 },
+  taburete: { art: 'mueble-taburete-bajo', h: 92, aspect: 1.76, maxUnits: 5 },
+  'taburete-alto': { art: 'mueble-taburete-alto', h: 116, aspect: 2.18, maxUnits: 5 },
+  mesa: { art: 'mueble-mesa', h: 104, aspect: 1.02, maxUnits: 6 },
+  silla: { art: 'mueble-silla', h: 96, aspect: 2.32, maxUnits: 6 },
+  estante: { art: 'mueble-estante-botellas', h: 126, aspect: 0.7, maxUnits: 3, stretch: 1.5 },
+  caja: { art: 'mueble-caja-cerveza', h: 68, aspect: 0.97, maxUnits: 6 },
+  nevera: { art: 'mueble-nevera', h: 136, aspect: 1.51, maxUnits: 3 },
+  toldo: { art: 'mueble-toldo-terraza', h: 96, aspect: 0.51, maxUnits: 3, stretch: 2.4 },
+  mostrador: { art: 'mueble-mostrador-mercado', h: 110, aspect: 0.9, maxUnits: 3, stretch: 1.8 },
+  // El barril todavía no tiene PNG (cupo de imágenes agotado): solo por código.
+  barril: { art: null, h: 92, aspect: 1.3, maxUnits: 4 },
+};
+
+/** ¿Es un mueble de bar conocido? */
+export function isFurniture(kind) { return !!FURNITURE[kind]; }
+
+/**
+ * Piezas de un mueble: divide el ancho de la plataforma en trozos del tamaño
+ * natural del dibujo. Devuelve [{ x, y, w, h }] con la superficie en y = p.y.
+ */
+export function furnitureUnits(p) {
+  const spec = FURNITURE[p.kind];
+  if (!spec) return [];
+  const unitW = spec.h / spec.aspect;
+  // Piezas continuas (barra, mostrador, toldo, estante): una sola pieza estirada
+  // mientras no sea desmesurada; si es muy larga, se repite como el resto.
+  if (spec.stretch && p.w / unitW <= spec.stretch && p.w >= unitW * 0.6) {
+    return [{ x: p.x, y: p.y, w: p.w, h: spec.h, i: 0, n: 1 }];
+  }
+  // Piezas sueltas (taburetes, mesas, cajas…): se repiten a tamaño natural
+  // repartiendo el hueco que sobra como separación entre ellas.
+  const n = Math.max(1, Math.min(spec.maxUnits || 4, Math.round(p.w / unitW)));
+  const w = Math.min(unitW, p.w / n);
+  const h = w * spec.aspect;
+  const gap = Math.max(0, (p.w - n * w) / (n + 1));
+  const out = [];
+  for (let i = 0; i < n; i++) out.push({ x: p.x + gap + i * (w + gap), y: p.y, w, h, i, n });
+  return out;
+}
+
+const WOOD = '#b5793a'; const WOOD_D = '#8a5a2b'; const WOOD_L = '#d9a05b';
+const STEEL = '#c9d4e0'; const GLASS = 'rgba(180,225,245,0.55)';
+const CLOTH_R = '#d92b3a'; const CLOTH_W = '#fff5e6'; const GREEN = '#3f8f4a';
+
+/** Dibujo provisional por código de cada mueble (mismo encuadre que el PNG). */
+function drawFurnitureCode(g, kind, w, h) {
+  g.save();
+  g.lineJoin = 'round'; g.lineCap = 'round';
+  g.strokeStyle = INK; g.lineWidth = Math.max(2, Math.min(4, w * 0.05));
+  const ink = g.lineWidth;
+  const rr = (x, y, ww, hh, r) => { g.beginPath(); g.roundRect(x, y, ww, hh, r); };
+  const plank = (x, y, ww, hh, light = WOOD, dark = WOOD_D) => {
+    const gr = g.createLinearGradient(0, y, 0, y + hh);
+    gr.addColorStop(0, light); gr.addColorStop(1, dark);
+    g.fillStyle = gr; rr(x, y, ww, hh, Math.min(4, ww * 0.08)); g.fill(); g.stroke();
+    g.fillStyle = 'rgba(255,255,255,0.4)'; g.fillRect(x + ww * 0.12, y + hh * 0.16, ww * 0.76, Math.max(1, hh * 0.08));
+  };
+  const seat = (y, hh, col) => {
+    g.fillStyle = col; g.beginPath(); g.ellipse(w / 2, y, w * 0.46, hh, 0, 0, Math.PI * 2); g.fill(); g.stroke();
+    g.fillStyle = 'rgba(255,255,255,0.45)';
+    g.beginPath(); g.ellipse(w * 0.42, y - hh * 0.3, w * 0.18, hh * 0.22, -0.2, 0, Math.PI * 2); g.fill();
+  };
+  const bottle = (x, y, bw, bh, col) => {
+    g.fillStyle = col; rr(x, y, bw, bh, bw * 0.35); g.fill(); g.stroke();
+    g.fillRect(x + bw * 0.32, y - bh * 0.3, bw * 0.36, bh * 0.32); g.strokeRect(x + bw * 0.32, y - bh * 0.3, bw * 0.36, bh * 0.32);
+    g.fillStyle = 'rgba(255,255,255,0.5)'; g.fillRect(x + bw * 0.16, y + bh * 0.12, bw * 0.14, bh * 0.6);
+  };
+
+  switch (kind) {
+    case 'taburete':
+    case 'taburete-alto': {
+      const alto = kind === 'taburete-alto';
+      const seatY = h * 0.14;
+      // Patas (con aro reposapiés)
+      g.strokeStyle = alto ? '#8d99a8' : WOOD_D; g.lineWidth = Math.max(2, w * 0.1);
+      for (const k of [0.22, 0.78]) {
+        g.beginPath(); g.moveTo(w * k, seatY + h * 0.06); g.lineTo(w * (k + (k < 0.5 ? 0.06 : -0.06)), h * 0.98); g.stroke();
+      }
+      g.lineWidth = Math.max(1.5, w * 0.07);
+      g.beginPath(); g.moveTo(w * 0.16, h * 0.72); g.lineTo(w * 0.84, h * 0.72); g.stroke();
+      if (alto) {
+        g.strokeStyle = '#8d99a8'; g.lineWidth = Math.max(2, w * 0.08);
+        g.beginPath(); g.moveTo(w * 0.18, seatY + h * 0.02); g.quadraticCurveTo(w * 0.05, h * 0.1, w * 0.12, -h * 0.02); g.stroke();
+        g.fillStyle = WOOD;
+        g.beginPath(); g.ellipse(w * 0.3, -h * 0.02, w * 0.28, h * 0.07, -0.15, 0, Math.PI * 2); g.fill();
+        g.strokeStyle = INK; g.lineWidth = ink; g.stroke();
+      }
+      g.strokeStyle = INK; g.lineWidth = ink;
+      seat(seatY, h * 0.11, alto ? '#b3122d' : CLOTH_R);
+      if (alto) {
+        g.fillStyle = '#d8d2c4';
+        g.beginPath(); g.ellipse(w / 2, seatY + h * 0.075, w * 0.44, h * 0.03, 0, 0, Math.PI * 2); g.fill(); g.stroke();
+        for (let i = 0; i < 5; i++) { g.fillStyle = '#ffd76b'; g.beginPath(); g.arc(w * (0.2 + i * 0.15), seatY + h * 0.02, Math.max(1, w * 0.025), 0, Math.PI * 2); g.fill(); }
+      }
+      break;
+    }
+    case 'barra': {
+      plank(0, 0, w, h * 0.2, WOOD_L, WOOD);
+      g.fillStyle = '#f4f1e6'; g.strokeRect(0, h * 0.2, w, h * 0.62);
+      g.strokeStyle = 'rgba(60,90,160,0.5)'; g.lineWidth = 1;
+      for (let x = 0; x < w; x += w / 7) g.beginPath(), g.moveTo(x, h * 0.2), g.lineTo(x, h * 0.82), g.stroke();
+      for (let y = h * 0.2 + h * 0.12; y < h * 0.82; y += h * 0.16) { g.beginPath(); g.moveTo(0, y); g.lineTo(w, y); g.stroke(); }
+      g.strokeStyle = INK; g.lineWidth = ink;
+      g.fillStyle = '#e2b443'; g.fillRect(0, h * 0.24, w, Math.max(2, h * 0.05)); g.strokeRect(0, h * 0.24, w, Math.max(2, h * 0.05));
+      g.fillStyle = '#e2b443'; g.fillRect(0, h * 0.7, w, Math.max(3, h * 0.07)); g.strokeRect(0, h * 0.7, w, Math.max(3, h * 0.07));
+      plank(0, h * 0.82, w, h * 0.16, WOOD, WOOD_D);
+      g.fillStyle = '#f4f1e6'; g.fillRect(w * 0.06, h * 0.2, w * 0.88, h * 0.07);
+      g.fillStyle = 'rgba(60,90,160,0.55)'; for (let x = w * 0.08; x < w * 0.92; x += w * 0.14) { g.beginPath(); g.ellipse(x, h * 0.235, w * 0.03, h * 0.02, 0, 0, Math.PI * 2); g.fill(); }
+      // Un grifo de cerveza asomando
+      g.fillStyle = '#e2b443'; g.fillRect(w * 0.2, -h * 0.16, w * 0.07, h * 0.18); g.strokeRect(w * 0.2, -h * 0.16, w * 0.07, h * 0.18);
+      g.fillStyle = INK; g.fillRect(w * 0.215, -h * 0.24, w * 0.04, h * 0.09);
+      break;
+    }
+    case 'mesa': {
+      const clothH = h * 0.5;
+      g.fillStyle = CLOTH_R; rr(-w * 0.02, 0, w * 1.04, clothH, 6); g.fill(); g.stroke();
+      g.fillStyle = CLOTH_W;
+      for (let y = 0; y < clothH; y += clothH / 3.2) for (let x = 0; x < w; x += w / 3.2) {
+        if (((x / (w / 3.2)) | 0) % 2 === ((y / (clothH / 3.2)) | 0) % 2) continue;
+        g.fillRect(x + 1, y + 1, w / 3.2 - 1, clothH / 3.2 - 1);
+      }
+      g.fillStyle = CLOTH_R;
+      g.beginPath();
+      g.moveTo(-w * 0.02, clothH);
+      for (let x = 0; x <= w; x += w / 6) g.quadraticCurveTo(x + w / 12, clothH + h * 0.08, x + w / 6, clothH);
+      g.lineTo(w * 1.02, clothH); g.lineTo(w * 1.02, clothH * 0.9); g.lineTo(-w * 0.02, clothH * 0.9); g.closePath(); g.fill(); g.stroke();
+      g.strokeStyle = INK; g.lineWidth = Math.max(2, w * 0.05);
+      g.beginPath(); g.moveTo(w * 0.28, h * 0.62); g.lineTo(w * 0.72, h * 0.98); g.moveTo(w * 0.72, h * 0.62); g.lineTo(w * 0.28, h * 0.98); g.stroke();
+      g.fillStyle = '#2e7d61'; g.fillRect(w * 0.42, -h * 0.3, w * 0.1, h * 0.3); g.strokeRect(w * 0.42, -h * 0.3, w * 0.1, h * 0.3);
+      break;
+    }
+    case 'silla': {
+      g.strokeStyle = INK; g.lineWidth = ink;
+      g.beginPath(); g.moveTo(w * 0.18, h * 0.05); g.lineTo(w * 0.18, h * 0.98); g.moveTo(w * 0.82, h * 0.55); g.lineTo(w * 0.88, h * 0.98); g.stroke();
+      g.strokeStyle = WOOD_D; g.lineWidth = Math.max(2, w * 0.1);
+      g.beginPath(); g.moveTo(w * 0.18, h * 0.05); g.lineTo(w * 0.18, h * 0.98); g.stroke();
+      g.strokeStyle = WOOD; g.lineWidth = Math.max(2, w * 0.09);
+      g.beginPath(); g.moveTo(w * 0.18, h * 0.92); g.lineTo(w * 0.85, h * 0.92); g.stroke();
+      g.strokeStyle = WOOD_D;
+      for (let y = h * 0.12; y < h * 0.45; y += h * 0.11) { g.beginPath(); g.moveTo(w * 0.18, y); g.lineTo(w * 0.62, y + h * 0.01); g.stroke(); }
+      g.strokeStyle = INK; g.lineWidth = ink;
+      g.fillStyle = WOOD; g.beginPath(); g.ellipse(w * 0.5, h * 0.55, w * 0.34, h * 0.06, 0, 0, Math.PI * 2); g.fill(); g.stroke();
+      break;
+    }
+    case 'estante': {
+      g.fillStyle = WOOD; g.strokeStyle = INK; g.lineWidth = ink;
+      g.fillRect(0, 0, w * 0.08, h); g.strokeRect(0, 0, w * 0.08, h);
+      g.fillRect(w * 0.92, 0, w * 0.08, h); g.strokeRect(w * 0.92, 0, w * 0.08, h);
+      const cols = ['#4b8f4a', '#f2c14e', '#4d9bd8', '#2f6b40', '#e08a2e', '#b3122d', '#7f5fa8'];
+      for (const [row, sy] of [[0, h * 0.06], [1, h * 0.56]]) {
+        g.fillStyle = WOOD_L; g.fillRect(0, sy + h * 0.34, w, h * 0.1);
+        g.strokeStyle = INK; g.strokeRect(0, sy + h * 0.34, w, h * 0.1);
+        for (let i = 0; i < 4; i++) bottle(w * (0.14 + i * 0.2), sy + h * 0.08, w * 0.09, h * 0.26, cols[(i + row * 3) % cols.length]);
+      }
+      break;
+    }
+    case 'caja': {
+      g.fillStyle = '#d92b2b'; g.strokeStyle = INK; g.lineWidth = ink;
+      rr(w * 0.04, h * 0.3, w * 0.92, h * 0.68, 3); g.fill(); g.stroke();
+      g.fillStyle = 'rgba(90,10,10,0.45)';
+      for (const k of [0.18, 0.5, 0.82]) g.fillRect(w * k, h * 0.42, w * 0.08, h * 0.46);
+      g.fillStyle = '#8b1f1f'; g.fillRect(w * 0.3, h * 0.36, w * 0.4, h * 0.16); g.strokeRect(w * 0.3, h * 0.36, w * 0.4, h * 0.16);
+      for (const k of [0.2, 0.42, 0.64, 0.86]) {
+        g.fillStyle = '#2e7d32'; rr(w * k - w * 0.06, h * 0.02, w * 0.12, h * 0.32, 3); g.fill(); g.stroke();
+        g.fillStyle = '#c8e6c9'; g.fillRect(w * k - w * 0.035, h * 0.005, w * 0.07, h * 0.05);
+      }
+      break;
+    }
+    case 'nevera': {
+      g.fillStyle = '#f6fbff'; g.strokeStyle = INK; g.lineWidth = ink;
+      rr(w * 0.04, 0, w * 0.92, h, h * 0.06); g.fill(); g.stroke();
+      g.fillStyle = GLASS; rr(w * 0.12, h * 0.08, w * 0.62, h * 0.84, h * 0.03); g.fill(); g.stroke();
+      const cols = ['#e0a118', '#b3122d', '#4b8f4a', '#4d9bd8'];
+      for (let row = 0; row < 3; row++) for (let i = 0; i < 3; i++) bottle(w * (0.16 + i * 0.18), h * (0.2 + row * 0.26), w * 0.1, h * 0.16, cols[(i + row) % cols.length]);
+      g.fillStyle = '#cfd8e3'; rr(w * 0.8, h * 0.2, w * 0.08, h * 0.5, h * 0.03); g.fill(); g.stroke();
+      g.fillStyle = '#f2c14e'; g.beginPath(); g.arc(w * 0.5, h * 0.06, h * 0.045, 0, Math.PI * 2); g.fill(); g.stroke();
+      g.fillStyle = '#8d99a8'; g.fillRect(w * 0.14, h * 0.98, w * 0.14, h * 0.05); g.fillRect(w * 0.72, h * 0.98, w * 0.14, h * 0.05);
+      break;
+    }
+    case 'toldo': {
+      const top = h * 0.12; const bottom = h * 0.5;
+      g.save();
+      g.beginPath(); g.moveTo(w * 0.02, top); g.lineTo(w * 0.98, top); g.lineTo(w, bottom); g.lineTo(0, bottom); g.closePath();
+      g.fillStyle = CLOTH_W; g.fill(); g.strokeStyle = INK; g.lineWidth = ink; g.stroke(); g.clip();
+      g.fillStyle = CLOTH_R;
+      for (let x = 0; x < w; x += w / 5) g.fillRect(x, top, w / 10, bottom - top + 2);
+      g.restore();
+      g.fillStyle = CLOTH_W; g.strokeStyle = INK; g.lineWidth = ink;
+      g.beginPath(); g.moveTo(0, bottom);
+      for (let x = 0; x <= w; x += w / 10) g.quadraticCurveTo(x + w / 20, bottom + h * 0.09, x + w / 10, bottom);
+      g.lineTo(w, bottom - h * 0.02); g.lineTo(0, bottom - h * 0.02); g.closePath(); g.fill(); g.stroke();
+      g.fillStyle = CLOTH_R;
+      for (let x = 0; x < w; x += w / 5) { g.beginPath(); g.ellipse(x + w / 20, bottom + h * 0.03, w / 24, h * 0.03, 0, 0, Math.PI * 2); g.fill(); }
+      g.fillStyle = '#cfd8e3'; g.strokeStyle = INK; g.lineWidth = ink;
+      for (const k of [0.07, 0.93]) { g.fillRect(w * k - w * 0.02, top, w * 0.04, h * 0.49); g.strokeRect(w * k - w * 0.02, top, w * 0.04, h * 0.49); }
+      break;
+    }
+    case 'mostrador': {
+      g.fillStyle = GREEN; g.strokeStyle = INK; g.lineWidth = ink;
+      g.beginPath(); g.moveTo(0, h * 0.18); g.lineTo(w, h * 0.18); g.lineTo(w, h * 0.36); g.lineTo(0, h * 0.36); g.closePath(); g.fill(); g.stroke();
+      g.fillStyle = CLOTH_W; for (let x = w * 0.05; x < w; x += w * 0.2) g.fillRect(x, h * 0.18, w * 0.1, h * 0.18);
+      plank(0, h * 0.34, w, h * 0.18, WOOD_L, WOOD);
+      const fruit = ['#ff8a1e', '#e0332e', '#7ac043', '#f2c14e'];
+      for (let i = 0; i < 4; i++) {
+        g.fillStyle = WOOD_D; g.fillRect(w * (0.05 + i * 0.24), h * 0.44, w * 0.18, h * 0.12);
+        g.strokeStyle = INK; g.strokeRect(w * (0.05 + i * 0.24), h * 0.44, w * 0.18, h * 0.12);
+        g.fillStyle = fruit[i];
+        for (let k = 0; k < 4; k++) { g.beginPath(); g.arc(w * (0.09 + i * 0.24 + (k % 2) * 0.07), h * (0.435 - Math.floor(k / 2) * 0.05), Math.max(2, w * 0.028), 0, Math.PI * 2); g.fill(); }
+      }
+      plank(0, h * 0.62, w, h * 0.38, WOOD, WOOD_D);
+      g.fillStyle = 'rgba(255,255,255,0.35)';
+      for (let x = w * 0.08; x < w * 0.95; x += w * 0.22) g.fillRect(x, h * 0.7, w * 0.14, h * 0.05);
+      break;
+    }
+    case 'barril': {
+      g.fillStyle = WOOD; g.strokeStyle = INK; g.lineWidth = ink;
+      g.beginPath();
+      g.moveTo(w * 0.1, h * 0.06); g.quadraticCurveTo(-w * 0.04, h * 0.5, w * 0.1, h * 0.94);
+      g.lineTo(w * 0.9, h * 0.94); g.quadraticCurveTo(w * 1.04, h * 0.5, w * 0.9, h * 0.06); g.closePath();
+      g.fill(); g.stroke();
+      g.strokeStyle = WOOD_D; g.lineWidth = Math.max(1, w * 0.04);
+      for (const k of [0.32, 0.5, 0.68]) { g.beginPath(); g.moveTo(w * 0.06, h * k); g.lineTo(w * 0.94, h * k); g.stroke(); }
+      g.strokeStyle = INK; g.lineWidth = Math.max(2, w * 0.07);
+      for (const k of [0.24, 0.76]) { g.beginPath(); g.moveTo(w * 0.07, h * k); g.lineTo(w * 0.93, h * k); g.stroke(); }
+      g.strokeStyle = INK; g.lineWidth = ink;
+      g.fillStyle = '#e2b443'; g.beginPath(); g.ellipse(w * 0.5, h * 0.06, w * 0.4, h * 0.05, 0, 0, Math.PI * 2); g.fill(); g.stroke();
+      g.fillStyle = '#c9a227'; g.fillRect(w * 0.42, h * 0.52, w * 0.16, h * 0.1); g.strokeRect(w * 0.42, h * 0.52, w * 0.16, h * 0.1);
+      break;
+    }
+    default: {
+      // Desconocido: tabla de madera honesta (nunca un bloque negro).
+      plank(0, 0, w, Math.max(8, h * 0.3), WOOD_L, WOOD);
+      break;
+    }
+  }
+  g.restore();
+}
+
+/**
+ * Dibuja UNA plataforma con forma de mueble de bar (sprite E1 si está cargado,
+ * provisional por código si no). Lo usan la capa de plataformas y la barra
+ * deslizante del Bar Pols.
+ */
+export function drawFurniturePlatform(ctx, p) {
+  const spec = FURNITURE[p.kind];
+  if (!spec) return false;
+  const units = furnitureUnits(p);
+  const img = spec.art ? getSpriteImage(spec.art) : null;
+  ctx.save();
+  ctx.fillStyle = 'rgba(10,5,30,0.22)';
+  ctx.beginPath(); ctx.roundRect(p.x + 6, p.y + 8, p.w, 12, 6); ctx.fill();
+  for (const u of units) {
+    const uw = u.w + 1;
+    if (img && img.width) {
+      // El alto sale de la pieza (natural o estirada); el PNG se adapta a él.
+      ctx.drawImage(img, u.x, u.y, uw, u.h);
+    } else {
+      ctx.save(); ctx.translate(u.x, u.y);
+      drawFurnitureCode(ctx, p.kind, uw, u.h);
+      ctx.restore();
+    }
+  }
+  // Superficie de apoyo: línea de tinta + brillo, para que se lea dónde se salta.
+  ctx.strokeStyle = 'rgba(26,16,48,0.85)'; ctx.lineWidth = 2.5;
+  ctx.beginPath(); ctx.moveTo(p.x, p.y + 1.5); ctx.lineTo(p.x + p.w, p.y + 1.5); ctx.stroke();
+  ctx.strokeStyle = 'rgba(255,255,255,0.55)'; ctx.lineWidth = 1.5;
+  ctx.beginPath(); ctx.moveTo(p.x + 2, p.y - 0.5); ctx.lineTo(p.x + p.w - 2, p.y - 0.5); ctx.stroke();
+  ctx.restore();
+  return true;
+}
+
+/** Dibuja las plataformas de una fase en una capa cacheada. */
 export function renderPlatforms(platforms, themeName) {
   const c = canvas(W, H); if (!c) return null;
   const g = c.getContext('2d');
   const th = THEMES[themeName] || THEMES.manana;
   for (const p of platforms) {
     if (p.floor) continue;
+    // Muebles de bar (tema «Dieta de Marcos»): sprite E1 con alfa o provisional.
+    if (p.kind && FURNITURE[p.kind]) {
+      drawFurniturePlatform(g, p);
+      if (th.tint) { g.save(); g.globalCompositeOperation = 'source-atop'; g.globalAlpha = th.tint[1] * 0.7; g.fillStyle = th.tint[0]; g.fillRect(p.x - 2, p.y - 2, p.w + 14, 240); g.restore(); }
+      continue;
+    }
     g.fillStyle = 'rgba(10,5,30,0.28)'; g.beginPath(); g.roundRect(p.x + 8, p.y + 12, p.w, p.h + 6, 8); g.fill();
     const gr = g.createLinearGradient(0, p.y, 0, p.y + p.h + 10);
     gr.addColorStop(0, '#fff8e6'); gr.addColorStop(0.35, '#ecd9b0'); gr.addColorStop(1, '#b89a6a');

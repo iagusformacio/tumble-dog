@@ -232,28 +232,52 @@ export const THEME = {
   },
 };
 
+// Rondas del arcade: cada bar tiene su escenario de muebles (issue #96). El
+// cuarto valor de cada plataforma es el `kind` de mueble de bar que dibuja
+// src/background.js (barra, taburete, mesa, silla, estante, caja, nevera,
+// toldo, mostrador, barril). Los escalones son irregulares y hay un hueco
+// central para los combos de la bola; todo sigue siendo alcanzable con el salto
+// del motor (lo comprueban tests/game.test.js y tests/escenarios.test.js).
 const RAW = [
-  { name: 'BAR LA TACA · LA BARRA', theme: 'barra', plats: [[80, 520, 340], [860, 520, 340], [380, 400, 520], [80, 280, 380], [820, 280, 380], [480, 160, 320]],
-    foes: [['portavoz', 340, 520], ['portavoz', 1000, 520], ['tertuliano', 700, 400]] },
-  { name: 'BAR LA TACA · LA TERRAZA', theme: 'terraza', plats: [[0, 520, 300], [980, 520, 300], [240, 400, 300], [740, 400, 300], [470, 280, 340], [60, 190, 300], [920, 190, 300]],
-    foes: [['portavoz', 120, 520], ['tertuliano', 1100, 520], ['influencer', 380, 400], ['portavoz', 880, 400], ['tertuliano', 620, 280]] },
-  { name: 'BAR LOS CONCUERSOS · EL MERCADO', theme: 'mercado', plats: [[160, 520, 960], [0, 400, 360], [920, 400, 360], [300, 280, 680], [120, 160, 260], [900, 160, 260]],
-    foes: [['asesor', 640, 520], ['portavoz', 150, 400], ['portavoz', 1100, 400], ['influencer', 640, 280], ['tertuliano', 250, 160]] },
-  { name: 'BAR POLS · LA SALA', theme: 'barra', plats: [[60, 520, 260], [510, 520, 260], [960, 520, 260], [280, 400, 260], [740, 400, 260], [60, 280, 260], [510, 280, 260], [960, 280, 260], [380, 160, 520]],
-    foes: [['activista', 180, 520], ['influencer', 1080, 520], ['asesor', 400, 400], ['tertuliano', 860, 400], ['portavoz', 640, 280], ['activista', 640, 160]] },
-  { name: 'JEFE: EL BOCATA GIGANTE', theme: 'barra', boss: 'tertuliano', plats: [[60, 500, 380], [60, 360, 300], [60, 220, 380], [520, 430, 200]], foes: [] },
-  { name: 'BAR DEL JEFE · LA BARRA', theme: 'noche', plats: [[0, 520, 420], [860, 520, 420], [330, 400, 620], [0, 280, 300], [980, 280, 300], [400, 280, 480], [500, 160, 280]],
-    foes: [['baron', 200, 520], ['diputado', 1060, 520], ['activista', 640, 400], ['asesor', 150, 280], ['influencer', 1130, 280], ['baron', 640, 160]] },
-  { name: 'LA TERRAZA DE VALÈNCIA', theme: 'terraza', plats: [[100, 520, 1080], [100, 400, 300], [880, 400, 300], [440, 340, 400], [100, 240, 360], [820, 240, 360], [460, 140, 360]],
-    foes: [['diputado', 300, 520], ['lider', 980, 520], ['tertuliano', 250, 400], ['activista', 1030, 400], ['baron', 640, 340], ['influencer', 640, 140]] },
-  { name: 'EL CHIRINGUITO DE LA PLAYA', theme: 'playa', plats: [[0, 520, 240], [1040, 520, 240], [320, 460, 640], [80, 340, 340], [860, 340, 340], [440, 230, 400], [0, 140, 260], [1020, 140, 260]],
-    foes: [['asesor', 120, 520], ['asesor', 1160, 520], ['lider', 640, 460], ['diputado', 250, 340], ['baron', 1030, 340], ['activista', 640, 230], ['influencer', 130, 140]] },
-  { name: 'LA NOCHE DEL MERCADO', theme: 'mercado', plats: [[60, 520, 500], [720, 520, 500], [260, 400, 760], [60, 280, 420], [800, 280, 420], [300, 160, 680]],
-    foes: [['lider', 300, 520], ['diputado', 960, 520], ['tertuliano', 640, 400], ['asesor', 250, 280], ['activista', 1000, 280], ['portavoz', 640, 160], ['influencer', 450, 160]] },
-  { name: 'JEFE FINAL: LA PAELLA GIGANTE', theme: 'playa', boss: 'lider', plats: [[60, 500, 380], [60, 360, 300], [60, 220, 380], [520, 430, 200]], foes: [] },
+  { name: 'BAR LA TACA · LA BARRA', theme: 'barra',
+    plats: [[70, 540, 250, 'taburete'], [960, 540, 250, 'taburete'], [300, 460, 240, 'mesa'], [740, 460, 240, 'mesa'],
+      [110, 350, 210, 'barril'], [960, 350, 210, 'barril'], [330, 280, 620, 'barra'], [520, 165, 240, 'estante']],
+    foes: [['portavoz', 180, 540], ['portavoz', 1060, 540], ['tertuliano', 620, 280]] },
+  { name: 'BAR LA TACA · LA TERRAZA', theme: 'terraza',
+    plats: [[0, 540, 290, 'toldo'], [990, 540, 290, 'toldo'], [250, 450, 230, 'mesa'], [800, 450, 230, 'mesa'],
+      [470, 380, 340, 'mesa'], [60, 300, 240, 'silla'], [980, 300, 240, 'silla'], [380, 200, 520, 'toldo']],
+    foes: [['portavoz', 120, 540], ['tertuliano', 1120, 540], ['influencer', 600, 380], ['portavoz', 620, 200]] },
+  { name: 'BAR LOS CONCURSOS · EL MERCADO', theme: 'mercado',
+    plats: [[150, 540, 430, 'mostrador'], [700, 540, 430, 'mostrador'], [20, 440, 300, 'caja'], [960, 440, 300, 'caja'],
+      [380, 340, 520, 'mostrador'], [180, 230, 260, 'caja'], [840, 230, 260, 'caja'], [480, 140, 320, 'toldo']],
+    foes: [['asesor', 360, 540], ['portavoz', 910, 540], ['influencer', 640, 340], ['tertuliano', 310, 230]] },
+  { name: 'BAR POLS · LA SALA', theme: 'barra',
+    plats: [[55, 540, 225, 'taburete'], [530, 540, 225, 'taburete'], [1000, 540, 225, 'taburete'], [280, 430, 260, 'mesa'],
+      [740, 430, 260, 'mesa'], [110, 320, 220, 'nevera'], [950, 320, 220, 'nevera'], [420, 250, 440, 'barra'], [400, 140, 480, 'estante']],
+    foes: [['activista', 160, 540], ['influencer', 1110, 540], ['asesor', 410, 430], ['tertuliano', 870, 430], ['portavoz', 640, 250], ['activista', 640, 140]] },
+  { name: 'JEFE: EL BOCATA GIGANTE', theme: 'barra', boss: 'tertuliano',
+    plats: [[60, 500, 380, 'barra'], [60, 360, 300, 'estante'], [60, 220, 380, 'barra'], [520, 430, 200, 'taburete']], foes: [] },
+  { name: 'BAR DEL JEFE · LA BARRA', theme: 'noche',
+    plats: [[0, 540, 410, 'mostrador'], [870, 540, 410, 'mostrador'], [330, 420, 620, 'barra'], [0, 300, 280, 'nevera'],
+      [1000, 300, 280, 'nevera'], [380, 300, 520, 'estante'], [500, 180, 280, 'barril']],
+    foes: [['baron', 200, 540], ['diputado', 1080, 540], ['activista', 640, 420], ['asesor', 140, 300], ['influencer', 1140, 300], ['baron', 640, 180]] },
+  { name: 'LA TERRAZA DE VALÈNCIA', theme: 'terraza',
+    plats: [[80, 540, 420, 'toldo'], [780, 540, 420, 'toldo'], [80, 430, 280, 'mesa'], [920, 430, 280, 'mesa'],
+      [420, 370, 440, 'mesa'], [80, 270, 350, 'silla'], [850, 270, 350, 'silla'], [460, 160, 360, 'toldo']],
+    foes: [['diputado', 250, 540], ['lider', 1000, 540], ['tertuliano', 220, 430], ['activista', 1060, 430], ['baron', 640, 370], ['influencer', 640, 160]] },
+  { name: 'EL CHIRINGUITO DE LA PLAYA', theme: 'playa',
+    plats: [[0, 540, 250, 'barril'], [1030, 540, 250, 'barril'], [300, 470, 680, 'mostrador'], [50, 350, 320, 'caja'],
+      [910, 350, 320, 'caja'], [430, 280, 420, 'toldo'], [0, 150, 270, 'caja'], [1010, 150, 270, 'caja']],
+    foes: [['asesor', 120, 540], ['asesor', 1150, 540], ['lider', 640, 470], ['diputado', 210, 350], ['baron', 1070, 350], ['activista', 640, 280], ['influencer', 130, 150]] },
+  { name: 'LA NOCHE DEL MERCADO', theme: 'mercado',
+    plats: [[40, 540, 460, 'mostrador'], [780, 540, 460, 'mostrador'], [250, 430, 780, 'mostrador'], [40, 310, 380, 'caja'],
+      [860, 310, 380, 'caja'], [300, 180, 680, 'toldo']],
+    foes: [['lider', 270, 540], ['diputado', 1010, 540], ['tertuliano', 640, 430], ['asesor', 230, 310], ['activista', 1050, 310], ['portavoz', 640, 180], ['influencer', 450, 180]] },
+  { name: 'JEFE FINAL: LA PAELLA GIGANTE', theme: 'playa', boss: 'lider',
+    plats: [[60, 500, 380, 'mostrador'], [60, 360, 300, 'caja'], [60, 220, 380, 'mostrador'], [520, 430, 200, 'barril']], foes: [] },
 ];
 
-export const STAGES = RAW.map((s) => ({ ...s, plats: [FLOOR, ...s.plats.map(([x, y, w]) => P(x, y, w))] }));
+export const STAGES = RAW.map((s) => ({ ...s, plats: [FLOOR, ...s.plats.map(([x, y, w, kind]) => ({ ...P(x, y, w), kind: kind || 'barra' }))] }));
 export const STAGE_COUNT = STAGES.length;
 
 // Canciones sintetizadas propias del tema (melodías originales, sin muestras).

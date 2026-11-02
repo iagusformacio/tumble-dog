@@ -328,6 +328,43 @@ def main_a9():
     src = os.path.join(SRC, 'escenario', 'bar-jefe-noche.png')
     Image.open(src).convert('RGB').save(os.path.join(OUT, 'fondo-noche-jefe.png'), 'PNG', optimize=True)
 
+# --- E1 · Muebles de bar como plataformas (issue #96) -------------------------
+# Diez PNG con fondo chroma #00FF00 en assets/escenario/mueble-*.png: taburetes
+# (dos alturas), barra, mesa, silla, estante de botellas, caja de cerveza,
+# nevera, toldo de terraza y mostrador de mercado. Son la «piel» de las
+# plataformas del tema «Dieta de Marcos» (las cornisas de piedra siguen en el
+# tema Tumble Dog). Se guardan en assets/sprites/escenario/ con su alto objetivo
+# en píxeles; el motor las estira al ancho de cada plataforma conservando la
+# proporción del dibujo. El barril no tiene PNG todavía: se dibuja por código.
+MUEBLES_E1 = {
+    'mueble-barra': ('escenario/mueble-barra.png', 220),
+    'mueble-taburete-bajo': ('escenario/mueble-taburete-bajo.png', 190),
+    'mueble-taburete-alto': ('escenario/mueble-taburete-alto.png', 240),
+    'mueble-mesa': ('escenario/mueble-mesa.png', 200),
+    'mueble-silla': ('escenario/mueble-silla.png', 220),
+    'mueble-estante-botellas': ('escenario/mueble-estante-botellas.png', 180),
+    'mueble-caja-cerveza': ('escenario/mueble-caja-cerveza.png', 130),
+    'mueble-nevera': ('escenario/mueble-nevera.png', 280),
+    'mueble-toldo-terraza': ('escenario/mueble-toldo-terraza.png', 160),
+    'mueble-mostrador-mercado': ('escenario/mueble-mostrador-mercado.png', 210),
+}
+
+
+def main_e1():
+    """Genera los muebles de bar de E1 en assets/sprites/escenario/."""
+    out = os.path.join(OUT, 'escenario')
+    os.makedirs(out, exist_ok=True)
+    for name, (rel, target) in MUEBLES_E1.items():
+        img = figure(rel)
+        scale = target / img.size[1]
+        img = img.resize((max(1, round(img.size[0] * scale)), target), Image.LANCZOS)
+        img.save(os.path.join(out, name + '.webp'), 'WEBP', quality=90, method=6)
+
+
+# Se ejecuta al importar porque EXTERNAL_SPRITES lee el tamaño de los WebP ya
+# generados (el primer arranque, sin ellos, los crea aquí).
+main_e1()
+
 EXTERNAL_SPRITES = {
     'fondo-barra': ('./assets/sprites/fondo-barra.png', 1280, 720),
     'fondo-terraza': ('./assets/sprites/fondo-terraza.png', 1280, 720),
@@ -348,6 +385,10 @@ EXTERNAL_SPRITES = {
     **{k: ('./assets/sprites/objetos/%s.webp' % k, *Image.open(os.path.join(OUT, 'objetos', k + '.webp')).size)
        for k in A9_OBJETOS},
     'fondo-noche-jefe': ('./assets/sprites/fondo-noche-jefe.png', 1280, 720),
+    # E1 · muebles de bar del tema «Dieta de Marcos» (subcarpeta propia).
+    # El tamaño se lee del WebP ya generado por main_e1().
+    **{k: ('./assets/sprites/escenario/%s.webp' % k, *Image.open(os.path.join(OUT, 'escenario', k + '.webp')).size)
+       for k in MUEBLES_E1},
 }
 
 # ---- A8 · Dieta de Marcos: Camarero de la Cuenta y premios (arena/5e565596) ----
@@ -397,6 +438,7 @@ SINGLES['dm-bocata-down'] = (E + 'jefe-bocata-gigante-derrotado.png', 190)
 
 def main():
     main_a9()
+    main_e1()
     manifest = {}
     for name, rel in FONDOS_MARCOS.items():
         save_fondo(rel, name)

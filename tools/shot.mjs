@@ -8,6 +8,8 @@
 //   node tools/shot.mjs --tema marcos --modo title    --salida /tmp/titulo.png
 //   node tools/shot.mjs --tema marcos --modo campaña  --salida /tmp/campana.png
 //   node tools/shot.mjs --tema marcos --modo juego --segundos 4 --salida /tmp/juego.png
+//   node tools/shot.mjs --tema marcos --modo juego --fase 4 --salida /tmp/bar2.png
+//   node tools/shot.mjs --tema marcos --modo juego --arcade --fase 2 --salida /tmp/a3.png
 import { readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -22,6 +24,8 @@ const theme = arg('tema', 'marcos');
 const mode = arg('modo', 'title');
 const out = arg('salida', '/tmp/captura.png');
 const seconds = Number(arg('segundos', '3'));
+const stageArg = Number(arg('fase', '0'));
+const arcade = argv.includes('--arcade');
 
 let createCanvas; let ImageLib = null;
 try {
@@ -103,8 +107,14 @@ if (mode === 'campaña' || mode === 'campana') {
   game.state.state = 'route';
   for (let i = 0; i < Math.round(1.2 / CONFIG.step); i++) game.update(CONFIG.step);
 } else if (mode === 'juego') {
-  game.debug.startCampaign(0);
-  game.debug.startStage(0);
+  // --fase N elige la ronda (0-15 de la campaña; 0-9 del arcade con --arcade).
+  if (arcade) {
+    game.debug.g.campaign = false;
+    game.debug.startStage(stageArg);
+  } else {
+    game.debug.startCampaign(0);
+    game.debug.startStage(stageArg);
+  }
   for (let i = 0; i < Math.round(seconds / CONFIG.step); i++) game.update(CONFIG.step);
 }
 game.render(ctx);
