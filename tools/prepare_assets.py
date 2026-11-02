@@ -132,6 +132,37 @@ FAMILIES['marcos'] = (220, (P + 'marcos-quieto.png', None), {
     'marcos-intro': (P + 'marcos-presentacion.png', None),
 })
 
+# ---- A3 · Enemigos 5-8 (tema Dieta de Marcos), bloque propio -------------------
+# Las hojas -poses.png de A3 se normalizan antes con tools/a3_normalize.py (fondo
+# por conectividad + despill, celdas iguales). Solo se registran si el arte ya está
+# en el repo: así main sigue generando sprites sin fallar mientras falta el dibujo.
+DIETA_SHEET_ENEMIES = {
+    'bocata': 'bocata-lomo', 'cacahuete': 'cacahuete-saltarin',
+    'tostada': 'tostada-tomate', 'chupito': 'chupito',
+}
+for key, base in DIETA_SHEET_ENEMIES.items():
+    sheet = E + base + '-poses.png'
+    if not os.path.exists(os.path.join(SRC, sheet)):
+        continue
+    FAMILIES[key] = (200, (sheet, (0, 3)), {
+        key + '-walkA': (sheet, (0, 3)),
+        key + '-walkB': (sheet, (1, 3)),
+        key + '-stun': (sheet, (2, 3)),
+    })
+    SINGLES[key + '-down'] = (E + base + '-derrotado.png', 120)
+# Jefa del final (paella gigante): reposo y derrotada.
+DIETA_BOSSES = {'paella': 'paella-gigante'}
+for key, base in DIETA_BOSSES.items():
+    if not os.path.exists(os.path.join(SRC, E + base + '-reposo.png')):
+        continue
+    FAMILIES[key] = (300, (E + base + '-reposo.png', None), {
+        key + '-idle': (E + base + '-reposo.png', None),
+        key + '-walkA': (E + base + '-reposo.png', None),
+        key + '-walkB': (E + base + '-reposo.png', None),
+    })
+    SINGLES[key + '-down'] = (E + base + '-derrotada.png', 160)
+# -------------------------------------------------------------------------------
+
 SINGLES = {
     # nombre: (ruta, altura objetivo)
     **{k + '-down': (E + v + '-derrotada.png', 120) for k, v in {**SHEET_ENEMIES, 'lider': 'lider-eterno-oposicion', 'baron': 'baron-regional'}.items()},
