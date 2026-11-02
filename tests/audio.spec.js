@@ -36,7 +36,9 @@ test('la canción suena por trozos de escena, sin descargar la canción entera',
   expect(a.section).toBe('title');
   expect(a.file).toBe('title');
   expect(a.playing).toBe(true);
-  expect(await mp3s(page), 'solo se descarga el trozo del título').toEqual(['dieta-de-marcos/01-titulo.mp3']);
+  const titleLoads = await mp3s(page);
+  expect(titleLoads, 'se descarga el trozo del título').toContain('dieta-de-marcos/01-titulo.mp3');
+  expect(titleLoads.filter((f) => f !== 'dieta-de-marcos/01-titulo.mp3'), 'nada más se descarga').toEqual([]);
 
   // Fundido de entrada hasta el volumen del tema.
   await expect.poll(async () => (await info(page)).volume, { timeout: 6_000 }).toBeGreaterThan(0.2);
@@ -48,6 +50,7 @@ test('la canción suena por trozos de escena, sin descargar la canción entera',
     .toContain('campaign-la-taca');
 
   // 3) Primera fase del Bar La Taca: suena su trozo (no el del título).
+  await page.waitForTimeout(1000); // la ruta ignora el salto durante los primeros 0,8 s
   await page.keyboard.press('Space');
   await expect.poll(async () => gameState(page), { timeout: 15_000 }).toMatch(/intro|play/);
   await expect.poll(async () => (await info(page)).section, { timeout: 10_000 }).toBe('campaign-la-taca');
@@ -84,17 +87,24 @@ test('la canción suena por trozos de escena, sin descargar la canción entera',
   expect(errors, `errores de JS detectados:\n${errors.join('\n')}`).toEqual([]);
 });
 
-test('el modo ARCADE de Dieta de Marcos no descarga trozos de canción', async ({ page }) => {
+test('el modo ARCADE de Dieta de Marcos no usa ni descarga trozos de canción', async ({ page }) => {
   await page.goto('/');
   await page.waitForFunction(() => !!window.__tumbleDogAudio && !!window.__tumbleDog);
-  await page.keyboard.press('ArrowRight'); // tema «marcos»
-  await page.keyboard.press('ArrowDown'); // modo ARCADE
+  await page.waitForTimeout(600);
+  await page.keyboard.press('ArrowRight'); // tema «marcos» (suena el trozo del título)
+  await expect.poll(async () => (await info(page)).section, { timeout: 8_000 }).toBe('title');
+  const antes = await mp3s(page);
+  expect(antes, 'el título sí usa su trozo').toContain('dieta-de-marcos/01-titulo.mp3');
+  // Modo ARCADE: secciones clásicas del motor, sin ficheros ni precargas.
+  await page.keyboard.press('ArrowDown');
   await page.keyboard.press('Space');
   await expect.poll(async () => gameState(page), { timeout: 15_000 }).toMatch(/intro|play/);
-  await page.waitForTimeout(800);
+  await page.waitForTimeout(900);
   const a = await info(page);
   expect(a.section, 'ARCADE usa las secciones clásicas').toMatch(/stage|boss/);
   expect(a.source, 'ARCADE no usa trozos: sintetizador').toBe('synth');
-  expect(a.cached, 'ARCADE no precarga trozos').toEqual([]);
-  expect(await mp3s(page), 'ARCADE no descarga mp3').toEqual([]);
+  expect(a.cached.filter((n) => n.startsWith('campaign-')), 'ARCADE no carga trozos de campaña').toEqual([]);
+  const despues = await mp3s(page);
+  expect(despues.filter((f) => !antes.includes(f)), 'ARCADE no descarga más mp3').toEqual([]);
+  expect(despues.filter((f) => f.includes('02-taca') || f.includes('06-jefes') || f.includes('07-bonus')), 'sin trozos de campaña').toEqual([]);
 });
