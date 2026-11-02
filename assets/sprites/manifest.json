@@ -203,6 +203,78 @@
   142,
   200
  ],
+ "dm-bocata-down": [
+  286,
+  190
+ ],
+ "dm-bocata-reposo": [
+  519,
+  300
+ ],
+ "dm-cafe-down": [
+  162,
+  110
+ ],
+ "dm-cafe-stun": [
+  115,
+  152
+ ],
+ "dm-cafe-walkA": [
+  128,
+  200
+ ],
+ "dm-cafe-walkB": [
+  128,
+  188
+ ],
+ "dm-calamares-down": [
+  200,
+  110
+ ],
+ "dm-calamares-stun": [
+  148,
+  148
+ ],
+ "dm-calamares-walkA": [
+  166,
+  200
+ ],
+ "dm-calamares-walkB": [
+  167,
+  186
+ ],
+ "dm-carajillo-down": [
+  186,
+  110
+ ],
+ "dm-carajillo-stun": [
+  134,
+  145
+ ],
+ "dm-carajillo-walkA": [
+  152,
+  200
+ ],
+ "dm-carajillo-walkB": [
+  153,
+  185
+ ],
+ "dm-tortilla-down": [
+  166,
+  110
+ ],
+ "dm-tortilla-stun": [
+  149,
+  146
+ ],
+ "dm-tortilla-walkA": [
+  171,
+  200
+ ],
+ "dm-tortilla-walkB": [
+  170,
+  185
+ ],
  "influencer-down": [
   305,
   120

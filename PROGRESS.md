@@ -6,6 +6,7 @@
 - A1 (#56): diez poses originales de Marcos en `assets/personajes/`, sprites normalizados en `assets/sprites/`, prompts registrados y generación reproducible; 12/12 tests de `npm test`.
 
 - A8 (#75, Refs #56/#57): arte libre del tema Dieta de Marcos — Camarero de la Cuenta (perseguidor de la prisa: walkA/walkB/grito), 6 premios (café, flan, antiácido, tila, zumo, ensaimada) y retrato de Marcos (referencia: arte del PR #62); 10 PNG8 ≤200 KB en assets/, registrados en tools/prepare_assets.py; 11/11 tests verdes.
+- A2 · Arte (#56): enemigos 1-4 del tema «Dieta de Marcos» (bocadillo de calamares, carajillo, tortilla y café con leche) con 4 hojas de poses 3×1, sus 4 derrotados y el jefe bocata gigante (reposo/derrotado); 20 sprites nuevos en `assets/sprites/` vía `tools/prepare_assets.py`; prompts en `assets/PROMPTS.md`. El derrotado del jefe queda provisional: el generador repitió un vaso de café y el cupo de la sesión se agotó.
 - V2-6 (#53): joystick táctil con salto y palancas independientes; prueba multitáctil en Chromium.
 - Jefe: arte propio de jefes (10 imágenes, norma 20) — boss-tertuliano y boss-lider (walkA/walkB/stun/down/shout) en assets/enemigos/, registrados en src/sprite-list.js y src/boss.js actualizado para usarlos; 11/11 tests verdes.
 
