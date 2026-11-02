@@ -3,9 +3,11 @@
 // es crear un módulo en src/themes/<juego>.js y registrarlo aquí.
 // Todo inventado: nada de personas reales ni personajes protegidos.
 import { THEME as TUMBLEDOG, STAGES as TUMBLEDOG_STAGES } from './tumbledog.js';
+import { THEME as DIETA_MARCOS, STAGES as DIETA_MARCOS_STAGES } from './dieta-marcos.js';
 
 export const THEMES = Object.freeze([
   { id: 'tumbledog', label: TUMBLEDOG.name, theme: TUMBLEDOG, stages: TUMBLEDOG_STAGES },
+  { id: 'dieta-marcos', label: DIETA_MARCOS.name, theme: DIETA_MARCOS, stages: DIETA_MARCOS_STAGES },
 ]);
 
 export function listThemes() { return THEMES; }
