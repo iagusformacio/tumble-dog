@@ -196,6 +196,24 @@ def save_fondo(rel, name):
     im.save(dst, 'PNG', optimize=True)
     return im.size
 
+# --- A7 · Jefes de campaña «Dieta de Marcos» (issue #57) ---------------------
+# El Cocinero de la Plancha (Vila-real · Bar La Taca) y El Presentador del Bingo
+# (Xirivella · Bar Los Concursos). Cinco poses por jefe, personajes inventados,
+# fondo chroma #00FF00. Bloque propio de la tarea A7; no mezclar con otras.
+A7_BOSSES = {
+    'cocinero-plancha': 'cocinero-plancha',
+    'presentador-bingo': 'presentador-bingo',
+}
+for key, base in A7_BOSSES.items():
+    FAMILIES['boss-' + key] = (300, (E + base + '-reposo.png', None), {
+        'boss-' + key + '-idle': (E + base + '-reposo.png', None),
+        'boss-' + key + '-attack': (E + base + '-atacar.png', None),
+        'boss-' + key + '-hurt': (E + base + '-herido.png', None),
+        'boss-' + key + '-down': (E + base + '-derrotado.png', None),
+        'boss-' + key + '-angry': (E + base + '-enfadado.png', None),
+    })
+# --- Fin del bloque A7 ------------------------------------------------------
+
 
 # Estos sprites se entregan como PNG ya preparados y los consume el juego directamente.
 # Se conservan aquí para que regenerar el manifiesto no los borre de src/sprite-list.js.
