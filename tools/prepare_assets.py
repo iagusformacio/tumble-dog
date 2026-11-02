@@ -136,6 +136,7 @@ FAMILIES['marcos'] = (220, (P + 'marcos-quieto.png', None), {
 # Las hojas -poses.png de A3 se normalizan antes con tools/a3_normalize.py (fondo
 # por conectividad + despill, celdas iguales). Solo se registran si el arte ya está
 # en el repo: así main sigue generando sprites sin fallar mientras falta el dibujo.
+A3_SINGLES = {}
 DIETA_SHEET_ENEMIES = {
     'bocata': 'bocata-lomo', 'cacahuete': 'cacahuete-saltarin',
     'tostada': 'tostada-tomate', 'chupito': 'chupito',
@@ -149,7 +150,7 @@ for key, base in DIETA_SHEET_ENEMIES.items():
         key + '-walkB': (sheet, (1, 3)),
         key + '-stun': (sheet, (2, 3)),
     })
-    SINGLES[key + '-down'] = (E + base + '-derrotado.png', 120)
+    A3_SINGLES[key + '-down'] = (E + base + '-derrotado.png', 120)
 # Jefa del final (paella gigante): reposo y derrotada.
 DIETA_BOSSES = {'paella': 'paella-gigante'}
 for key, base in DIETA_BOSSES.items():
@@ -160,7 +161,7 @@ for key, base in DIETA_BOSSES.items():
         key + '-walkA': (E + base + '-reposo.png', None),
         key + '-walkB': (E + base + '-reposo.png', None),
     })
-    SINGLES[key + '-down'] = (E + base + '-derrotada.png', 160)
+    A3_SINGLES[key + '-down'] = (E + base + '-derrotada.png', 160)
 # -------------------------------------------------------------------------------
 
 SINGLES = {
@@ -175,6 +176,9 @@ SINGLES = {
     'tertuliano-shout': (E + 'tertuliano-bulos.png', 260),
     'influencer-selfie': (E + 'influencer-ringlight.png', 260),
 }
+
+# A3: añadir solo tras inicializar SINGLES, también en una instalación completa.
+SINGLES.update(A3_SINGLES)
 
 # ---------------------------------------------------------------------------
 # DIETA DE MARCOS · A5 · Jefa de Sala del Bar Pols (10 poses, 2026-11-02)
