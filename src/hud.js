@@ -45,7 +45,7 @@ export function drawHud(ctx, g, time) {
     ctx.strokeStyle = '#1a1030'; ctx.lineWidth = 3; ctx.beginPath(); ctx.roundRect(x, y + 16, w, 18, 9); ctx.stroke();
   }
   // Letras T-U-M-B-L-E-D-O-G sobre la terraza
-  const word = CONFIG.letters.word;
+  const word = g.theme.word;
   const lw = 46, x0 = W / 2 - (word.length * lw) / 2 + lw / 2, ly = FLOOR_Y + 48;
   ctx.font = `40px ${FONT}`;
   for (let i = 0; i < word.length; i++) {

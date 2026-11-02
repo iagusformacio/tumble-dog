@@ -103,3 +103,18 @@ test('el empaquetador genera un HTML autocontenido', () => {
   assert.ok(!html.includes('type="module"'));
   assert.ok(html.includes('data:image/webp;base64,'));
 });
+
+test('tema original conserva las fases y admite otra palabra y ruta', async () => {
+  const { TUMBLE_DOG } = await import('../src/themes/tumbledog.js');
+  const { createGame } = await import('../src/game.js');
+  assert.equal(TUMBLE_DOG.word, CONFIG.letters.word);
+  assert.equal(TUMBLE_DOG.stages.length, STAGES.length);
+  const input = { update() {}, held: {}, pressed: {}, takeAny: () => false };
+  const audio = { update() {}, music() {}, sfx() {}, suck() {} };
+  const theme = { ...TUMBLE_DOG, word: 'ESMORZAR', stages: [TUMBLE_DOG.stages[1]] };
+  const game = createGame({ input, audio, theme });
+  assert.equal(game.state.stage.name, TUMBLE_DOG.stages[1].name);
+  assert.equal(game.state.letterPop.length, 8);
+  game.debug.startStage(0);
+  assert.equal(game.state.enemies.length, theme.stages[0].foes.length);
+});

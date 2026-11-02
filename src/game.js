@@ -1,6 +1,7 @@
 // Estados del juego, reglas, colisiones y orden de dibujo.
 import { W, H, FLOOR_Y, CONFIG } from './config.js';
-import { STAGES } from './stages.js';
+import { STAGES, createStages } from './stages.js';
+import { TUMBLE_DOG } from './themes/tumbledog.js';
 import { createBackground, renderPlatforms } from './background.js';
 import { createFx, FONT, outlinedText, burst } from './fx.js';
 import { createPlayer, respawnPlayer, updatePlayer, drawPlayer, drawHeld, nozzle } from './player.js';
@@ -18,20 +19,21 @@ const V = CONFIG.vacuum;
 function loadHi() { try { return Number(globalThis.localStorage?.getItem('tumbledog-hi')) || 0; } catch { return 0; } }
 function saveHi(v) { try { globalThis.localStorage?.setItem('tumbledog-hi', String(v)); } catch { /* sin almacenamiento */ } }
 
-export function createGame({ input, audio }) {
+export function createGame({ input, audio, theme = TUMBLE_DOG }) {
+  const stages = theme === TUMBLE_DOG ? STAGES : createStages(theme.stages);
   const bg = createBackground();
   const fx = createFx();
   let dark = null;
   if (typeof document !== 'undefined') { dark = document.createElement('canvas'); dark.width = W; dark.height = H; }
 
   const g = {
-    state: 'title', stateT: 0, time: 0, score: 0, shownScore: 0, hi: loadHi(), lives: CONFIG.player.lives, nextLife: CONFIG.player.extraLifeEvery,
-    stageIndex: 0, loop: 0, stage: STAGES[0], plats: STAGES[0].plats, platLayer: null,
-    player: createPlayer(), enemies: [], balls: [], shots: [], items: [], letterBubbles: [], letters: new Set(), letterPop: new Array(9).fill(0),
+    theme, state: 'title', stateT: 0, time: 0, score: 0, shownScore: 0, hi: loadHi(), lives: CONFIG.player.lives, nextLife: CONFIG.player.extraLifeEvery,
+    stageIndex: 0, loop: 0, stage: stages[0], plats: stages[0].plats, platLayer: null,
+    player: createPlayer(), enemies: [], balls: [], shots: [], items: [], letterBubbles: [], letters: new Set(), letterPop: new Array(theme.word.length).fill(0),
     boss: null, chaser: null, stageT: 0, hurried: false, freeze: 0, paused: false, bonusPending: false, trans: null, warnT: 0, tutorial: 0,
     parade: TYPE_KEYS.map((k, i) => ({ type: k, x: -120 - i * 150 })),
   };
-  bg.setTheme('manana');
+  bg.setTheme(theme.backgrounds.title);
 
   // ---------- Flujo
   function startTransition(cb) { g.trans = { t: 0, dur: 0.45, phase: 'out', cb }; }
@@ -46,15 +48,15 @@ export function createGame({ input, audio }) {
   function difficulty() { return 1 + g.loop * 0.18 + g.stageIndex * 0.025; }
 
   function startStage(i, bonus = false) {
-    g.stageIndex = i; g.stage = STAGES[i];
-    const theme = bonus ? 'mediodia' : g.stage.theme;
-    bg.setTheme(theme);
-    g.plats = bonus ? STAGES[0].plats : g.stage.plats;
-    g.platLayer = renderPlatforms(g.plats, theme);
+    g.stageIndex = i; g.stage = stages[i];
+    const background = bonus ? theme.backgrounds.bonus : g.stage.theme;
+    bg.setTheme(background);
+    g.plats = bonus ? stages[0].plats : g.stage.plats;
+    g.platLayer = renderPlatforms(g.plats, background);
     g.enemies = []; g.balls = []; g.shots = []; g.items = []; g.letterBubbles = []; g.boss = null; g.chaser = null;
     g.stageT = 0; g.hurried = false; g.freeze = 0; fx.clear();
     const p = g.player; respawnPlayer(p); p.invul = 2.2; p.x = 120; p.y = FLOOR_Y - p.h; p.onGround = true;
-    if (bonus) { g.state = 'bonus'; g.stateT = 0; audio.music('bonus'); return; }
+    if (bonus) { g.state = 'bonus'; g.stateT = 0; audio.music(theme.music.bonus); return; }
     if (!g.stage.boss) {
       g.stage.foes.forEach(([type, x, y], k) => g.enemies.push(createEnemy(type, x, y, { enter: true, delay: 0.35 + k * 0.28, speedMul: 1 })));
     } else {
@@ -63,13 +65,13 @@ export function createGame({ input, audio }) {
     }
     g.state = 'intro'; g.stateT = 0;
     g.tutorial = i === 0 && g.loop === 0 ? 7 : 0;
-    audio.music(g.stage.boss ? 'boss' : 'stage');
+    audio.music(g.stage.boss ? theme.music.boss : theme.music.stage);
   }
 
   function nextStage() {
     if (g.bonusPending) { g.bonusPending = false; startTransition(() => startStage(g.stageIndex, true)); return; }
     const n = g.stageIndex + 1;
-    if (n >= STAGES.length) { startTransition(() => { g.state = 'ending'; g.stateT = 0; bg.setTheme('noche'); audio.music('title'); }); return; }
+    if (n >= stages.length) { startTransition(() => { g.state = 'ending'; g.stateT = 0; bg.setTheme(theme.backgrounds.ending); audio.music(theme.music.title); }); return; }
     startTransition(() => startStage(n));
   }
 
@@ -160,8 +162,8 @@ export function createGame({ input, audio }) {
   function dropLoot(x, y, chain) {
     g.items.push(createItem(randomItemKind(chain), x, y));
     if (Math.random() < CONFIG.letters.dropChance + chain * 0.05) {
-      const missing = [...CONFIG.letters.word].map((c, i) => i).filter((i) => !g.letters.has(i) && !g.letterBubbles.some((l) => l.i === i));
-      if (missing.length) { const i = pick(missing); const l = createLetter(CONFIG.letters.word[i], x, y - 40); l.i = i; g.letterBubbles.push(l); }
+      const missing = [...theme.word].map((c, i) => i).filter((i) => !g.letters.has(i) && !g.letterBubbles.some((l) => l.i === i));
+      if (missing.length) { const i = pick(missing); const l = createLetter(theme.word[i], x, y - 40); l.i = i; g.letterBubbles.push(l); }
     }
   }
 
@@ -266,7 +268,7 @@ export function createGame({ input, audio }) {
         if (overlap(pb, { x: l.x - l.r, y: l.y - l.r, w: l.r * 2, h: l.r * 2 })) {
           g.letterBubbles.splice(i, 1); g.letters.add(l.i); g.letterPop[l.i] = 1;
           audio.sfx('letter'); addScore(500, l.x, l.y - 20, '#ffffff'); fx.ring(l.x, l.y, hsl(g.time * 200, 100, 70), 80, 0.4, 6);
-          if (g.letters.size === CONFIG.letters.word.length) { g.bonusPending = true; fx.text(W / 2, 300, '¡TUMBLE DOG!', { size: 90, burst: true, life: 2, color: '#fff35c' }); fx.confetti(W / 2, 300, 80, 2); audio.sfx('oneup'); }
+          if (g.letters.size === theme.word.length) { g.bonusPending = true; fx.text(W / 2, 300, theme.bonusText, { size: 90, burst: true, life: 2, color: '#fff35c' }); fx.confetti(W / 2, 300, 80, 2); audio.sfx('oneup'); }
         }
       }
       if (p.invul <= 0 && g.state === 'play') {
@@ -325,7 +327,7 @@ export function createGame({ input, audio }) {
     if (g.stateT >= CONFIG.bonus.time + 1.5 && !g.trans) {
       g.letters = new Set(); gainLife();
       const n = g.stageIndex + 1;
-      if (n >= STAGES.length) startTransition(() => { g.state = 'ending'; g.stateT = 0; bg.setTheme('noche'); });
+      if (n >= stages.length) startTransition(() => { g.state = 'ending'; g.stateT = 0; bg.setTheme(theme.backgrounds.ending); });
       else startTransition(() => startStage(n));
     }
   }
@@ -352,7 +354,7 @@ export function createGame({ input, audio }) {
         for (const d of g.parade) { d.x += 110 * dt; if (d.x > W + 140) d.x -= TYPE_KEYS.length * 150 + 140; }
         if ((input.pressed.jump || input.pressed.start || input.pressed.shoot || (any && input.touch)) && g.stateT > 0.6 && !g.trans) { audio.unlock(); startTransition(newGame); }
         else if (any) audio.unlock();
-        if (g.stateT > 0.1 && !g.titleMusic) { g.titleMusic = true; audio.music('title'); }
+        if (g.stateT > 0.1 && !g.titleMusic) { g.titleMusic = true; audio.music(theme.music.title); }
         break;
       case 'intro':
         for (const e of g.enemies) updateEnemy(e, dt, { plats: g.plats, player: g.player, shots: [], fx, freeze: 0, difficulty: 1 });
@@ -369,7 +371,7 @@ export function createGame({ input, audio }) {
         if (g.stateT > 1.5 && (input.pressed.jump || input.pressed.start || (any && input.touch)) && !g.trans) {
           startTransition(() => { g.lives = CONFIG.player.lives; g.score = 0; g.shownScore = 0; g.player = createPlayer(); startStage(g.stageIndex); });
         }
-        if (g.stateT > 12 && !g.trans) startTransition(() => { g.state = 'title'; g.stateT = 0; g.titleMusic = false; bg.setTheme('manana'); });
+        if (g.stateT > 12 && !g.trans) startTransition(() => { g.state = 'title'; g.stateT = 0; g.titleMusic = false; bg.setTheme(theme.backgrounds.title); });
         break;
       case 'ending':
         if (Math.random() < dt * 4) fx.confetti(rand(200, W - 200), -10, 20, 1);
@@ -463,9 +465,9 @@ export function createGame({ input, audio }) {
     const t = g.time;
     for (const d of g.parade) drawSprite(ctx, d.type + (Math.floor(t * 6 + d.x) % 2 ? '-walkA' : '-walkB'), d.x, FLOOR_Y, { s: 0.42 });
     ctx.fillStyle = 'rgba(20,10,50,0.35)'; ctx.fillRect(0, 0, W, H);
-    drawSprite(ctx, 'portrait-presi', 230, 560, { s: 1, rot: Math.sin(t * 2) * 0.04 });
-    drawSprite(ctx, 'presi-suck', 1060, FLOOR_Y, { s: 0.85, flip: true, sy: 1 + Math.sin(t * 4) * 0.02 });
-    const word = 'TUMBLE DOG';
+    drawSprite(ctx, theme.portrait, 230, 560, { s: 1, rot: Math.sin(t * 2) * 0.04 });
+    drawSprite(ctx, theme.titleCharacter, 1060, FLOOR_Y, { s: 0.85, flip: true, sy: 1 + Math.sin(t * 4) * 0.02 });
+    const word = theme.title;
     ctx.font = `132px ${FONT}`;
     const widths = [...word].map((ch) => (ch === ' ' ? 44 : ctx.measureText(ch).width + 6));
     let x = W / 2 - widths.reduce((a, b) => a + b, 0) / 2;
@@ -480,14 +482,14 @@ export function createGame({ input, audio }) {
       ctx.restore();
       x += widths[i] / 2;
     }
-    outlinedText(ctx, 'EL PRESIDENTE QUE ASPIRA A LA OPOSICIÓN', W / 2, 270, 32, '#ffffff');
+    outlinedText(ctx, theme.subtitle, W / 2, 270, 32, '#ffffff');
     if (Math.floor(t * 2) % 2 === 0) outlinedText(ctx, input.touch ? 'TOCA PARA JUGAR' : 'PULSA ESPACIO PARA JUGAR', W / 2, 360, 46, '#fff35c');
     ctx.save(); ctx.fillStyle = 'rgba(20,10,50,0.7)'; ctx.beginPath(); ctx.roundRect(W / 2 - 290, 410, 580, 120, 18); ctx.fill(); ctx.strokeStyle = '#ffe14d'; ctx.lineWidth = 3; ctx.stroke(); ctx.restore();
     outlinedText(ctx, '← →  MOVER    ESPACIO  SALTAR    ↓+ESPACIO  BAJAR', W / 2, 440, 22, '#fff');
-    outlinedText(ctx, 'X  ASPIRAR (MANTÉN)    Z  LANZAR LA BOLA', W / 2, 474, 22, '#9fe7ff');
-    outlinedText(ctx, 'JUNTA LAS LETRAS T·U·M·B·L·E·D·O·G   ·   M SONIDO   ·   P PAUSA', W / 2, 508, 18, '#ffb3d9');
+    outlinedText(ctx, theme.controls, W / 2, 474, 22, '#9fe7ff');
+    outlinedText(ctx, `JUNTA LAS LETRAS ${[...theme.word].join('·')}   ·   M SONIDO   ·   P PAUSA`, W / 2, 508, 18, '#ffb3d9');
     outlinedText(ctx, 'RÉCORD ' + String(g.hi).padStart(7, '0'), W / 2, 590, 28, '#ffb3d9');
-    outlinedText(ctx, 'Personajes inventados · parodia', W / 2, 700, 16, 'rgba(255,255,255,0.7)');
+    outlinedText(ctx, theme.credits, W / 2, 700, 16, 'rgba(255,255,255,0.7)');
   }
 
   function render(ctx) {
@@ -502,7 +504,7 @@ export function createGame({ input, audio }) {
     if (g.tutorial > 0 && g.state === 'play' && g.player.alive) {
       const p = g.player; const a = Math.min(1, g.tutorial);
       ctx.save(); ctx.globalAlpha = a;
-      const msg = input.touch ? 'MANTÉN ASPIRA · LUEGO LANZA' : 'MANTÉN X PARA ASPIRAR · Z PARA LANZAR';
+      const msg = input.touch ? theme.tutorialTouch : theme.tutorialKeyboard;
       ctx.font = `24px ${FONT}`;
       const tw = ctx.measureText(msg).width + 44;
       ctx.fillStyle = '#fff'; ctx.strokeStyle = '#1a1030'; ctx.lineWidth = 4;
