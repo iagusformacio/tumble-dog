@@ -13,6 +13,8 @@ import { setSkin } from './skin.js';
 import { groundBelow } from './physics.js';
 import { rand, pick, clamp, lerp, overlap, easeOutBack, hsl } from './util.js';
 import { getTheme, DEFAULT_THEME_ID, listThemes } from './themes/index.js';
+import { CAMPAIGN_STAGES, ROUNDS_PER_BAR, readProgress, writeProgress, clearProgress, progressForStage, modeList, drawRoute, drawCampaignMenu, drawCampaignHud, drawCampaignEnding, barOfStage } from './campaign.js';
+import { createBarMechanic } from './bar_mechanics.js';
 
 const V = CONFIG.vacuum;
 
@@ -28,6 +30,7 @@ export function createGame({ input, audio, themeId = DEFAULT_THEME_ID }) {
   const t0 = getTheme(themeId);
   let THEME = t0.theme;
   let STAGES = t0.stages;
+  let mech = null; // mecánica del bar activo (solo campaña)
 
   // Conecta el tema activo con el motor: mapeo de sprites canónicos → sprites del
   // tema, skin provisional por código, fondos, música, tipos de enemigo y textos.
@@ -51,7 +54,7 @@ export function createGame({ input, audio, themeId = DEFAULT_THEME_ID }) {
 
   const g = {
     state: 'title', stateT: 0, time: 0, score: 0, shownScore: 0, hi: loadHi(), lives: CONFIG.player.lives, nextLife: CONFIG.player.extraLifeEvery,
-    gameSel: 0, themeId: themeId,
+    gameSel: 0, modeSel: 0, campaign: false, routeBar: 0, routeNext: 0, mechanic: null, themeId: themeId,
     stageIndex: 0, loop: 0, stage: STAGES[0], plats: STAGES[0].plats, platLayer: null,
     player: createPlayer(), enemies: [], balls: [], shots: [], items: [], letterBubbles: [], letters: new Set(), letterPop: new Array(THEME.letters.word.length).fill(0),
     boss: null, chaser: null, stageT: 0, hurried: false, freeze: 0, paused: false, bonusPending: false, trans: null, warnT: 0, tutorial: 0,
@@ -60,14 +63,41 @@ export function createGame({ input, audio, themeId = DEFAULT_THEME_ID }) {
 
   // ---------- Flujo
   function startTransition(cb) { g.trans = { t: 0, dur: 0.45, phase: 'out', cb }; }
+  function stages() { return g.campaign ? CAMPAIGN_STAGES : STAGES; }
+
+  // Cambia el tema activo y reconecta el motor (sprites, fondos, música, textos).
+  function switchTheme(id, force = false) {
+    if (!force && (!id || id === g.themeId)) return;
+    const t = getTheme(id || g.themeId);
+    THEME = t.theme; STAGES = t.stages; g.themeId = t.id;
+    applyTheme();
+  }
+
+  /** Arranca la campaña en una fase (0 = nueva partida, o progreso guardado). */
+  function startCampaign(from) {
+    const saved = typeof from === 'object' && from ? from : null;
+    const i = clamp(saved ? saved.stageIndex : (Number(from) || 0), 0, CAMPAIGN_STAGES.length - 1);
+    const marcos = listThemes().find((t) => ['marcos', 'dieta-marcos', 'dieta-de-marcos'].includes(t.id));
+    switchTheme(marcos ? marcos.id : g.themeId, true);
+    g.campaign = true;
+    Object.assign(g, {
+      score: saved ? saved.score : 0, shownScore: saved ? saved.score : 0,
+      lives: saved ? saved.lives : CONFIG.player.lives,
+      nextLife: (Math.floor((saved ? saved.score : 0) / CONFIG.player.extraLifeEvery) + 1) * CONFIG.player.extraLifeEvery,
+      loop: 0, letters: new Set(), tutorial: 0,
+    });
+    g.player = createPlayer();
+    if (!saved) clearProgress();
+    g.routeBar = barOfStage(i); g.routeNext = i;
+    g.state = 'route'; g.stateT = 0; g.titleMusic = false;
+    bg.setTheme('atardecer'); audio.music('title'); audio.sfx('start');
+    writeProgress(progressForStage(i, { score: g.score, lives: g.lives, themeId: g.themeId }));
+  }
 
   function newGame(selThemeId) {
-    if (selThemeId && selThemeId !== g.themeId) {
-      const t = getTheme(selThemeId);
-      THEME = t.theme; STAGES = t.stages; g.themeId = selThemeId;
-      applyTheme();
-    }
-    Object.assign(g, { score: 0, shownScore: 0, lives: CONFIG.player.lives, nextLife: CONFIG.player.extraLifeEvery, stageIndex: 0, loop: 0, letters: new Set() });
+    switchTheme(selThemeId);
+    g.campaign = false;
+    Object.assign(g, { score: 0, shownScore: 0, lives: CONFIG.player.lives, nextLife: CONFIG.player.extraLifeEvery, stageIndex: 0, loop: 0, letters: new Set(), tutorial: 0 });
     g.player = createPlayer();
     audio.sfx('start');
     startStage(0);
@@ -76,11 +106,17 @@ export function createGame({ input, audio, themeId = DEFAULT_THEME_ID }) {
   function difficulty() { return 1 + g.loop * 0.18 + g.stageIndex * 0.025; }
 
   function startStage(i, bonus = false) {
-    g.stageIndex = i; g.stage = STAGES[i];
+    const list = stages();
+    g.stageIndex = clamp(i, 0, list.length - 1); g.stage = list[g.stageIndex];
     const theme = bonus ? (THEME.bonusTheme || 'mediodia') : g.stage.theme;
     bg.setTheme(theme);
-    g.plats = bonus ? STAGES[0].plats : g.stage.plats;
+    // Copia superficial: la barra deslizante se añade solo a la fase en curso.
+    g.plats = bonus ? list[0].plats.slice() : g.stage.plats.slice();
     g.platLayer = renderPlatforms(g.plats, theme);
+    if (mech) mech.onEnd(g);
+    mech = g.campaign && !bonus ? createBarMechanic(g.stage) : null;
+    g.mechanic = mech ? mech.id : null;
+    if (mech) mech.onStart(g);
     g.enemies = []; g.balls = []; g.shots = []; g.items = []; g.letterBubbles = []; g.boss = null; g.chaser = null;
     g.stageT = 0; g.hurried = false; g.freeze = 0; fx.clear();
     const p = g.player; respawnPlayer(p); p.invul = 2.2; p.x = 120; p.y = FLOOR_Y - p.h; p.onGround = true;
@@ -89,17 +125,38 @@ export function createGame({ input, audio, themeId = DEFAULT_THEME_ID }) {
       g.stage.foes.forEach(([type, x, y], k) => g.enemies.push(createEnemy(type, x, y, { enter: true, delay: 0.35 + k * 0.28, speedMul: 1 })));
     } else {
       g.boss = createBoss(g.stage.boss, THEME.bossHp);
-      g.boss.maxHp = g.boss.hp = Math.round(g.boss.hp * (1 + g.loop * 0.3));
+      if (g.stage.bossName) {
+        Object.assign(g.boss, {
+          name: g.stage.bossName, minions: g.stage.bossMinions,
+          shot: g.stage.bossShot, s: g.stage.bossScale || 0.64,
+        });
+      }
+      const base = g.stage.bossHp || g.boss.hp;
+      g.boss.maxHp = g.boss.hp = Math.round(base * (1 + g.loop * 0.3));
     }
     g.state = 'intro'; g.stateT = 0;
-    g.tutorial = i === 0 && g.loop === 0 ? 7 : 0;
+    g.tutorial = !g.campaign && g.stageIndex === 0 && g.loop === 0 ? 7 : 0;
     audio.music(g.stage.boss ? 'boss' : 'stage');
+    if (g.campaign) writeProgress(progressForStage(g.stageIndex, { score: g.score, lives: g.lives, themeId: g.themeId }));
   }
 
   function nextStage() {
     if (g.bonusPending) { g.bonusPending = false; startTransition(() => startStage(g.stageIndex, true)); return; }
     const n = g.stageIndex + 1;
-    if (n >= STAGES.length) { startTransition(() => { g.state = 'ending'; g.stateT = 0; bg.setTheme(THEME.nightTheme || 'noche'); audio.music('title'); }); return; }
+    // Al pasar de bar se muestra la pantalla de ruta (y se guarda la parada).
+    if (g.campaign && n < CAMPAIGN_STAGES.length && n % ROUNDS_PER_BAR === 0) {
+      startTransition(() => {
+        g.routeBar = n / ROUNDS_PER_BAR; g.routeNext = n;
+        g.state = 'route'; g.stateT = 0;
+        bg.setTheme('atardecer'); audio.music('title');
+        writeProgress(progressForStage(n, { score: g.score, lives: g.lives, themeId: g.themeId }));
+      });
+      return;
+    }
+    if (n >= stages().length) {
+      startTransition(() => { g.state = 'ending'; g.stateT = 0; bg.setTheme(THEME.nightTheme || 'noche'); audio.music('title'); if (g.campaign) clearProgress(); });
+      return;
+    }
     startTransition(() => startStage(n));
   }
 
@@ -230,6 +287,25 @@ export function createGame({ input, audio, themeId = DEFAULT_THEME_ID }) {
     fx.spark(cx, cy + 10, 10, { hue: 50, max: 260 });
   }
 
+  // ---------- Mecánicas de los bares (campaña)
+  const mechHooks = {
+    g, fx, audio, input, addScore, hurt, gainLife,
+    spawnFoe(type, x, y) { g.enemies.push(createEnemy(type, x, y, { enter: true, delay: 0.25, speedMul: 1 })); },
+    spawnChaser() {
+      if (g.chaser) return;
+      g.chaser = createChaser();
+      fx.text(W / 2, 260, '¡LA CUENTA!', { size: 60, burst: true, life: 1.6, color: '#ff6b6b' });
+      fx.flash(0.4, '#ff3b5c'); audio.sfx('hurry');
+    },
+    setPrisa() {
+      if (g.hurried) return;
+      g.hurried = true;
+      for (const e of g.enemies) e.angry = true;
+      fx.text(W / 2, 330, '¡DATE PRISA!', { size: 70, burst: true, life: 1.4, color: '#ff6b6b' });
+      audio.sfx('hurry'); audio.music('stage', 1.3);
+    },
+  };
+
   // ---------- Bucle de juego
   function updatePlay(dt) {
     const p = g.player;
@@ -238,6 +314,7 @@ export function createGame({ input, audio, themeId = DEFAULT_THEME_ID }) {
     p.pow = Math.max(0, p.pow - dt);
     g.tutorial = Math.max(0, g.tutorial - dt);
     const ev = updatePlayer(p, dt, input, g.plats, fx);
+    if (mech) mech.update(dt, mechHooks);
     if (ev.jumped) audio.sfx('jump');
     if (ev.landed) audio.sfx('land');
     if (ev.shoot) shoot();
@@ -356,7 +433,7 @@ export function createGame({ input, audio, themeId = DEFAULT_THEME_ID }) {
     if (g.stateT >= CONFIG.bonus.time + 1.5 && !g.trans) {
       g.letters = new Set(); gainLife();
       const n = g.stageIndex + 1;
-      if (n >= STAGES.length) startTransition(() => { g.state = 'ending'; g.stateT = 0; bg.setTheme(THEME.nightTheme || 'noche'); });
+      if (n >= stages().length) startTransition(() => { g.state = 'ending'; g.stateT = 0; bg.setTheme(THEME.nightTheme || 'noche'); });
       else startTransition(() => startStage(n));
     }
   }
@@ -382,6 +459,12 @@ export function createGame({ input, audio, themeId = DEFAULT_THEME_ID }) {
       case 'title':
         for (const d of g.parade) { d.x += 110 * dt; if (d.x > W + 140) d.x -= TYPE_KEYS.length * 150 + 140; }
         const nTemas = listThemes().length;
+        const modos = modeList(readProgress());
+        if (g.modeSel >= modos.length) g.modeSel = 0;
+        if (input.pressed.up || input.pressed.down) {
+          g.modeSel = (g.modeSel + (input.pressed.up ? -1 : 1) + modos.length) % modos.length;
+          audio.sfx('coin');
+        }
         if (input.pressed.left) { g.gameSel = (g.gameSel - 1 + nTemas) % nTemas; }
         else if (input.pressed.right) { g.gameSel = (g.gameSel + 1) % nTemas; }
         if (input.pressed.left || input.pressed.right) {
@@ -389,9 +472,22 @@ export function createGame({ input, audio, themeId = DEFAULT_THEME_ID }) {
           audio.setSongs(selT.theme.SONGS || null, selT.theme.audio || null);
           if (g.titleMusic) audio.music('title');
         }
-        if ((input.pressed.jump || input.pressed.start || input.pressed.shoot || (any && input.touch)) && g.stateT > 0.6 && !g.trans) { audio.unlock(); startTransition(() => newGame(listThemes()[g.gameSel].id)); }
+        if ((input.pressed.jump || input.pressed.start || input.pressed.shoot || (any && input.touch)) && g.stateT > 0.6 && !g.trans) {
+          audio.unlock();
+          const mode = modos[g.modeSel].id;
+          startTransition(() => {
+            if (mode === 'campaign') startCampaign(0);
+            else if (mode === 'continue') startCampaign(readProgress());
+            else newGame(listThemes()[g.gameSel].id);
+          });
+        }
         else if (any) audio.unlock();
         if (g.stateT > 0.1 && !g.titleMusic) { g.titleMusic = true; audio.music('title'); }
+        break;
+      case 'route':
+        if (!g.trans && ((g.stateT > 0.8 && (input.pressed.jump || input.pressed.start || input.pressed.shoot || (any && input.touch))) || g.stateT > 9)) {
+          startTransition(() => startStage(g.routeNext));
+        }
         break;
       case 'intro':
         for (const e of g.enemies) updateEnemy(e, dt, { plats: g.plats, player: g.player, shots: [], fx, freeze: 0, difficulty: 1 });
@@ -451,7 +547,12 @@ export function createGame({ input, audio, themeId = DEFAULT_THEME_ID }) {
   function drawWorld(ctx) {
     const t = g.time;
     bg.draw(ctx, t);
+    // El Bar del Jefe es nocturno: oscurecemos el fondo de bar (A4).
+    if (g.campaign && g.stage && g.stage.night && !['title', 'route'].includes(g.state)) {
+      ctx.fillStyle = 'rgba(6,8,34,0.34)'; ctx.fillRect(0, 0, W, H);
+    }
     if (g.platLayer && g.state !== 'title') ctx.drawImage(g.platLayer, 0, 0);
+    if (mech && ['intro', 'play', 'clear', 'bonus'].includes(g.state)) mech.draw(ctx, t);
     const p = g.player;
     if (g.state !== 'title' && g.state !== 'ending') {
       for (const e of g.enemies) if (e.state !== 'dead' && !(e.state === 'enter' && e.enterDelay > 0)) shadow(ctx, e.x + e.w / 2, e.y + e.h, e.w);
@@ -546,8 +647,8 @@ export function createGame({ input, audio, themeId = DEFAULT_THEME_ID }) {
     outlinedText(ctx, `${THEME.titleScreen.move}    ${THEME.titleScreen.jump}    ${THEME.titleScreen.down}`, W / 2, yBox + 30, 22, '#fff');
     outlinedText(ctx, `${THEME.titleScreen.suck}    ${THEME.titleScreen.shoot}`, W / 2, yBox + 64, 22, '#9fe7ff');
     outlinedText(ctx, `${THEME.titleScreen.lettersHint}   ·   ${THEME.titleScreen.mute}   ·   ${THEME.titleScreen.pause}`, W / 2, yBox + 98, 18, '#ffb3d9');
-    outlinedText(ctx, THEME.hud.record + ' ' + String(g.hi).padStart(7, '0'), W / 2, 610, 28, '#ffb3d9');
-    outlinedText(ctx, THEME.titleScreen.parody, W / 2, 700, 16, 'rgba(255,255,255,0.7)');
+    outlinedText(ctx, THEME.hud.record + ' ' + String(g.hi).padStart(7, '0'), W / 2, 578, 28, '#ffb3d9');
+    outlinedText(ctx, THEME.titleScreen.parody, W / 2, 714, 16, 'rgba(255,255,255,0.7)');
   }
 
   function render(ctx) {
@@ -557,8 +658,9 @@ export function createGame({ input, audio, themeId = DEFAULT_THEME_ID }) {
     drawWorld(ctx);
     fx.drawTexts(ctx);
     ctx.restore();
-    if (g.state === 'title') drawTitle(ctx);
-    else if (g.state !== 'ending') drawHud(ctx, g, g.time, THEME);
+    if (g.state === 'title') { drawTitle(ctx); drawCampaignMenu(ctx, g, g.time); }
+    else if (g.state === 'route') drawRoute(ctx, g, g.time);
+    else if (g.state !== 'ending') { drawHud(ctx, g, g.time, THEME); if (g.campaign) drawCampaignHud(ctx, g); }
     if (g.tutorial > 0 && g.state === 'play' && g.player.alive) {
       const p = g.player; const a = Math.min(1, g.tutorial);
       ctx.save(); ctx.globalAlpha = a;
@@ -571,7 +673,7 @@ export function createGame({ input, audio, themeId = DEFAULT_THEME_ID }) {
       ctx.beginPath(); ctx.roundRect(bx - tw / 2, by - 26, tw, 46, 20); ctx.fill(); ctx.stroke(); ctx.fillStyle = '#1a1030'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(msg, bx, by - 2);
       ctx.restore();
     }
-    if (g.state === 'intro') banner(ctx, g.stage.boss ? THEME.banner.jefe : `FASE ${g.stageIndex + 1}`, g.stage.name, g.stateT / 0.4, g.stage.boss ? 350 : 45);
+    if (g.state === 'intro') banner(ctx, g.stage.boss ? THEME.banner.jefe : (g.campaign ? g.stage.shortName : `FASE ${g.stageIndex + 1}`), g.stage.name, g.stateT / 0.4, g.stage.boss ? 350 : 45);
     if (g.state === 'clear' && g.stateT < THEME.stage.clearDelay + 1.2) banner(ctx, THEME.banner.faseLimpia, g.clearBonus ? `BONUS TIEMPO +${g.clearBonus}` : THEME.banner.adios, g.stateT / 0.4, 140);
     if (g.state === 'bonus') {
       outlinedText(ctx, THEME.banner.bonus, W / 2, 140, 70, hsl(g.time * 120, 95, 62));
@@ -591,6 +693,7 @@ export function createGame({ input, audio, themeId = DEFAULT_THEME_ID }) {
       outlinedText(ctx, THEME.ending.completed, W / 2, 140, 76, hsl(g.time * 90, 95, 62));
       outlinedText(ctx, THEME.ending.puntos + ' ' + g.score, W / 2, 220, 44, '#ffe14d');
       if (g.stateT > 3) outlinedText(ctx, THEME.ending.next, W / 2, 290, 30, '#fff');
+      if (g.campaign) drawCampaignEnding(ctx, g, g.time);
     }
     if (g.paused) { ctx.fillStyle = 'rgba(10,0,30,0.6)'; ctx.fillRect(0, 0, W, H); outlinedText(ctx, 'PAUSA', W / 2, H / 2, 100, '#fff'); }
     drawVignette(ctx);
@@ -604,5 +707,5 @@ export function createGame({ input, audio, themeId = DEFAULT_THEME_ID }) {
     }
   }
 
-  return { update, render, state: g, debug: { g, fx, startStage } };
+  return { update, render, state: g, debug: { g, fx, startStage, startCampaign, nextStage, get mechanic() { return mech; } } };
 }
