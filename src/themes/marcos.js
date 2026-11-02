@@ -52,20 +52,26 @@ export const THEME = {
     mercado: 'fondo-mercado',
     playa: 'fondo-playa',
   },
-  // Música (issue #95): la canción aportada por la persona ES la música del
-  // tema — título, todas las fases, jefes y ronda bonus —, en bucle y con
-  // fundido al cambiar de pantalla. Las canciones sintetizadas de abajo quedan
-  // solo como respaldo si el mp3 no carga; los efectos siguen siendo WebAudio.
+  // Música (issues #95 y #101): la canción aportada por la persona ES la música
+  // del tema, pero partida en un trozo por escena de la campaña (título, cada
+  // bar, los jefes y la ronda bonus). Cada trozo pesa ~230 KB y se descarga solo
+  // cuando toca, con la escena siguiente precargada: el título suena enseguida.
+  // Cortes, fundidos y nombres: tools/split_music.py. El original completo sigue
+  // en assets/audio/dieta-de-marcos.mp3 (no se usa en el juego).
+  // El modo ARCADE no usa estos trozos (sigue con SYNTH abajo).
   audio: {
-    title: './assets/audio/dieta-de-marcos.mp3',
-    stage: './assets/audio/dieta-de-marcos.mp3',
-    boss: './assets/audio/dieta-de-marcos.mp3',
-    bonus: './assets/audio/dieta-de-marcos.mp3',
+    title: './assets/audio/dieta-de-marcos/01-titulo.mp3',
+    'campaign-la-taca': './assets/audio/dieta-de-marcos/02-taca.mp3',
+    'campaign-concursos': './assets/audio/dieta-de-marcos/03-concursos.mp3',
+    'campaign-pols': './assets/audio/dieta-de-marcos/04-pols.mp3',
+    'campaign-del-jefe': './assets/audio/dieta-de-marcos/05-jefe-bar.mp3',
+    'campaign-jefes': './assets/audio/dieta-de-marcos/06-jefes.mp3',
+    'campaign-bonus': './assets/audio/dieta-de-marcos/07-bonus.mp3',
   },
   // Volumen de la canción respecto a los efectos y velocidad por sección
-  // (en los jefes va un poco más rápida, sin cambiar de canción).
+  // (en los jefes va un poco más rápida, sin cambiar de trozo).
   audioVolume: 0.5,
-  audioRate: { title: 1, stage: 1, boss: 1.08, bonus: 1 },
+  audioRate: { title: 1, 'campaign-jefes': 1.08, 'campaign-bonus': 1 },
   // Sprites del tema YA en main (assets/sprites/). Cada valor debe existir en
   // disco (lo comprueba tests/marcos.test.js). A4: logo, bola de vómito,
   // onomatopeyas y fondos. A1: las 10 poses de Marcos. A8: retrato de Marcos,

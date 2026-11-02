@@ -122,13 +122,14 @@ test('fondos de bar del tema existen en disco y cubren los escenarios de las fas
   }
 });
 
-test('la canción aportada es la música del tema en todas las pantallas (issue #95)', () => {
-  for (const name of ['title', 'stage', 'boss', 'bonus']) {
-    assert.equal(MARCOS.audio[name], MARCOS.audio.title, `${name} usa la misma canción`);
+test('la canción aportada es la música del tema, partida en trozos por escena (#95 y #101)', () => {
+  // El título abre con su trozo y cada escena de la campaña tiene el suyo.
+  assert.equal(MARCOS.audio.title, './assets/audio/dieta-de-marcos/01-titulo.mp3');
+  for (const url of Object.values(MARCOS.audio)) {
+    assert.ok(url.endsWith('.mp3'), `${url} debe ser un mp3`);
+    assert.ok(disk(url), `falta el trozo ${url}`);
   }
-  assert.ok(MARCOS.audio.title.endsWith('.mp3'));
-  assert.ok(disk(MARCOS.audio.title), 'falta el mp3 de la canción');
-  assert.equal(MARCOS.audio.title, './assets/audio/dieta-de-marcos.mp3');
+  assert.equal(Object.keys(MARCOS.audio).length, 7, 'título + 4 bares + jefes + bonus');
 });
 
 test('las fases del tema son válidas: 10 rondas, plataformas en pantalla y enemigos sobre plataforma', () => {

@@ -206,6 +206,24 @@ export function fondoForStage(stage) {
 export function stageIndexOf(bar, round) {
   return clamp(Math.trunc(bar) * ROUNDS_PER_BAR + Math.trunc(round), 0, CAMPAIGN_STAGE_COUNT - 1);
 }
+
+// ---- Música por escena (issue #101) --------------------------------------
+// Cada fase de la campaña tiene su trozo de canción: un trozo por bar, otro para
+// los jefes de bar, otro para la ronda bonus y el del título para los menús.
+// Fuera de la campaña (modo ARCADE) no se usan trozos: el tema ya no declara
+// 'stage' ni 'boss' y el motor cae en su música sintetizada.
+export function musicForStage(i) {
+  const st = CAMPAIGN_STAGES[Math.trunc(Number(i) || 0)];
+  if (!st) return 'title';
+  if (st.bossStage) return 'campaign-jefes';
+  return 'campaign-' + BARS[st.bar].id;
+}
+
+/** Sección que toca precargar mientras se juega la fase `i`. */
+export function nextMusicForStage(i) {
+  const n = Math.trunc(i) + 1;
+  return n >= CAMPAIGN_STAGE_COUNT ? 'title' : musicForStage(n);
+}
 export function barOfStage(i) { return clamp(Math.floor(i / ROUNDS_PER_BAR), 0, BARS.length - 1); }
 export function roundOfStage(i) { return clamp(i % ROUNDS_PER_BAR, 0, ROUNDS_PER_BAR - 1); }
 

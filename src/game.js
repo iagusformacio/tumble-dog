@@ -13,7 +13,7 @@ import { setSkin } from './skin.js';
 import { groundBelow } from './physics.js';
 import { rand, pick, clamp, lerp, overlap, easeOutBack, hsl } from './util.js';
 import { getTheme, DEFAULT_THEME_ID, listThemes } from './themes/index.js';
-import { CAMPAIGN_STAGES, ROUNDS_PER_BAR, readProgress, writeProgress, clearProgress, progressForStage, modeList, drawRoute, drawCampaignMenu, drawCampaignHud, drawCampaignEnding, barOfStage } from './campaign.js';
+import { CAMPAIGN_STAGES, ROUNDS_PER_BAR, readProgress, writeProgress, clearProgress, progressForStage, modeList, drawRoute, drawCampaignMenu, drawCampaignHud, drawCampaignEnding, barOfStage, musicForStage, nextMusicForStage } from './campaign.js';
 import { createBarMechanic } from './bar_mechanics.js';
 
 const V = CONFIG.vacuum;
@@ -92,6 +92,7 @@ export function createGame({ input, audio, themeId = DEFAULT_THEME_ID }) {
     g.routeBar = barOfStage(i); g.routeNext = i;
     g.state = 'route'; g.stateT = 0; g.titleMusic = false;
     bg.setTheme('atardecer'); audio.music('title'); audio.sfx('start');
+    preloadNextMusic(i - 1); // el bar donde se va a jugar
     writeProgress(progressForStage(i, { score: g.score, lives: g.lives, themeId: g.themeId }));
   }
 
@@ -105,6 +106,20 @@ export function createGame({ input, audio, themeId = DEFAULT_THEME_ID }) {
   }
 
   function difficulty() { return 1 + g.loop * 0.18 + g.stageIndex * 0.025; }
+
+  // Música de una fase (issue #101): en la campaña, un trozo de la canción por
+  // escena; fuera de la campaña (ARCADE) las secciones de siempre, que el tema
+  // «marcos» no declara como fichero → música sintetizada.
+  function stageMusic(i, bonus = false) {
+    if (g.campaign) return bonus ? 'campaign-bonus' : musicForStage(i);
+    const st = stages()[i];
+    return st && st.boss ? 'boss' : 'stage';
+  }
+  /** Precarga el trozo de la escena siguiente, sin bloquear nada si tarda. */
+  function preloadNextMusic(i) {
+    if (!g.campaign || !audio.preload) return;
+    try { audio.preload(nextMusicForStage(i)); } catch { /* la música nunca rompe el juego */ }
+  }
 
   function startStage(i, bonus = false) {
     const list = stages();
@@ -121,7 +136,7 @@ export function createGame({ input, audio, themeId = DEFAULT_THEME_ID }) {
     g.enemies = []; g.balls = []; g.shots = []; g.items = []; g.letterBubbles = []; g.boss = null; g.chaser = null;
     g.stageT = 0; g.hurried = false; g.freeze = 0; fx.clear();
     const p = g.player; respawnPlayer(p); p.invul = 2.2; p.x = 120; p.y = FLOOR_Y - p.h; p.onGround = true;
-    if (bonus) { g.state = 'bonus'; g.stateT = 0; audio.music('bonus'); return; }
+    if (bonus) { g.state = 'bonus'; g.stateT = 0; audio.music(stageMusic(g.stageIndex, true)); return; }
     if (!g.stage.boss) {
       g.stage.foes.forEach(([type, x, y], k) => g.enemies.push(createEnemy(type, x, y, { enter: true, delay: 0.35 + k * 0.28, speedMul: 1 })));
     } else {
@@ -137,7 +152,8 @@ export function createGame({ input, audio, themeId = DEFAULT_THEME_ID }) {
     }
     g.state = 'intro'; g.stateT = 0;
     g.tutorial = !g.campaign && g.stageIndex === 0 && g.loop === 0 ? 7 : 0;
-    audio.music(g.stage.boss ? 'boss' : 'stage');
+    audio.music(stageMusic(g.stageIndex));
+    preloadNextMusic(g.stageIndex);
     if (g.campaign) writeProgress(progressForStage(g.stageIndex, { score: g.score, lives: g.lives, themeId: g.themeId }));
   }
 
@@ -150,6 +166,7 @@ export function createGame({ input, audio, themeId = DEFAULT_THEME_ID }) {
         g.routeBar = n / ROUNDS_PER_BAR; g.routeNext = n;
         g.state = 'route'; g.stateT = 0;
         bg.setTheme('atardecer'); audio.music('title');
+        preloadNextMusic(n - 1); // la fase de la ruta ya se va cargando
         writeProgress(progressForStage(n, { score: g.score, lives: g.lives, themeId: g.themeId }));
       });
       return;
@@ -303,7 +320,7 @@ export function createGame({ input, audio, themeId = DEFAULT_THEME_ID }) {
       g.hurried = true;
       for (const e of g.enemies) e.angry = true;
       fx.text(W / 2, 330, '¡DATE PRISA!', { size: 70, burst: true, life: 1.4, color: '#ff6b6b' });
-      audio.sfx('hurry'); audio.music('stage', 1.3);
+      audio.sfx('hurry'); audio.music(stageMusic(g.stageIndex), 1.3);
     },
   };
 
@@ -400,7 +417,7 @@ export function createGame({ input, audio, themeId = DEFAULT_THEME_ID }) {
     // Prisa y perseguidor
     if (!g.stage.boss && g.state === 'play') {
       if (!g.hurried && g.stageT > THEME.stage.hurryAt) {
-        g.hurried = true; audio.sfx('hurry'); audio.music('stage', 1.3);
+        g.hurried = true; audio.sfx('hurry'); audio.music(stageMusic(g.stageIndex), 1.3);
         fx.text(W / 2, 330, THEME.hud.datePrisa, { size: 80, burst: true, life: 1.6, color: '#ff6b6b' });
         for (const e of g.enemies) e.angry = true;
       }
@@ -411,7 +428,7 @@ export function createGame({ input, audio, themeId = DEFAULT_THEME_ID }) {
     if (!p.alive) {
       g.deadT += dt;
       if (g.deadT > 1.7) {
-        if (g.lives > 0) { respawnPlayer(p); audio.music(g.stage.boss ? 'boss' : 'stage', g.hurried ? 1.3 : 1); }
+        if (g.lives > 0) { respawnPlayer(p); audio.music(stageMusic(g.stageIndex), g.hurried ? 1.3 : 1); }
         else { g.state = 'gameover'; g.stateT = 0; audio.stopMusic(); audio.sfx('gameover'); if (g.score >= g.hi) saveHi(g.hi); }
       }
     }
