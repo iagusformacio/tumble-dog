@@ -83,6 +83,26 @@
   231,
   300
  ],
+ "boss-cocinero-plancha-portrait": [
+  440,
+  238
+ ],
+ "boss-cocinero-plancha-shout": [
+  204,
+  225
+ ],
+ "boss-cocinero-plancha-walkA": [
+  231,
+  302
+ ],
+ "boss-cocinero-plancha-walkB": [
+  231,
+  302
+ ],
+ "boss-cocinero-plancha-win": [
+  185,
+  235
+ ],
  "boss-jefa-angry": [
   178,
   320
@@ -141,6 +161,26 @@
  ],
  "boss-presentador-bingo-idle": [
   181,
+  300
+ ],
+ "boss-presentador-bingo-portrait": [
+  333,
+  237
+ ],
+ "boss-presentador-bingo-shout": [
+  219,
+  300
+ ],
+ "boss-presentador-bingo-walkA": [
+  181,
+  294
+ ],
+ "boss-presentador-bingo-walkB": [
+  181,
+  295
+ ],
+ "boss-presentador-bingo-win": [
+  270,
   300
  ],
  "cacahuete-down": [
