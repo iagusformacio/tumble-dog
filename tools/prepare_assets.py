@@ -131,6 +131,28 @@ SINGLES = {
     'influencer-selfie': (E + 'influencer-ringlight.png', 260),
 }
 
+# ---------------------------------------------------------------------------
+# DIETA DE MARCOS · A5 · Jefa de Sala del Bar Pols (10 poses, 2026-11-02)
+# Un PNG por pose en assets/enemigos/jefa-sala-*.png (sin hoja de viñetas:
+# jefa-sala-poses.png es una hoja derivada, aquí se leen los PNG sueltos).
+# Bloque propio: no toca nada de lo anterior.
+# ---------------------------------------------------------------------------
+JEFA = E + 'jefa-sala-'
+FAMILIES['jefa'] = (320, (JEFA + 'reposo.png', None), {
+    'boss-jefa-walkA': (JEFA + 'andar-a.png', None),
+    'boss-jefa-walkB': (JEFA + 'andar-b.png', None),
+    'boss-jefa-stun': (JEFA + 'herida.png', None),
+    'boss-jefa-idle': (JEFA + 'reposo.png', None),
+    'boss-jefa-throw': (JEFA + 'bandeja.png', None),
+    'boss-jefa-shout': (JEFA + 'grito.png', None),
+    'boss-jefa-angry': (JEFA + 'enfadada.png', None),
+    'boss-jefa-win': (JEFA + 'victoria.png', None),
+})
+SINGLES.update({
+    'boss-jefa-down': (JEFA + 'derrotada.png', 160),
+    'boss-jefa-portrait': (JEFA + 'retrato.png', 360),
+})
+
 
 # --- Bloque A4 (arena/79932f6e · issue #57): Dieta de Marcos, escenario y UI ---
 # Los fondos de bar NO llevan croma: se copian tal cual (ya son 1280×720) a sprites/.

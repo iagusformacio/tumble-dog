@@ -38,3 +38,4 @@
 | T02 entrada unificada | hecho (validado localmente; pendiente de CI/merge) |
 | T03 fondo Moncloa | en curso |
 | T13 smoke test CI | hecho |
+- A5 (arte, sesión 2026-11-02): Jefa de Sala del Bar Pols con 10 poses (reposo, andar A/B, bandeja, grito, herida, derrotada, enfadada, victoria, retrato) en `assets/enemigos/jefa-sala-*.png` + hoja derivada; sprites `boss-jefa-*` en `assets/sprites/`.
