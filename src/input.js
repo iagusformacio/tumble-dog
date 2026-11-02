@@ -12,6 +12,8 @@ const ACTIONS = ['left', 'right', 'up', 'down', 'jump', 'suck', 'shoot', 'start'
 const DEAD_ZONE = 0.15;
 const STICK_SMOOTHING = 0.35;
 
+import { THEME } from './themes/tumbledog.js';
+
 export function createInput(win = globalThis.window) {
   const keys = new Set();
   const latched = new Set();
@@ -45,8 +47,8 @@ export function createInput(win = globalThis.window) {
     root.id = 'touchpad';
     root.innerHTML = `<div class="orientation-hint">GIRA EL MÓVIL PARA JUGAR</div>
       <div class="stick" role="group" aria-label="Movimiento y salto"><div class="stick-knob"></div></div>
-      <div class="levers"><button type="button" class="lever suck" aria-label="Aspirar"><span>ASPIRA</span></button>
-      <button type="button" class="lever shoot" aria-label="Lanzar"><span>LANZA</span></button></div>`;
+      <div class="levers"><button type="button" class="lever suck" aria-label="${THEME.touch.suck}"><span>${THEME.touch.suck}</span></button>
+      <button type="button" class="lever shoot" aria-label="${THEME.touch.shoot}"><span>${THEME.touch.shoot}</span></button></div>`;
     doc.body.appendChild(root);
     const stick = root.querySelector('.stick');
     const knob = root.querySelector('.stick-knob');

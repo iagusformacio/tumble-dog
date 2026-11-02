@@ -1,4 +1,7 @@
-// Todos los números del «feeling». Cambiar el juego = cambiar aquí.
+// Números del «feeling» (físicas, jugador, bola, vacío, efectos) — compartidos
+// por todos los temas. No importa del tema para evitar ciclos de importación
+// (config → tema → physics → config). Los textos, fases, música y nombres
+// propios de cada tema viven en src/themes/<tema>.js.
 // Unidades: píxeles lógicos (1280×720), segundos.
 export const W = 1280;
 export const H = 720;

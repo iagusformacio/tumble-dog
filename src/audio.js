@@ -8,23 +8,8 @@ const NOTE = (n) => {
 };
 const seq = (s) => s.trim().split(/\s+/).map((tok) => { const [n, d] = tok.split(':'); return [NOTE(n), Number(d || 1)]; });
 
-// Canciones: lead, bajo y batería por semicorcheas. bpm en negras.
-const SONGS = {
-  title: { bpm: 128, lead: seq(`G4:2 C5:2 E5:2 G5:2 E5:1 F5:1 G5:2 E5:2 C5:2 D5:2 E5:1 D5:1 C5:2 A4:2 G4:4
-    A4:2 C5:2 F5:2 A5:2 G5:1 F5:1 E5:2 D5:2 C5:2 B4:2 C5:1 D5:1 E5:2 D5:2 -:4`),
-    bass: seq(`C3:4 G3:4 C3:4 G3:4 F3:4 C3:4 G3:4 G2:4 F3:4 C4:4 F3:4 C3:4 G3:4 D3:4 G3:4 G2:4`), drums: 'k-h-s-h-k-k-s-h-' },
-  stage: { bpm: 152, lead: seq(`E5:1 E5:1 -:1 C5:1 E5:2 G5:2 -:2 G4:2 -:2 C5:3 G4:3 E4:2 A4:2 B4:2 A#4:1 A4:2
-    G4:1 E5:1 G5:1 A5:2 F5:1 G5:1 -:1 E5:2 C5:1 D5:1 B4:3 C5:2 E5:1 G5:1 A5:2 G5:1 E5:1 D5:1 C5:1 D5:2 G4:2 C5:4`),
-    bass: seq(`C3:2 G3:2 C3:2 G3:2 F3:2 C4:2 F3:2 C4:2 G3:2 D4:2 G3:2 D4:2 C3:2 G3:2 C3:2 G3:2
-    A2:2 E3:2 A2:2 E3:2 F3:2 C4:2 G3:2 G2:2 C3:2 G3:2 F3:2 G3:2 C3:4 -:4`), drums: 'k-hsk-hsk-hsk-hs' },
-  boss: { bpm: 168, lead: seq(`A4:1 A4:1 C5:1 A4:1 D5:1 A4:1 D#5:1 E5:1 -:2 E5:1 D5:1 C5:1 B4:1 A4:2
-    A4:1 A4:1 C5:1 A4:1 G5:1 F5:1 E5:1 D5:1 E5:3 B4:1 C5:2 B4:2 G#4:4`),
-    bass: seq(`A2:1 A2:1 A3:1 A2:1 A2:1 A3:1 A2:1 A3:1 F2:1 F2:1 F3:1 F2:1 G2:1 G3:1 G2:1 G#2:1
-    A2:1 A2:1 A3:1 A2:1 A2:1 A3:1 A2:1 A3:1 E2:1 E3:1 E2:1 E3:1 E2:1 E3:1 G#2:1 B2:1`), drums: 'kkhskkhskkhskshs' },
-  bonus: { bpm: 176, lead: seq(`C5:1 E5:1 G5:1 C6:1 G5:1 E5:1 C5:1 E5:1 D5:1 F5:1 A5:1 D6:1 A5:1 F5:1 D5:1 F5:1
-    E5:1 G5:1 B5:1 E6:1 B5:1 G5:1 E5:1 G5:1 F5:1 A5:1 C6:1 F6:1 E6:2 C6:2`),
-    bass: seq(`C3:2 C4:2 D3:2 D4:2 E3:2 E4:2 F3:2 G3:2`), drums: 'k-hsk-hs' },
-};
+// Canciones del tema «tumbledog»: lead, bajo y batería por semicorcheas. bpm en negras.
+import { SONGS } from './themes/tumbledog.js';
 
 export function createAudio() {
   let ctx = null, master = null, musicGain = null, sfxGain = null, noiseBuf = null;
