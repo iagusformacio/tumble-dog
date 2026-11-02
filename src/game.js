@@ -649,16 +649,32 @@ export function createGame({ input, audio, themeId = DEFAULT_THEME_ID }) {
     const nTemas = temas.length;
     const sel = temas[g.gameSel];
     const selX = W / 2;
-    outlinedText(ctx, 'JUEGO', selX - 140, ySel, 24, '#ffb3d9');
-    const arrows = nTemas > 1 ? ((g.gameSel === 0 ? '' : '← ') + sel.theme.title + (g.gameSel === nTemas - 1 ? '' : ' →')) : sel.theme.title;
-    outlinedText(ctx, arrows, selX, ySel, 40, '#ffe14d');
+    // Con un solo tema el selector solo añadiría ruido: se anuncia el juego y ya.
+    if (nTemas > 1) {
+      outlinedText(ctx, 'JUEGO', selX - 140, ySel, 24, '#ffb3d9');
+      const arrows = (g.gameSel === 0 ? '' : '← ') + sel.theme.title + (g.gameSel === nTemas - 1 ? '' : ' →');
+      outlinedText(ctx, arrows, selX, ySel, 40, '#ffe14d');
+    } else {
+      outlinedText(ctx, sel.theme.title, selX, ySel, 40, '#ffe14d');
+    }
     if (Math.floor(t * 2) % 2 === 0) outlinedText(ctx, input.touch ? THEME.titleScreen.startTouch : THEME.titleScreen.startKeyboard, W / 2, yStart, 46, '#fff35c');
     ctx.save(); ctx.fillStyle = 'rgba(20,10,50,0.7)'; ctx.beginPath(); ctx.roundRect(W / 2 - 290, yBox, 580, 120, 18); ctx.fill(); ctx.strokeStyle = '#ffe14d'; ctx.lineWidth = 3; ctx.stroke(); ctx.restore();
     outlinedText(ctx, `${THEME.titleScreen.move}    ${THEME.titleScreen.jump}    ${THEME.titleScreen.down}`, W / 2, yBox + 30, 22, '#fff');
     outlinedText(ctx, `${THEME.titleScreen.suck}    ${THEME.titleScreen.shoot}`, W / 2, yBox + 64, 22, '#9fe7ff');
     outlinedText(ctx, `${THEME.titleScreen.lettersHint}   ·   ${THEME.titleScreen.mute}   ·   ${THEME.titleScreen.pause}`, W / 2, yBox + 98, 18, '#ffb3d9');
+    drawTitleBand(ctx);
     outlinedText(ctx, THEME.hud.record + ' ' + String(g.hi).padStart(7, '0'), W / 2, 578, 28, '#ffb3d9');
     outlinedText(ctx, THEME.titleScreen.parody, W / 2, 714, 16, 'rgba(255,255,255,0.7)');
+  }
+
+  // Franja del récord: tapón opaco entre la caja de controles y el menú de modo.
+  // Sin él, la línea del récord se cruzaba con «ELIGE MODO · ELIGE JUEGO».
+  function drawTitleBand(ctx) {
+    ctx.save();
+    ctx.fillStyle = 'rgba(20,10,50,0.9)';
+    ctx.beginPath(); ctx.roundRect(W / 2 - 215, 558, 430, 40, 12); ctx.fill();
+    ctx.strokeStyle = 'rgba(255,225,77,0.6)'; ctx.lineWidth = 2; ctx.stroke();
+    ctx.restore();
   }
 
   function render(ctx) {

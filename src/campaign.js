@@ -8,6 +8,7 @@ import { FLOOR } from './physics.js';
 import { FONT, outlinedText } from './fx.js';
 import { TYPE_KEYS } from './enemies.js';
 import { clamp } from './util.js';
+import { listThemes } from './themes/index.js';
 
 export const CAMPAIGN_TITLE = 'DIETA DE MARCOS';
 export const ROUNDS_PER_BAR = 4; // 3 rondas normales + el jefe de bar
@@ -226,7 +227,9 @@ export function drawCampaignMenu(ctx, g, time) {
   const y = 624, w = 300, gap = 16;
   const total = modes.length * w + (modes.length - 1) * gap;
   const x0 = W / 2 - total / 2;
-  outlinedText(ctx, '↑ ↓  ELIGE MODO  ·  ← →  ELIGE JUEGO', W / 2, y - 18, 22, '#9fe7ff');
+  // Con un solo juego instalado no se puede cambiar de juego: la pista lo refleja.
+  const juegos = listThemes().length;
+  outlinedText(ctx, juegos > 1 ? '↑ ↓  ELIGE MODO  ·  ← →  ELIGE JUEGO' : '↑ ↓  ELIGE MODO', W / 2, y - 18, 22, '#9fe7ff');
   modes.forEach((m, i) => {
     const x = x0 + i * (w + gap);
     const on = i === sel;
