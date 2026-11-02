@@ -288,6 +288,31 @@ SINGLES.update({
     'premio-ensaimada': (U + 'premio-ensaimada.png', 96),
 })
 
+# ---------------------------------------------------------------------------
+# A2 · Enemigos 1-4 y jefe del tema «Dieta de Marcos» (bloque propio).
+# Los tres fotogramas (andar A, andar B y aspirado) van en una hoja 3×1 de
+# 512×512 por celda; andar B y aspirado se derivan del andar A con aplastado y
+# giro leve (mismo criterio que las hojas derivadas de ART anteriores).
+DIETA_ENEMIES = {
+    'calamares': 'bocadillo-calamares',
+    'carajillo': 'carajillo',
+    'tortilla': 'tortilla',
+    'cafe': 'cafe-con-leche',
+}
+for key, base in DIETA_ENEMIES.items():
+    sheet = E + base + '-poses.png'
+    FAMILIES['dm-' + key] = (200, (sheet, (0, 3)), {
+        'dm-' + key + '-walkA': (sheet, (0, 3)),
+        'dm-' + key + '-walkB': (sheet, (1, 3)),
+        'dm-' + key + '-stun': (sheet, (2, 3)),
+    })
+for key, base in DIETA_ENEMIES.items():
+    SINGLES['dm-' + key + '-down'] = (E + base + '-derrotado.png', 110)
+# Jefe del primer bar: bocata gigante (reposo y derrotado). La hoja de poses
+# del jefe se monta con reposo, el segundo fotograma de andar y el golpe.
+SINGLES['dm-bocata-reposo'] = (E + 'jefe-bocata-gigante-reposo.png', 300)
+SINGLES['dm-bocata-down'] = (E + 'jefe-bocata-gigante-derrotado.png', 190)
+
 
 def main():
     manifest = {}
