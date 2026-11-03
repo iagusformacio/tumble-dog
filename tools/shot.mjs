@@ -10,6 +10,9 @@
 //   node tools/shot.mjs --tema marcos --modo juego --segundos 4 --salida /tmp/juego.png
 //   node tools/shot.mjs --tema marcos --modo juego --fase 4 --salida /tmp/bar2.png
 //   node tools/shot.mjs --tema marcos --modo juego --arcade --fase 2 --salida /tmp/a3.png
+//   node tools/shot.mjs --tema marcos --modo juego --giro izquierda --salida /tmp/giro.png
+//      (--giro izquierda|derecha: con X pulsado y 3 enemigos tragados, para ver el
+//       volteo del sprite, del cono, de la boquilla y de la mochila — issue #94)
 import { readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -26,6 +29,7 @@ const out = arg('salida', '/tmp/captura.png');
 const seconds = Number(arg('segundos', '3'));
 const stageArg = Number(arg('fase', '0'));
 const arcade = argv.includes('--arcade');
+const giro = arg('giro', ''); // '', 'izquierda' o 'derecha' (B94)
 
 let createCanvas; let ImageLib = null;
 try {
@@ -116,6 +120,22 @@ if (mode === 'campaña' || mode === 'campana') {
     game.debug.startStage(stageArg);
   }
   for (let i = 0; i < Math.round(seconds / CONFIG.step); i++) game.update(CONFIG.step);
+  if (giro) {
+    // B94 · Fotograma del giro: X pulsado, tres enemigos en la mochila y el
+    // personaje girando de verdad (el frame anterior miraba al otro lado).
+    const g = game.state;
+    const p = g.player;
+    Object.assign(g, { state: 'play', paused: false, trans: null, tutorial: 0, warnT: 0 });
+    if (game.debug.fx && game.debug.fx.clear) game.debug.fx.clear(); // sin restos de golpes anteriores
+    for (const e of g.enemies) e.x = 1160; // despeja el primer plano
+    Object.assign(p, { x: 520, vx: 0, invul: 999, alive: true, heldT: 0.35, facing: giro === 'izquierda' ? 1 : -1 });
+    p.held = ['portavoz', 'tertuliano', 'asesor'];
+    input.held.suck = true;
+    input.held.left = giro === 'izquierda';
+    input.held.right = giro === 'derecha';
+    for (let i = 0; i < 8; i++) game.update(CONFIG.step);
+    if (game.debug.fx && game.debug.fx.clear) game.debug.fx.clear(); // solo jugador, cono y mochila
+  }
 }
 game.render(ctx);
 writeFileSync(out, main.toBuffer('image/png'));

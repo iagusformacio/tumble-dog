@@ -17,6 +17,9 @@ Fotogramas **reales del motor** (Canvas 2D), tema «Dieta de Marcos»:
 | `i18n-movil-val.jpg` | I18N (#102): título en móvil horizontal 800×360, selector táctil dentro del canvas. |
 | `i18n-juego-val.jpg` | I18N (#102): campaña en valencià, HUD y palancas EMPASSA/VOMITA. |
 | `escenarios-bar-del-jefe.png` | Escenarios E1 (#96): Bar del Jefe de noche, con neveras, estantería, barriles y mostradores de mercado mezclados. |
+| `b94-giro-derecha.png` | B94 (#94): Marcos con X pulsado y 3 esmorzars tragados mirando a la **derecha**: cono y boquilla a la derecha, mochila a la espalda (izquierda). |
+| `b94-giro-izquierda.png` | B94 (#94): el mismo instante tras pulsar izquierda **sin soltar X**: sprite, cono, boquilla y mochila volteados en un frame. |
+| `b94-giro-tumbledog.png` | B94 (#94): Don Presi en Tumble Dog con el mismo giro (el arreglo es del motor, vale para los dos temas). |
 
 ## Cómo se regeneran
 
@@ -29,6 +32,7 @@ node tools/shot.mjs --tema marcos --modo title     --salida /tmp/titulo.png
 node tools/shot.mjs --tema marcos --modo campaña   --salida /tmp/ruta.png
 node tools/shot.mjs --tema marcos --modo juego --segundos 5 --salida /tmp/juego.png
 node tools/shot.mjs --tema marcos --modo juego --fase 4  --salida /tmp/mercado.png   # ronda de campaña
+node tools/shot.mjs --tema marcos --arcade --modo juego --giro izquierda --salida /tmp/giro.png  # B94
 node tools/shot.mjs --tema marcos --modo juego --arcade --fase 7 --salida /tmp/arcade.png
 ```
 

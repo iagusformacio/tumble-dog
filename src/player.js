@@ -41,7 +41,11 @@ export function updatePlayer(p, dt, inp, plats, fx) {
   p.sucking = h.suck;
   const max = C.runSpeed * (p.speedUp > 0 ? 1.35 : 1) * (p.sucking ? 0.45 : 1);
   if (dir) {
-    p.facing = dir;
+    // Giro SIEMPRE (issue #94): también con X pulsado, con enemigos tragados y
+    // en el aire. `p.facing` voltea en el mismo frame el sprite, el cono, la
+    // boquilla (`nozzle`), los enemigos de la mochila (`drawHeld`) y el lado por
+    // el que sale la bola. El aplaste hace legible el cambio de lado (juice).
+    if (p.facing !== dir) { p.facing = dir; p.sx = C.turnSquash; }
     p.vx = approach(p.vx, dir * max, (p.onGround ? C.accelGround : C.accelAir) * dt);
   } else {
     p.vx = approach(p.vx, 0, (p.onGround ? C.friction : C.accelAir * 0.6) * dt);
