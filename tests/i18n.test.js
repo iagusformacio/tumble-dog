@@ -74,6 +74,10 @@ test('i18n: todas las claves declaradas por los temas existen en los dos idiomas
       assert.ok(es[key] && val[key], key);
     }
     assert.equal(theme.letters.word, theme.id === 'marcos' ? 'ESMORZAR' : 'TUMBLEDOG');
+    for (const group of ['verbs', 'powers', 'juice']) {
+      assert.ok(theme[group], `${theme.id}.${group}`);
+      for (const value of Object.values(theme[group])) assert.ok(typeof value === 'string' && value && !value.includes('{'), `${theme.id}.${group}`);
+    }
   }
   for (const stage of [...TD_STAGES, ...DM_STAGES, ...CAMPAIGN_STAGES]) {
     setLanguage('es'); assert.ok(!stage.name.includes('campaign.'), stage.name);

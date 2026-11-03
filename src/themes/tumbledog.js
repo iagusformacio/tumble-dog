@@ -24,14 +24,17 @@ export const THEME = {
   stage: { hurryAt: 32, chaserAt: 42, clearDelay: 1.6, introTime: 1.8 },
   // Mensajes al recibir daño.
   // Onomatopeyas del juego.
+  // Grupos que completa localizeTheme(); sin ellos, aspirar/premios lanzaban
+  // TypeError al leer THEME.juice.capture o THEME.powers.speed (regresión #102).
+  verbs: {},
+  powers: {},
+  juice: {},
   // Etiquetas del HUD.
   hud: {},
   // Textos de la pantalla de título.
   titleScreen: {},
   // Etiquetas de los botones táctiles.
   touch: {},
-  // Textos de captura y lanzamiento usados por el motor.
-  juice: {},
   // Mensajes de fin de partida.
   gameOver: {},
   ending: {},
