@@ -54,3 +54,10 @@ test('sprite y burbujas se reflejan juntos respecto al centro', () => {
     assert.equal(left.filter(c => c[0] === 'scale' && c[1] === -1).length, 5, 'jugador y cuatro sprites retenidos');
   } finally { __setImagesForNode(new Map()); }
 });
+
+test('el tema Tumble Dog tiene textos de captura y lanzamiento localizados', async () => {
+  const { THEME } = await import('../src/themes/tumbledog.js');
+  for (const key of ['capture', 'shatter', 'wall', 'escape', 'oneup', 'chaser']) {
+    assert.ok(THEME.juice[key], `falta el texto ${key}`);
+  }
+});
