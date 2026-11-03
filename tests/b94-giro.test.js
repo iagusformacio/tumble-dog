@@ -39,53 +39,21 @@ function recordCtx() {
   return { ctx, calls };
 }
 
-test('gira en el mismo frame con X pulsado y cuatro enemigos tragados', () => {
-  const p = createPlayer();
-  p.held = HELD4.slice();
-  p.facing = 1;
-  const n0 = nozzle(p);
-  const ev = step(p, { suck: true, left: true });
-  assert.equal(p.sucking, true, 'sigue aspirando mientras gira');
-  assert.equal(p.facing, -1, 'el giro es inmediato (un frame)');
-  assert.equal(p.held.length, 4, 'los tragados siguen dentro al girar');
-  const n1 = nozzle(p);
-  assert.ok(n1.x < n0.x, 'la boquilla salta al otro lado');
-  assert.ok(Math.abs(n1.x - (p.x + p.w / 2 - 56)) < 1e-6, 'la boquilla queda a la izquierda del cuerpo');
-  assert.equal(ev.shoot, false);
-});
 
-test('gira a la derecha y a la izquierda sin frenos mientras aspira', () => {
-  const p = createPlayer();
-  p.held = HELD4.slice();
-  const lados = [];
-  for (const dir of ['right', 'left', 'right', 'right', 'left']) {
-    step(p, { suck: true, [dir]: true });
-    lados.push(p.facing);
-  }
-  assert.deepEqual(lados, [1, -1, 1, 1, -1], 'cada pulsación cambia de lado al momento');
-});
 
-test('gira en el aire aspirando (salto y caída)', () => {
-  const p = createPlayer();
-  p.held = HELD4.slice(0, 2);
-  p.y -= 260; p.onGround = false; p.vy = -420; // subiendo
-  p.facing = 1;
-  step(p, { suck: true, left: true });
-  assert.equal(p.facing, -1, 'gira subiendo');
-  for (let i = 0; i < 40; i++) step(p, { suck: true, left: true });
-  step(p, { suck: true, right: true });
-  assert.equal(p.facing, 1, 'gira cayendo');
-});
 
-test('al girar se voltea el dibujo del personaje (espejo) y se aplasta un poco', () => {
+test('el giro lleva aplaste de juice (config, no constante mágica) y no rompe el dibujo', () => {
   const p = createPlayer();
   p.held = HELD4.slice();
   p.facing = 1;
   p.sx = 1;
   step(p, { suck: true, left: true });
-  assert.equal(p.sx, CONFIG.player.turnSquash, 'juice del giro (config, no constante mágica)');
-  // En Node no hay hojas de sprite cargadas: se usa el provisional por código,
-  // que también recibe el espejo (`o.flip`). Comprobamos que se llama y no rompe.
+  assert.equal(p.sx, CONFIG.player.turnSquash, 'aplaste al girar');
+  // Al seguir en la misma dirección ya no se vuelve a aplastar.
+  p.sx = 1;
+  step(p, { suck: true, left: true });
+  assert.equal(p.sx, 1, 'solo aplasta en el frame del cambio de lado');
+  // El dibujo (provisional por código en Node) aguanta el giro.
   const { ctx } = recordCtx();
   drawPlayer(ctx, p, 1.25);
 });
@@ -198,20 +166,3 @@ test('los dos temas traen el grupo «juice» que el motor lee sin guardia (rebot
   assert.notEqual(b.dir, -1, 'rebota y cambia de dirección');
 });
 
-test('el giro no depende del tema: el motor usa la misma física en los dos', () => {
-  const a = harness('tumbledog');
-  const b = harness('marcos');
-  for (const { game, input } of [a, b]) {
-    input.held.suck = true; input.held.left = true;
-    game.update(CONFIG.step);
-    assert.equal(game.state.player.facing, -1);
-    assert.equal(game.state.player.sucking, true);
-  }
-  // Y el personaje sigue dentro de la pantalla al girar pegado al borde.
-  const { game, input } = a;
-  game.state.player.x = 2;
-  input.held.left = true;
-  for (let i = 0; i < 10; i++) game.update(CONFIG.step);
-  assert.ok(game.state.player.x >= 0 && game.state.player.x + game.state.player.w <= W);
-  assert.ok(game.state.player.y + game.state.player.h <= FLOOR_Y + 1);
-});

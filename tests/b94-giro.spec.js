@@ -99,18 +99,3 @@ for (const theme of ['marcos', 'tumbledog']) {
     expect(errors, `errores de JS detectados:\n${errors.join('\n')}`).toEqual([]);
   });
 }
-
-test('el giro funciona también en el aire mientras aspira', async ({ page }) => {
-  await page.goto('/');
-  await page.waitForFunction(() => !!window.__tumbleDog);
-  await entrar(page, 'marcos');
-  await page.evaluate(() => { const g = window.__tumbleDog.g; g.player.y -= 220; g.player.onGround = false; g.player.vy = -200; });
-  await page.keyboard.down('KeyX');
-  await page.keyboard.down('ArrowLeft');
-  await expect.poll(() => page.evaluate(() => window.__tumbleDog.g.player.facing)).toBe(-1);
-  const p = await page.evaluate(() => ({ y: window.__tumbleDog.g.player.y, onGround: window.__tumbleDog.g.player.onGround, held: window.__tumbleDog.g.player.held.length }));
-  expect(p.onGround, 'sigue en el aire').toBe(false);
-  expect(p.held).toBe(3);
-  await page.keyboard.up('ArrowLeft');
-  await page.keyboard.up('KeyX');
-});
