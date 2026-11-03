@@ -67,3 +67,5 @@
 - B94 (#94): giro inmediato al aspirar con enemigos retenidos, burbujas reflejadas y regresiones en suelo/aire y navegador para ambos juegos.
 
 - #111: aviso y contrajuego para el perseguidor en ambos temas; la bola lo aturde, se limita su velocidad y no aparece en jefes.
+
+- #101: los siete fragmentos incorporan fundido cruzado premontado de 0,3 s; verificados por forma de onda y repetición real en Chromium.

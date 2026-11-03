@@ -14,8 +14,10 @@ medible):
   3. Divide ese intervalo en tantos trozos iguales como escenas y, para cada
      corte, busca el **valle de volumen** más profundo en ±1,5 s: el corte cae
      donde la música respira, no a mitad de una nota.
-  4. Corta con ffmpeg y aplica **fundido de 0,3 s** en cada extremo, para que el
-     principio y el final del trozo (y la repetición en bucle) no chasqueen.
+  4. Cruza el final con el principio durante 0,3 s y coloca la mezcla al final:
+     el fragmento gira hasta comenzar justo después del fundido, de modo que
+     el audio al repetir conecta con la misma señal, sin un valle de silencio.
+     La entrada/salida entre escenas se sigue fundiendo en el reproductor.
 
 Uso:
     python3 tools/split_music.py [--check]
@@ -48,7 +50,7 @@ SCENES = [
     ('07-bonus', 'ronda bonus'),
 ]
 
-FADE = 0.3          # fundido en cada extremo (segundos)
+FADE = 0.3          # solapamiento cruzado del final y el principio (segundos)
 BITRATE = '96k'     # 96 kbps mono: pesa poco y se oye bien
 MIN_START_DB = -40  # por debajo de esto se considera silencio
 WIN = 0.05          # ventana de análisis (segundos)
@@ -131,6 +133,25 @@ def cut_points(samples, n=None):
     return cuts
 
 
+def loop_filter(dur, fade=FADE):
+    """Gira el corte: [fade, fin-fade] + mezcla [fin-fade, fin] × [0, fade].
+
+    El empalme al repetir enlaza el final de la mezcla con el principio del
+    cuerpo (ambos corresponden a la muestra `fade` del corte). La duración del
+    bucle es `dur - fade`; se trata de un solapamiento real, no dos silencios.
+    """
+    if not 0 < fade < dur / 2:
+        raise ValueError('el fundido debe caber dos veces en el corte')
+    return (
+        'asplit=3[body][tail][head];'
+        '[body]atrim=start={f}:end={body_end},asetpts=PTS-STARTPTS[bodycut];'
+        '[tail]atrim=start={body_end}:end={d},asetpts=PTS-STARTPTS[tailcut];'
+        '[head]atrim=start=0:end={f},asetpts=PTS-STARTPTS[headcut];'
+        '[tailcut][headcut]acrossfade=d={f}:c1=tri:c2=tri[mix];'
+        '[bodycut][mix]concat=n=2:v=0:a=1[out]'
+    ).format(f=fade, body_end=round(dur - fade, 3), d=dur)
+
+
 def split(ffmpeg, cuts):
     os.makedirs(OUT_DIR, exist_ok=True)
     rows = []
@@ -138,13 +159,12 @@ def split(ffmpeg, cuts):
         a, b = cuts[i], cuts[i + 1]
         dur = round(b - a, 3)
         out = os.path.join(OUT_DIR, slug + '.mp3')
-        afade = ('afade=t=in:st=0:d=%s,afade=t=out:st=%s:d=%s'
-                 % (FADE, round(dur - FADE, 3), FADE))
         subprocess.run([ffmpeg, '-hide_banner', '-v', 'error', '-y',
-                        '-ss', '%.3f' % a, '-to', '%.3f' % b, '-i', ORIGINAL,
-                        '-af', afade, '-ac', '1', '-ar', '44100',
+                        '-ss', '%.3f' % a, '-t', '%.3f' % dur, '-i', ORIGINAL,
+                        '-filter_complex', loop_filter(dur), '-map', '[out]',
+                        '-ac', '1', '-ar', '44100',
                         '-c:a', 'libmp3lame', '-b:a', BITRATE, out], check=True)
-        rows.append((slug, label, a, b, dur, os.path.getsize(out)))
+        rows.append((slug, label, a, b, round(dur - FADE, 3), os.path.getsize(out)))
     return rows
 
 
@@ -212,8 +232,8 @@ def graph(path, cuts, samples):
         d.text((mid - 40, bottom + 20), '%.1f s · %s' % (b - a, label), fill='#ffd23f')
     d.line([(px(cuts[-1]), top - 14), (px(cuts[-1]), bottom + 14)], fill='#ff3b5c', width=2)
     d.text((x0, 16), 'DIETA DE MARCOS · canción partida en 7 trozos (issue #101)', fill='#ffffff')
-    d.text((x0, 34), 'envolvente de volumen · cortes en valle · fundido de 0,3 s en cada extremo', fill='#9fe7ff')
-    d.text((x0, H - 40), 'bucle en el navegador: <audio loop> por escena, con carga bajo demanda y precarga de la siguiente',
+    d.text((x0, 34), 'envolvente · cortes en valle · bucles con fundido cruzado de 0,3 s', fill='#9fe7ff')
+    d.text((x0, H - 40), 'fundido cruzado premontado · <audio loop> por escena · carga bajo demanda',
            fill='#9b8ec4')
     img.save(path, optimize=True)
     print('figura:', path)
