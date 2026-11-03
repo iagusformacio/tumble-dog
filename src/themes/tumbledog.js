@@ -30,6 +30,8 @@ export const THEME = {
   titleScreen: {},
   // Etiquetas de los botones táctiles.
   touch: {},
+  // Textos de captura y lanzamiento usados por el motor.
+  juice: {},
   // Mensajes de fin de partida.
   gameOver: {},
   ending: {},

@@ -41,7 +41,7 @@ export function updatePlayer(p, dt, inp, plats, fx) {
   p.sucking = h.suck;
   const max = C.runSpeed * (p.speedUp > 0 ? 1.35 : 1) * (p.sucking ? 0.45 : 1);
   if (dir) {
-    if (!p.sucking) p.facing = dir;
+    p.facing = dir;
     p.vx = approach(p.vx, dir * max, (p.onGround ? C.accelGround : C.accelAir) * dt);
   } else {
     p.vx = approach(p.vx, 0, (p.onGround ? C.friction : C.accelAir * 0.6) * dt);
@@ -143,7 +143,7 @@ export function drawHeld(ctx, p, time) {
   const k = clamp(p.heldT / CONFIG.vacuum.burstAt, 0, 1);
   p.held.forEach((type, i) => {
     const a = time * 3 + i * (Math.PI * 2 / p.held.length);
-    const bx = p.x + p.w / 2 - p.facing * 18 + Math.cos(a) * 26;
+    const bx = p.x + p.w / 2 + p.facing * (-18 + Math.cos(a) * 26);
     const by = p.y - 22 - i * 4 + Math.sin(a) * 8 + (warn ? Math.sin(time * 60 + i) * 3 : 0);
     const r = 20 + k * 8;
     ctx.save();
@@ -153,7 +153,7 @@ export function drawHeld(ctx, p, time) {
     ctx.lineWidth = 3; ctx.strokeStyle = '#1a1030'; ctx.stroke();
     ctx.beginPath(); ctx.arc(bx, by, r - 1, 0, Math.PI * 2); ctx.clip();
     const sf = type + '-stun';
-    if (hasSprite(sf)) drawSprite(ctx, sf, bx, by + r * 1.1, { s: 0.2 });
+    if (hasSprite(sf)) drawSprite(ctx, sf, bx, by + r * 1.1, { s: 0.2, flip: p.facing < 0 });
     else {
       // Sin sprite del tema: burbuja con el color provisional del tipo.
       ctx.fillStyle = (skin.enemyColors && skin.enemyColors[type]) || '#9fe7ff';
