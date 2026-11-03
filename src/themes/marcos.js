@@ -8,6 +8,7 @@
 // `spritesWanted` y, mientras no exista en disco, el motor dibuja un provisional
 // por código (nunca un bloque negro).
 import { FLOOR } from '../physics.js';
+import { localizeTheme } from '../i18n/theme.js';
 
 const T = 18;
 const P = (x, y, w) => ({ x, y, w, h: T });
@@ -28,30 +29,20 @@ const ESMORZAR = {
 
 export const THEME = {
   id: 'marcos',
-  name: 'Dieta de Marcos',
-  title: 'DIETA DE MARCOS',
-  tagline: '¡MARcos TRAGA ESMORZARS Y LOS VOMITA!',
+  i18n: 'theme.marcos',
+  // Claves de textos (catálogos src/i18n/es.js y val.js).
+  hurtMessagesKeys: Array.from({ length: 4 }, (_, i) => `theme.marcos.hurtMessages.${i}`),
+  onomatopeyasKeys: Array.from({ length: 4 }, (_, i) => `theme.marcos.onomatopeyas.${i}`),
+  bossHitWordsKeys: Array.from({ length: 3 }, (_, i) => `theme.marcos.bossHitWords.${i}`),
   // Verbos propios del tema (aspirar = TRAGAR, lanzar = VOMITAR).
-  verbs: { suck: 'TRAGAR', shoot: 'VOMITAR' },
-  // Letras que se recogen para desbloquear la ronda bonus.
+  verbs: {},
+  // Datos de juego (sin textos): no cambian con el idioma.
   letters: { word: 'ESMORZAR', dropChance: 0.3, bubbleSpeed: 70 },
-  // Vida de los jefes por tipo (mismas claves de tipo que el motor).
   bossHp: { tertuliano: 10, lider: 14 },
-  // Nombres de jefe propios del tema.
-  bossNames: { tertuliano: 'EL BOCATA GIGANTE', lider: 'LA PAELLA GIGANTE' },
-  // Temporizado de fase.
+  bossNames: { tertuliano: null, lider: null },
   stage: { hurryAt: 30, chaserAt: 40, clearDelay: 1.6, introTime: 1.8 },
-  // Fondos por código del motor sustituidos por escenarios del tema:
-  // 'barra'/'terraza'/'mercado'/'playa' son los de las fases; en el título,
-  // bonus y ending se usan startTheme/bonusTheme/nightTheme.
   startTheme: 'barra', bonusTheme: 'mercado', nightTheme: 'noche',
-  backgrounds: {
-    noche: 'fondo-noche-jefe',
-    barra: 'fondo-barra',
-    terraza: 'fondo-terraza',
-    mercado: 'fondo-mercado',
-    playa: 'fondo-playa',
-  },
+  backgrounds: { noche: 'fondo-noche-jefe', barra: 'fondo-barra', terraza: 'fondo-terraza', mercado: 'fondo-mercado', playa: 'fondo-playa' },
   // Música (issues #95 y #101): la canción aportada por la persona ES la música
   // del tema, pero partida en un trozo por escena de la campaña (título, cada
   // bar, los jefes y la ronda bonus). Cada trozo pesa ~230 KB y se descarga solo
@@ -133,9 +124,8 @@ export const THEME = {
   // Color de la chaqueta turquesa de Marcos para el provisional por código.
   playerSkin: { tint: '#2ec4b6' },
   // El perseguidor invencible es el camarero con la cuenta.
-  chaser: { name: 'EL CAMARERO CON LA CUENTA', draw: 'camarero' },
+  chaser: { draw: 'camarero' },
   // Onomatopeyas del juego (con sprite propio cada una, ya en main).
-  onomatopeyas: ['¡BLEEEH!', '¡GLUP!', '¡PLAF!', '¡CRAC!'],
   onomatopeyaSprites: ['ui-bleeeh', 'ui-glup', 'ui-plaf', 'ui-crac'],
   // Objetos de las mecánicas de los bares y proyectiles de los jefes (bloque A9).
   // Están en disco y registrados en sprite-list.js; el motor los usará cuando
@@ -162,68 +152,29 @@ export const THEME = {
     'jefe-bar': 'proj-cazo',
   },
   // Mensajes al recibir daño.
-  hurtMessages: ['¡INDIGESTIÓN!', '¡ESO NO ASIENTA!', '¡DEMASIADO PICANTE!', '¡REPITE!'],
   // Golpes del jefe.
-  bossHitWords: ['¡ESO ESTABA CADUCADO!', '¡ME LA HAN COLADO!', '¡QUÉ RABIA!'],
   // Etiquetas del HUD.
-  hud: {
-    puntos: 'PUNTOS',
-    record: 'RÉCORD',
-    fase: 'RONDA',
-    tiempo: 'TIEMPO',
-    datePrisa: '¡DATE PRISA O LLEGA LA CUENTA!',
-    turbo: 'CAFÉ DOBLE',
-    pow: 'SUPERTRAGÓN',
-    pausa: 'SIESTA',
-    vidaExtra: '¡1UP!',
-  },
+  hud: {},
+  titleScreen: {},
+  juice: {},
   // Textos de los premios potenciadores.
-  powers: { speed: '¡CAFÉ DOBLE!', pow: '¡SUPERTRAGÓN!', freeze: '¡SIESTA EN LA BARRA!' },
-  // Textos de la pantalla de título.
-  titleScreen: {
-    startTouch: 'TOCA PARA EMPEZAR A COMER',
-    startKeyboard: 'PULSA ESPACIO PARA EMPEZAR',
-    move: '← →  MOVER',
-    jump: 'ESPACIO  SALTAR',
-    down: '↓+ESPACIO  AGACHAR',
-    suck: 'X  TRAGAR (MANTÉN)',
-    shoot: 'Z  VOMITAR',
-    lettersHint: 'JUNTA LAS LETRAS E·S·M·O·R·Z·A·R',
-    mute: 'M SONIDO',
-    pause: 'P PAUSA',
-    parody: 'Personajes inventados · humor de bar',
-  },
+  powers: {},
   // Etiquetas de los botones táctiles.
-  touch: { jump: 'SALTO', suck: 'TRAGA', shoot: 'VOMITA' },
-  // Texto del botón de pausa.
-  pause: 'PAUSA',
-  // Juice (onomatopeyas y avisos breves).
-  juice: {
-    capture: '¡GLUP!',
-    shatter: '¡PLAF!',
-    wall: '¡REBOTE!',
-    escape: '¡INDIGESTIÓN!',
-    oneup: '¡1UP!',
-    chaser: '¡LLEGA EL CAMARERO CON LA CUENTA!',
-  },
+  touch: {},
   // Mensajes de fin de partida.
-  gameOver: { puntos: 'PUNTOS', continuar: '¿OTRA RONDA?' },
-  ending: {
-    completed: '¡ESMORZAR COMPLETADO!',
-    puntos: 'PUNTOS',
-    next: 'PULSA PARA OTRO BAR (MÁS LLENO)',
-  },
-  banner: { jefe: '¡JEFE DE BAR!', faseLimpia: '¡BAR LIMPIO!', adios: '¡ADIÓS, ESMORZAR!', bonus: '¡RONDA BONUS!', cogeTodo: '¡COGE TODO!' },
+  gameOver: {},
+  ending: {},
+  banner: {},
   // Comportamiento de cada esmorzar (mismas claves y mecánicas que el motor).
   enemyTypes: {
-    portavoz: { name: 'El Bocadillo de Calamares', speed: 100, jump: 0.18, drop: 0.45, shoot: 'shout', rate: [3.2, 5], res: 1, score: 200 },
-    tertuliano: { name: 'El Carajillo', speed: 90, jump: 0.45, drop: 0.3, shoot: 'bulo', rate: [3.5, 5.5], res: 1, score: 200 },
-    asesor: { name: 'El Café con Leche', speed: 165, jump: 0.1, drop: 0.85, shoot: null, res: 1, ghost: true, score: 300 },
-    influencer: { name: 'El Cacahuete Saltarín', speed: 120, jump: 0.9, hop: true, drop: 0.5, shoot: 'flash', rate: [3.8, 6], res: 0.9, score: 300 },
-    activista: { name: 'El Bocata de Lomo', speed: 190, jump: 0.25, drop: 0.6, shoot: null, res: 1, chase: true, score: 300 },
-    lider: { name: 'La Tostada con Tomate', speed: 72, jump: 0.15, drop: 0.3, shoot: 'shout', rate: [4, 6], res: 2.1, score: 500 },
-    baron: { name: 'El Chupito', speed: 105, jump: 0.5, drop: 0.7, shoot: null, res: 1.3, chase: true, score: 400 },
-    diputado: { name: 'La Tortilla de Patatas', speed: 66, jump: 0.35, drop: 0.25, shoot: 'bulo', rate: [4.5, 7], res: 1.5, score: 400 },
+    portavoz: { speed: 100, jump: 0.18, drop: 0.45, shoot: 'shout', rate: [3.2, 5], res: 1, score: 200 },
+    tertuliano: { speed: 90, jump: 0.45, drop: 0.3, shoot: 'bulo', rate: [3.5, 5.5], res: 1, score: 200 },
+    asesor: { speed: 165, jump: 0.1, drop: 0.85, shoot: null, res: 1, ghost: true, score: 300 },
+    influencer: { speed: 120, jump: 0.9, hop: true, drop: 0.5, shoot: 'flash', rate: [3.8, 6], res: 0.9, score: 300 },
+    activista: { speed: 190, jump: 0.25, drop: 0.6, shoot: null, res: 1, chase: true, score: 300 },
+    lider: { speed: 72, jump: 0.15, drop: 0.3, shoot: 'shout', rate: [4, 6], res: 2.1, score: 500 },
+    baron: { speed: 105, jump: 0.5, drop: 0.7, shoot: null, res: 1.3, chase: true, score: 400 },
+    diputado: { speed: 66, jump: 0.35, drop: 0.25, shoot: 'bulo', rate: [4.5, 7], res: 1.5, score: 400 },
   },
   // Colores de dibujo provisional por código (nunca negro).
   enemyColors: {
@@ -245,46 +196,47 @@ export const THEME = {
 // central para los combos de la bola; todo sigue siendo alcanzable con el salto
 // del motor (lo comprueban tests/game.test.js y tests/escenarios.test.js).
 const RAW = [
-  { name: 'BAR LA TACA · LA BARRA', theme: 'barra',
+  { theme: 'barra',
     plats: [[70, 540, 250, 'taburete'], [960, 540, 250, 'taburete'], [300, 460, 240, 'mesa'], [740, 460, 240, 'mesa'],
       [110, 350, 210, 'barril'], [960, 350, 210, 'barril'], [330, 280, 620, 'barra'], [520, 165, 240, 'estante']],
     foes: [['portavoz', 180, 540], ['portavoz', 1060, 540], ['tertuliano', 620, 280]] },
-  { name: 'BAR LA TACA · LA TERRAZA', theme: 'terraza',
+  { theme: 'terraza',
     plats: [[0, 540, 290, 'toldo'], [990, 540, 290, 'toldo'], [250, 450, 230, 'mesa'], [800, 450, 230, 'mesa'],
       [470, 380, 340, 'mesa'], [60, 300, 240, 'silla'], [980, 300, 240, 'silla'], [380, 200, 520, 'toldo']],
     foes: [['portavoz', 120, 540], ['tertuliano', 1120, 540], ['influencer', 600, 380], ['portavoz', 620, 200]] },
-  { name: 'BAR LOS CONCURSOS · EL MERCADO', theme: 'mercado',
+  { theme: 'mercado',
     plats: [[150, 540, 430, 'mostrador'], [700, 540, 430, 'mostrador'], [20, 440, 300, 'caja'], [960, 440, 300, 'caja'],
       [380, 340, 520, 'mostrador'], [180, 230, 260, 'caja'], [840, 230, 260, 'caja'], [480, 140, 320, 'toldo']],
     foes: [['asesor', 360, 540], ['portavoz', 910, 540], ['influencer', 640, 340], ['tertuliano', 310, 230]] },
-  { name: 'BAR POLS · LA SALA', theme: 'barra',
+  { theme: 'barra',
     plats: [[55, 540, 225, 'taburete'], [530, 540, 225, 'taburete'], [1000, 540, 225, 'taburete'], [280, 430, 260, 'mesa'],
       [740, 430, 260, 'mesa'], [110, 320, 220, 'nevera'], [950, 320, 220, 'nevera'], [420, 250, 440, 'barra'], [400, 140, 480, 'estante']],
     foes: [['activista', 160, 540], ['influencer', 1110, 540], ['asesor', 410, 430], ['tertuliano', 870, 430], ['portavoz', 640, 250], ['activista', 640, 140]] },
-  { name: 'JEFE: EL BOCATA GIGANTE', theme: 'barra', boss: 'tertuliano',
+  { theme: 'barra', boss: 'tertuliano',
     plats: [[60, 500, 380, 'barra'], [60, 360, 300, 'estante'], [60, 220, 380, 'barra'], [520, 430, 200, 'taburete']], foes: [] },
-  { name: 'BAR DEL JEFE · LA BARRA', theme: 'noche',
+  { theme: 'noche',
     plats: [[0, 540, 410, 'mostrador'], [870, 540, 410, 'mostrador'], [330, 420, 620, 'barra'], [0, 300, 280, 'nevera'],
       [1000, 300, 280, 'nevera'], [380, 300, 520, 'estante'], [500, 180, 280, 'barril']],
     foes: [['baron', 200, 540], ['diputado', 1080, 540], ['activista', 640, 420], ['asesor', 140, 300], ['influencer', 1140, 300], ['baron', 640, 180]] },
-  { name: 'LA TERRAZA DE VALÈNCIA', theme: 'terraza',
+  { theme: 'terraza',
     plats: [[80, 540, 420, 'toldo'], [780, 540, 420, 'toldo'], [80, 430, 280, 'mesa'], [920, 430, 280, 'mesa'],
       [420, 370, 440, 'mesa'], [80, 270, 350, 'silla'], [850, 270, 350, 'silla'], [460, 160, 360, 'toldo']],
     foes: [['diputado', 250, 540], ['lider', 1000, 540], ['tertuliano', 220, 430], ['activista', 1060, 430], ['baron', 640, 370], ['influencer', 640, 160]] },
-  { name: 'EL CHIRINGUITO DE LA PLAYA', theme: 'playa',
+  { theme: 'playa',
     plats: [[0, 540, 250, 'barril'], [1030, 540, 250, 'barril'], [300, 470, 680, 'mostrador'], [50, 350, 320, 'caja'],
       [910, 350, 320, 'caja'], [430, 280, 420, 'toldo'], [0, 150, 270, 'caja'], [1010, 150, 270, 'caja']],
     foes: [['asesor', 120, 540], ['asesor', 1150, 540], ['lider', 640, 470], ['diputado', 210, 350], ['baron', 1070, 350], ['activista', 640, 280], ['influencer', 130, 150]] },
-  { name: 'LA NOCHE DEL MERCADO', theme: 'mercado',
+  { theme: 'mercado',
     plats: [[40, 540, 460, 'mostrador'], [780, 540, 460, 'mostrador'], [250, 430, 780, 'mostrador'], [40, 310, 380, 'caja'],
       [860, 310, 380, 'caja'], [300, 180, 680, 'toldo']],
     foes: [['lider', 270, 540], ['diputado', 1010, 540], ['tertuliano', 640, 430], ['asesor', 230, 310], ['activista', 1050, 310], ['portavoz', 640, 180], ['influencer', 450, 180]] },
-  { name: 'JEFE FINAL: LA PAELLA GIGANTE', theme: 'playa', boss: 'lider',
+  { theme: 'playa', boss: 'lider',
     plats: [[60, 500, 380, 'mostrador'], [60, 360, 300, 'caja'], [60, 220, 380, 'mostrador'], [520, 430, 200, 'barril']], foes: [] },
 ];
 
 export const STAGES = RAW.map((s) => ({ ...s, plats: [FLOOR, ...s.plats.map(([x, y, w, kind]) => ({ ...P(x, y, w), kind: kind || 'barra' }))] }));
 export const STAGE_COUNT = STAGES.length;
+localizeTheme(THEME, STAGES);
 
 // Canciones sintetizadas propias del tema (melodías originales, sin muestras).
 const NOTE = (n) => {
@@ -313,7 +265,7 @@ export const SONGS = {
 };
 
 // Named exports de sub-partes del tema (para importación directa en módulos).
-export const onomatopeyas = THEME.onomatopeyas;
+export const onomatopeyasKeys = THEME.onomatopeyasKeys;
 export const letters = THEME.letters;
 export const bossHp = THEME.bossHp;
 export const stage = THEME.stage;

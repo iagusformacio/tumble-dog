@@ -65,7 +65,7 @@ export function drawItem(ctx, it, time) {
     ctx.strokeStyle = '#4dd2ff'; ctx.lineWidth = 3; for (let i = 0; i < 3; i++) { ctx.beginPath(); ctx.moveTo(-26 - i * 2, -8 + i * 7); ctx.lineTo(-34 - i * 4, -8 + i * 7); ctx.stroke(); }
   } else if (k === 'pow') {
     ctx.fillStyle = '#2f6bff'; ctx.fillRect(-18, -16, 36, 32); ctx.strokeRect(-18, -16, 36, 32);
-    ctx.fillStyle = '#fff'; ctx.font = `17px ${FONT}`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('POW', 0, 1);
+    ctx.fillStyle = '#fff'; ctx.font = `17px ${FONT}`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(t('item.pow'), 0, 1);
   } else if (k === 'clock') {
     ctx.fillStyle = '#ffd23f'; ctx.beginPath(); ctx.arc(0, 2, 16, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
     ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(0, 2, 11, 0, Math.PI * 2); ctx.fill();
@@ -74,7 +74,7 @@ export function drawItem(ctx, it, time) {
   } else if (k === 'life') {
     ctx.fillStyle = '#ff3b6b'; ctx.scale(1 + Math.sin(time * 8) * 0.08, 1 + Math.sin(time * 8) * 0.08);
     ctx.beginPath(); ctx.moveTo(0, 15); ctx.bezierCurveTo(-26, -2, -14, -22, 0, -8); ctx.bezierCurveTo(14, -22, 26, -2, 0, 15); ctx.fill(); ctx.stroke();
-    ctx.fillStyle = '#fff'; ctx.font = `14px ${FONT}`; ctx.textAlign = 'center'; ctx.fillText('1UP', 0, 2);
+    ctx.fillStyle = '#fff'; ctx.font = `14px ${FONT}`; ctx.textAlign = 'center'; ctx.fillText(t('item.life'), 0, 2);
   }
   ctx.restore();
 }

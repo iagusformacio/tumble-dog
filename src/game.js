@@ -1,5 +1,6 @@
 // Estados del juego, reglas, colisiones y orden de dibujo.
 import { W, H, FLOOR_Y, CONFIG } from './config.js';
+import { t as translate, toggleLanguage } from './i18n/index.js';
 import { createBackground, renderPlatforms } from './background.js';
 import { createFx, FONT, outlinedText, burst, setWords } from './fx.js';
 import { createPlayer, respawnPlayer, updatePlayer, drawPlayer, drawPlayerFallback, drawHeld, nozzle } from './player.js';
@@ -40,15 +41,15 @@ export function createGame({ input, audio, themeId = DEFAULT_THEME_ID }) {
       enemyColors: THEME.enemyColors || null,
       playerTint: (THEME.playerSkin && THEME.playerSkin.tint) || null,
       chaser: (THEME.chaser && THEME.chaser.draw) || null,
-      hitWords: THEME.bossHitWords || null,
+      hitWords: THEME.bossHitWordsKeys || null,
       touch: THEME.touch || null,
       bossShots: THEME.bossShots || null,
     });
     setEnemyTypes(THEME.enemyTypes);
-    setBossNames(THEME.bossNames || null);
+    setBossNames(THEME.id === 'marcos' ? { tertuliano: 'theme.marcos.bossNames.tertuliano', lider: 'theme.marcos.bossNames.lider' } : null);
     bg.setImageBackgrounds(THEME.backgrounds || null);
     audio.setSongs(THEME.SONGS || null, THEME.audio || null, { volume: THEME.audioVolume, rate: THEME.audioRate });
-    setWords(THEME.onomatopeyas, THEME.onomatopeyaSprites || null);
+    setWords(THEME.onomatopeyasKeys, THEME.onomatopeyaSprites || null);
     bg.setTheme(THEME.startTheme || 'manana');
   }
   applyTheme();
@@ -143,7 +144,7 @@ export function createGame({ input, audio, themeId = DEFAULT_THEME_ID }) {
       g.boss = createBoss(g.stage.boss, THEME.bossHp, g.stage.bossArt);
       if (g.stage.bossName) {
         Object.assign(g.boss, {
-          name: g.stage.bossName, minions: g.stage.bossMinions,
+          nameKey: g.stage.bossNameKey, minions: g.stage.bossMinions,
           shot: g.stage.bossShot, s: g.stage.bossScale || 0.64,
         });
       }
@@ -279,7 +280,7 @@ export function createGame({ input, audio, themeId = DEFAULT_THEME_ID }) {
     fx.stars(cx, cy, 8 + b.chain * 2); fx.spark(cx, cy, 16, { hue: (b.chain * 50) % 360 }); fx.confetti(cx, cy, 10 + b.chain * 6);
     fx.word(cx + rand(-30, 30), cy - 50, 44 + b.chain * 4);
     addScore(v, cx, cy - 100, hsl(50 + b.chain * 40, 100, 65), 30 + b.chain * 5);
-    if (b.chain >= 2) fx.text(clamp(cx, 200, W - 200), Math.max(150, cy - 160), `¡COMBO x${b.chain}!`, { size: 50 + b.chain * 6, color: hsl(b.chain * 60, 100, 65), burst: true, life: 1.1, vy: -30 });
+    if (b.chain >= 2) fx.text(clamp(cx, 200, W - 200), Math.max(150, cy - 160), translate('ui.combo', { count: b.chain }), { size: 50 + b.chain * 6, color: hsl(b.chain * 60, 100, 65), burst: true, life: 1.1, vy: -30 });
     audio.sfx('kill', b.chain);
     dropLoot(cx, cy, b.chain);
   }
@@ -296,9 +297,9 @@ export function createGame({ input, audio, themeId = DEFAULT_THEME_ID }) {
     const d = ITEM_KINDS[it.kind];
     const cx = it.x + it.w / 2, cy = it.y;
     const pw = THEME.powers || {};
-    if (d.power === 'speed') { g.player.speedUp = 12; fx.text(cx, cy - 20, pw.speed || '¡TURBO!', { size: 40, burst: true }); audio.sfx('power'); }
-    else if (d.power === 'pow') { g.player.pow = 15; fx.text(cx, cy - 20, pw.pow || '¡SUPERASPIRADORA!', { size: 36, burst: true }); audio.sfx('power'); }
-    else if (d.power === 'freeze') { g.freeze = 6; fx.text(cx, cy - 20, pw.freeze || '¡PAUSA!', { size: 34, burst: true }); fx.flash(0.4, '#9ff'); audio.sfx('power'); }
+    if (d.power === 'speed') { g.player.speedUp = 12; fx.text(cx, cy - 20, pw.speed || translate('ui.powerSpeed'), { size: 40, burst: true }); audio.sfx('power'); }
+    else if (d.power === 'pow') { g.player.pow = 15; fx.text(cx, cy - 20, pw.pow || translate('ui.powerVacuum'), { size: 36, burst: true }); audio.sfx('power'); }
+    else if (d.power === 'freeze') { g.freeze = 6; fx.text(cx, cy - 20, pw.freeze || translate('ui.powerFreeze'), { size: 34, burst: true }); fx.flash(0.4, '#9ff'); audio.sfx('power'); }
     else if (d.power === 'life') { gainLife(); }
     else audio.sfx(it.kind === 'coin' ? 'coin' : 'gem');
     addScore(d.value, cx, cy - 10, '#fff', 24);
@@ -312,14 +313,14 @@ export function createGame({ input, audio, themeId = DEFAULT_THEME_ID }) {
     spawnChaser() {
       if (g.chaser) return;
       g.chaser = createChaser();
-      fx.text(W / 2, 260, '¡LA CUENTA!', { size: 60, burst: true, life: 1.6, color: '#ff6b6b' });
+      fx.text(W / 2, 260, translate('ui.bill'), { size: 60, burst: true, life: 1.6, color: '#ff6b6b' });
       fx.flash(0.4, '#ff3b5c'); audio.sfx('hurry');
     },
     setPrisa() {
       if (g.hurried) return;
       g.hurried = true;
       for (const e of g.enemies) e.angry = true;
-      fx.text(W / 2, 330, '¡DATE PRISA!', { size: 70, burst: true, life: 1.4, color: '#ff6b6b' });
+      fx.text(W / 2, 330, translate('ui.hurry'), { size: 70, burst: true, life: 1.4, color: '#ff6b6b' });
       audio.sfx('hurry'); audio.music(stageMusic(g.stageIndex), 1.3);
     },
   };
@@ -345,7 +346,7 @@ export function createGame({ input, audio, themeId = DEFAULT_THEME_ID }) {
     }
     const ectx = { plats: g.plats, player: p, shots: g.shots, fx, freeze: g.freeze, difficulty: difficulty(), calm: g.stageIndex === 0 && g.loop === 0 };
     const living = g.enemies.filter((e) => e.state !== 'dead');
-    if (!g.stage.boss && living.length === 1 && g.state === 'play' && !living[0].angry && living[0].state === 'walk') { living[0].angry = true; fx.text(living[0].x + 20, living[0].y - 30, '¡GRRR!', { size: 34, color: '#ff6b6b' }); }
+    if (!g.stage.boss && living.length === 1 && g.state === 'play' && !living[0].angry && living[0].state === 'walk') { living[0].angry = true; fx.text(living[0].x + 20, living[0].y - 30, translate('ui.angry'), { size: 34, color: '#ff6b6b' }); }
     for (const e of g.enemies) {
       const before = g.shots.length;
       updateEnemy(e, dt, ectx);
@@ -401,7 +402,7 @@ export function createGame({ input, audio, themeId = DEFAULT_THEME_ID }) {
         if (overlap(pb, { x: l.x - l.r, y: l.y - l.r, w: l.r * 2, h: l.r * 2 })) {
           g.letterBubbles.splice(i, 1); g.letters.add(l.i); g.letterPop[l.i] = 1;
           audio.sfx('letter'); addScore(500, l.x, l.y - 20, '#ffffff'); fx.ring(l.x, l.y, hsl(g.time * 200, 100, 70), 80, 0.4, 6);
-          if (g.letters.size === THEME.letters.word.length) { g.bonusPending = true; fx.text(W / 2, 300, '¡' + THEME.letters.word + '!', { size: 90, burst: true, life: 2, color: '#fff35c' }); fx.confetti(W / 2, 300, 80, 2); audio.sfx('oneup'); }
+          if (g.letters.size === THEME.letters.word.length) { g.bonusPending = true; fx.text(W / 2, 300, translate('ui.wordComplete', { word: THEME.letters.word }), { size: 90, burst: true, life: 2, color: '#fff35c' }); fx.confetti(W / 2, 300, 80, 2); audio.sfx('oneup'); }
         }
       }
       if (p.invul <= 0 && g.state === 'play') {
@@ -469,6 +470,7 @@ export function createGame({ input, audio, themeId = DEFAULT_THEME_ID }) {
     input.update();
     audio.update();
     if (input.pressed.mute) audio.toggleMute();
+    if (input.pressed.language && g.state === 'title') toggleLanguage();
     if (g.trans) {
       g.trans.t += dt;
       if (g.trans.t >= g.trans.dur) {
@@ -669,7 +671,7 @@ export function createGame({ input, audio, themeId = DEFAULT_THEME_ID }) {
     const selX = W / 2;
     // Con un solo tema el selector solo añadiría ruido: se anuncia el juego y ya.
     if (nTemas > 1) {
-      outlinedText(ctx, 'JUEGO', selX - 140, ySel, 24, '#ffb3d9');
+      outlinedText(ctx, translate('ui.game'), selX - 140, ySel, 24, '#ffb3d9');
       const arrows = (g.gameSel === 0 ? '' : '← ') + sel.theme.title + (g.gameSel === nTemas - 1 ? '' : ' →');
       outlinedText(ctx, arrows, selX, ySel, 40, '#ffe14d');
     } else {
@@ -708,8 +710,8 @@ export function createGame({ input, audio, themeId = DEFAULT_THEME_ID }) {
     if (g.tutorial > 0 && g.state === 'play' && g.player.alive) {
       const p = g.player; const a = Math.min(1, g.tutorial);
       ctx.save(); ctx.globalAlpha = a;
-      const v = THEME.verbs || { suck: 'ASPIRAR', shoot: 'LANZAR' };
-      const msg = input.touch ? `MANTÉN ${THEME.touch.suck} · LUEGO ${THEME.touch.shoot}` : `MANTÉN X PARA ${v.suck} · Z PARA ${v.shoot}`;
+      const v = THEME.verbs || { suck: translate('theme.tumbledog.touch.suck'), shoot: translate('theme.tumbledog.touch.shoot') };
+      const msg = input.touch ? translate('ui.tutorialTouch', THEME.touch) : translate('ui.tutorialKeys', v);
       ctx.font = `24px ${FONT}`;
       const tw = ctx.measureText(msg).width + 44;
       ctx.fillStyle = '#fff'; ctx.strokeStyle = '#1a1030'; ctx.lineWidth = 4;
@@ -717,7 +719,7 @@ export function createGame({ input, audio, themeId = DEFAULT_THEME_ID }) {
       ctx.beginPath(); ctx.roundRect(bx - tw / 2, by - 26, tw, 46, 20); ctx.fill(); ctx.stroke(); ctx.fillStyle = '#1a1030'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(msg, bx, by - 2);
       ctx.restore();
     }
-    if (g.state === 'intro') banner(ctx, g.stage.boss ? THEME.banner.jefe : (g.campaign ? g.stage.shortName : `FASE ${g.stageIndex + 1}`), g.stage.name, g.stateT / 0.4, g.stage.boss ? 350 : 45);
+    if (g.state === 'intro') banner(ctx, g.stage.boss ? THEME.banner.jefe : (g.campaign ? g.stage.shortName : translate('theme.tumbledog.hud.fase') + ' ' + (g.stageIndex + 1)), g.stage.name, g.stateT / 0.4, g.stage.boss ? 350 : 45);
     // Retrato del jefe en la presentación (arte de sesión): entra rebotando.
     if (g.state === 'intro' && g.boss) {
       const portrait = `boss-${g.boss.art || g.boss.type}-portrait`;
@@ -729,7 +731,7 @@ export function createGame({ input, audio, themeId = DEFAULT_THEME_ID }) {
         ctx.restore();
       }
     }
-    if (g.state === 'clear' && g.stateT < THEME.stage.clearDelay + 1.2) banner(ctx, THEME.banner.faseLimpia, g.clearBonus ? `BONUS TIEMPO +${g.clearBonus}` : THEME.banner.adios, g.stateT / 0.4, 140);
+    if (g.state === 'clear' && g.stateT < THEME.stage.clearDelay + 1.2) banner(ctx, THEME.banner.faseLimpia, g.clearBonus ? translate('ui.timeBonus', { score: g.clearBonus }) : THEME.banner.adios, g.stateT / 0.4, 140);
     if (g.state === 'bonus') {
       outlinedText(ctx, THEME.banner.bonus, W / 2, 140, 70, hsl(g.time * 120, 95, 62));
       outlinedText(ctx, `${THEME.banner.cogeTodo} ${Math.max(0, Math.ceil(CONFIG.bonus.time - g.stateT))}`, W / 2, 200, 40, '#fff');
@@ -750,7 +752,7 @@ export function createGame({ input, audio, themeId = DEFAULT_THEME_ID }) {
       if (g.stateT > 3) outlinedText(ctx, THEME.ending.next, W / 2, 290, 30, '#fff');
       if (g.campaign) drawCampaignEnding(ctx, g, g.time);
     }
-    if (g.paused) { ctx.fillStyle = 'rgba(10,0,30,0.6)'; ctx.fillRect(0, 0, W, H); outlinedText(ctx, 'PAUSA', W / 2, H / 2, 100, '#fff'); }
+    if (g.paused) { ctx.fillStyle = 'rgba(10,0,30,0.6)'; ctx.fillRect(0, 0, W, H); outlinedText(ctx, translate('ui.pause'), W / 2, H / 2, 100, '#fff'); }
     drawVignette(ctx);
     fx.drawFlash(ctx, W, H);
     if (g.trans) {
