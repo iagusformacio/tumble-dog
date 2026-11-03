@@ -20,7 +20,7 @@ Homenaje a **Tumblepop** (Data East, 1991): plataformas de pantalla fija donde a
 - Sprites del tebeo procesados (recorte del verde, sin halo, escalas coherentes) en `assets/sprites/` con `tools/prepare_assets.py`.
 - «Juice»: partículas, confeti, estrellas, ondas, temblor de cámara, hit-stop, squash & stretch, onomatopeyas (¡PAF!, ¡ZAS!, ¡CRAC!), rastro arcoíris de la bola, transición en iris, viñeta, luz nocturna.
 - Música y efectos sintetizados (WebAudio), melodías originales.
-- **Canción de «Dieta de Marcos» partida en 7 trozos** (título, 4 bares, jefes y ronda bonus) de ~20 s y ~230 KB: se descarga solo el trozo de la escena y se precarga el siguiente, así el título suena enseguida. El modo Arcade no usa trozos (sigue el sintetizador). Cortes, fundidos y ficheros: `tools/split_music.py`; figura: `docs/audio-trozos.png`.
+- **Canción de «Dieta de Marcos» partida en 7 trozos** (título, 4 bares, jefes y ronda bonus) de ~20 s y ~230 KB: se descarga solo el trozo de la escena y se precarga el siguiente, así el título suena enseguida. El modo Arcade no usa trozos (sigue el sintetizador). Cada bucle premonta un fundido cruzado de 0,3 s; cortes, mezcla y ficheros: `tools/split_music.py`; figura: `docs/audio-trozos.png`.
 - Controles: teclado, mando y táctil (botones en pantalla al tocar).
 
 ## Personajes (todos inventados)

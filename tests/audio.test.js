@@ -94,6 +94,12 @@ test('tools/split_music.py --check valida el troceado sin ffmpeg', () => {
   assert.match(out, /troceado correcto: 7 trozos/);
 });
 
+test('el fundido cruzado premontado mezcla principio y final de los siete bucles', () => {
+  // Con ffmpeg se contrastan los MP3 contra el original; sin él se omiten
+  // esas pruebas de forma de onda y se mantienen las validaciones de --check.
+  execFileSync('python3', ['tools/test_split_music.py'], { encoding: 'utf8' });
+});
+
 test('la campaña mapea cada fase a su trozo y la siguiente escena a precargar', () => {
   assert.equal(CAMPAIGN_STAGE_COUNT, BARS.length * 4);
   for (const [b, bar] of BARS.entries()) {
