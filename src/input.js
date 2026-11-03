@@ -6,14 +6,15 @@ const KEYS = {
   Space: 'jump', KeyC: 'jump',
   KeyX: 'suck', KeyJ: 'suck', ShiftLeft: 'suck',
   KeyZ: 'shoot', KeyK: 'shoot', ControlLeft: 'shoot',
-  Enter: 'start', Escape: 'pause', KeyP: 'pause', KeyM: 'mute',
+  Enter: 'start', Escape: 'pause', KeyP: 'pause', KeyM: 'mute', KeyL: 'language',
 };
-const ACTIONS = ['left', 'right', 'up', 'down', 'jump', 'suck', 'shoot', 'start', 'pause', 'mute'];
+const ACTIONS = ['left', 'right', 'up', 'down', 'jump', 'suck', 'shoot', 'start', 'pause', 'mute', 'language'];
 const DEAD_ZONE = 0.15;
 const STICK_SMOOTHING = 0.35;
 
 import { THEME } from './themes/tumbledog.js';
 import { skin } from './skin.js';
+import { t, onLanguageChange } from './i18n/index.js';
 
 export function createInput(win = globalThis.window) {
   const keys = new Set();
@@ -26,6 +27,8 @@ export function createInput(win = globalThis.window) {
   let pad = null;
   let clearTouch = () => {};
   let updateStick = () => {};
+  let refreshTouchTexts = () => {};
+  let touchTextKey = '';
   for (const a of ACTIONS) { held[a] = false; pressed[a] = false; }
 
   if (win && win.addEventListener) {
@@ -37,6 +40,7 @@ export function createInput(win = globalThis.window) {
     win.addEventListener('keyup', (e) => { const a = KEYS[e.code]; if (a) { keys.delete(a); e.preventDefault(); } });
     win.addEventListener('blur', () => { keys.clear(); latched.clear(); clearTouch(); });
     win.addEventListener('pointerdown', (e) => {
+      if (e.target?.closest?.('#language-selector')) return;
       anyPressed = true;
       if (e.pointerType === 'touch' && !usingTouch) { usingTouch = true; buildTouch(win.document); }
     });
@@ -44,17 +48,31 @@ export function createInput(win = globalThis.window) {
 
   function buildTouch(doc) {
     if (!doc || doc.getElementById('touchpad')) return;
-    const tl = skin.touch || THEME.touch;
+    const tl = () => skin.touch || THEME.touch;
     const root = doc.createElement('div');
     root.id = 'touchpad';
-    root.innerHTML = `<div class="orientation-hint">GIRA EL MÓVIL PARA JUGAR</div>
-      <div class="stick" role="group" aria-label="Movimiento y salto"><div class="stick-knob"></div></div>
-      <div class="levers"><button type="button" class="lever suck" aria-label="${tl.suck}"><span>${tl.suck}</span></button>
-      <button type="button" class="lever shoot" aria-label="${tl.shoot}"><span>${tl.shoot}</span></button></div>`;
+    root.innerHTML = `<div class="orientation-hint">${t('input.rotate')}</div>
+      <div class="stick" role="group" aria-label="${t('input.movement')}"><div class="stick-knob"></div></div>
+      <div class="levers"><button type="button" class="lever suck" aria-label="${tl().suck}"><span>${tl().suck}</span></button>
+      <button type="button" class="lever shoot" aria-label="${tl().shoot}"><span>${tl().shoot}</span></button></div>`;
     doc.body.appendChild(root);
+    const refreshTexts = () => {
+      const key = `${tl().suck}|${tl().shoot}`;
+      if (key === touchTextKey) return;
+      touchTextKey = key;
+      root.querySelector('.orientation-hint').textContent = t('input.rotate');
+      root.querySelector('.stick').setAttribute('aria-label', t('input.movement'));
+      for (const button of buttons) {
+        const action = button.classList.contains('suck') ? 'suck' : 'shoot';
+        button.setAttribute('aria-label', tl()[action]); button.querySelector('span').textContent = tl()[action];
+      }
+    };
     const stick = root.querySelector('.stick');
     const knob = root.querySelector('.stick-knob');
     const buttons = [...root.querySelectorAll('.lever')];
+    refreshTouchTexts = refreshTexts;
+    onLanguageChange(() => { touchTextKey = ''; refreshTexts(); });
+    refreshTexts();
     let stickId = null, targetX = 0, targetY = 0, x = 0, y = 0;
     const owners = new Map();
     const directions = ['left', 'right', 'up', 'down', 'jump'];
@@ -127,6 +145,7 @@ export function createInput(win = globalThis.window) {
 
   function update() {
     updateStick();
+    refreshTouchTexts(); // el tema puede cambiar después de crear los controles
     const p = readPad();
     for (const a of ACTIONS) {
       const now = keys.has(a) || latched.has(a) || touch.has(a) || !!p[a];

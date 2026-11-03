@@ -66,7 +66,7 @@ export function createFx() {
     },
     trail(x, y, r, h) { add({ k: 'trail', x, y, r, h, life: 0.28, vx: 0, vy: 0, g: 0, drag: 0 }); },
     text(x, y, str, o = {}) {
-      texts.push({ x, y, str, t: 0, life: o.life ?? 1.0, size: o.size ?? 34, color: o.color ?? '#fff', stroke: o.stroke ?? '#1a1030', vy: o.vy ?? -70, burst: !!o.burst, hue: o.hue ?? rand(0, 360), rot: o.rot ?? rand(-0.18, 0.18) });
+      texts.push({ x, y, str, key: o.key, params: o.params, t: 0, life: o.life ?? 1.0, size: o.size ?? 34, color: o.color ?? '#fff', stroke: o.stroke ?? '#1a1030', vy: o.vy ?? -70, burst: !!o.burst, hue: o.hue ?? rand(0, 360), rot: o.rot ?? rand(-0.18, 0.18) });
     },
     message(x, y, key, o = {}) { api.text(x, y, translate(key, o.params), { ...o, key }); },
     word(x, y, size = 46) {
@@ -146,9 +146,12 @@ export function createFx() {
           const sz = spriteSize(t.sprite);
           drawSprite(ctx, t.sprite, 0, t.size * 0.55, { s: (t.size * 2.1) / (sz.h || 1) });
         } else {
-          ctx.font = `${t.size}px ${FONT}`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-          ctx.lineJoin = 'round'; ctx.lineWidth = Math.max(4, t.size * 0.18); ctx.strokeStyle = t.stroke;
+          ctx.font = `${t.size}px ${FONT}`;
           const str = t.key ? translate(t.key, t.params) : t.str;
+          const width = ctx.measureText(str).width;
+          if (width > 1200) ctx.font = `${t.size * 1200 / width}px ${FONT}`;
+          ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+          ctx.lineJoin = 'round'; ctx.lineWidth = Math.max(4, t.size * 0.18); ctx.strokeStyle = t.stroke;
           ctx.strokeText(str, 0, 0); ctx.fillStyle = t.color; ctx.fillText(str, 0, 0);
         }
         ctx.restore();
@@ -186,8 +189,12 @@ export function burst(ctx, rx, ry, hue, t = 0) {
   ctx.fill(); ctx.stroke();
 }
 
-export function outlinedText(ctx, str, x, y, size, fill = '#fff', stroke = '#1a1030', align = 'center') {
-  ctx.font = `${size}px ${FONT}`; ctx.textAlign = align; ctx.textBaseline = 'middle';
+export function outlinedText(ctx, str, x, y, size, fill = '#fff', stroke = '#1a1030', align = 'center', maxWidth = Infinity) {
+  ctx.font = `${size}px ${FONT}`;
+  // Ajuste óptico: el valenciano puede ser más largo; se reduce el cuerpo, no se
+  // deforman las letras ni se invade la columna vecina. Mínimo legible: 12 px.
+  const width = ctx.measureText(str).width;
+  if (width > maxWidth) ctx.font = `${Math.max(12, size * maxWidth / width)}px ${FONT}`; ctx.textAlign = align; ctx.textBaseline = 'middle';
   ctx.lineJoin = 'round'; ctx.lineWidth = Math.max(4, size * 0.2); ctx.strokeStyle = stroke;
   ctx.strokeText(str, x, y); ctx.fillStyle = fill; ctx.fillText(str, x, y);
 }

@@ -103,7 +103,7 @@ export function createBarMechanic(stage, rng = Math.random) {
       }
       if (s.slipT <= 0) {
         s.slipT = 0.8;
-        h.fx.text(p.x + p.w / 2, p.y - 20, t(st.kind === 'lento' ? 'mechanic.slow' : 'mechanic.slip'), { size: 26, color: '#fff35c', life: 0.6 });
+        h.fx.text(p.x + p.w / 2, p.y - 20, translate(st.kind === 'lento' ? 'mechanic.slow' : 'mechanic.slip'), { size: 26, color: '#fff35c', life: 0.6 });
         h.audio.sfx('land');
       }
     }
@@ -113,7 +113,7 @@ export function createBarMechanic(stage, rng = Math.random) {
     const prize = PICK(PRIZES);
     const p = h.g.player;
     s.prizes++;
-    h.fx.text(b.x, b.y - 46, t(prize.labelKey), { size: 40, burst: true, color: prize.good ? '#7dff8a' : '#ff6b6b', life: 1.2 });
+    h.fx.text(b.x, b.y - 46, translate(prize.labelKey), { size: 40, burst: true, color: prize.good ? '#7dff8a' : '#ff6b6b', life: 1.2 });
     h.fx.spark(b.x, b.y, 18, { hue: prize.good ? 120 : 10 });
     h.fx.confetti(b.x, b.y, prize.good ? 16 : 6, 0.6);
     h.audio.sfx(prize.good ? 'coin' : 'hurry');
@@ -138,7 +138,7 @@ export function createBarMechanic(stage, rng = Math.random) {
     if (s.ballT <= 0 && s.balls.length < 2) {
       s.ballT = R(5.5, 8.5);
       s.balls.push({ x: R(180, W - 180), y: 90, vx: R(-70, 70), vy: 0, r: 24, t: 0, life: 16, dead: false });
-      h.fx.text(W / 2, 150, t('mechanic.sorteo'), { size: 36, color: '#4dd2ff', life: 1 });
+      h.fx.text(W / 2, 150, translate('mechanic.sorteo'), { size: 36, color: '#4dd2ff', life: 1 });
       h.audio.sfx('letter');
     }
     for (const b of s.balls) {
@@ -172,7 +172,7 @@ export function createBarMechanic(stage, rng = Math.random) {
       if (t.x < -80 || t.x > W + 80 || t.t > 12) t.dead = true;
       if (!t.dead && p.alive && Math.abs(p.x + p.w / 2 - t.x) < p.w / 2 + t.r && Math.abs(p.y + p.h / 2 - t.y) < p.h / 2 + t.r) {
         t.dead = true;
-        h.fx.text(t.x, t.y - 30, t('mechanic.tray'), { size: 40, burst: true, color: '#fff35c' });
+        h.fx.text(t.x, t.y - 30, translate('mechanic.tray'), { size: 40, burst: true, color: '#fff35c' });
         h.fx.shake(0.3);
         h.hurt();
       }

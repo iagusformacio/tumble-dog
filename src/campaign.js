@@ -334,11 +334,11 @@ export function drawCampaignHud(ctx, g) {
   const bar = BARS[barOfStage(i)];
   const round = roundOfStage(i) + 1;
   panel(ctx, W / 2 - 262, 4, 524, 62, '#140a32', bar.color, 14);
-  outlinedText(ctx, t('campaign.place', bar), W / 2, 25, 24, '#ffffff');
+  outlinedText(ctx, t('campaign.place', bar), W / 2, 25, 24, '#ffffff', INK, 'center', 490);
   outlinedText(ctx, t(round === ROUNDS_PER_BAR ? 'campaign.bossRound' : 'campaign.roundOf', { round }), W / 2, 52, 20, bar.color);
   // Franja inferior: tapa las letras del tema clásico y muestra la mecánica del bar.
   panel(ctx, W / 2 - 350, 662, 700, 52, '#140a32', bar.color, 14);
-  outlinedText(ctx, bar.mechanicLabel, W / 2, 688, 26, '#ffffff');
+  outlinedText(ctx, bar.mechanicLabel, W / 2, 688, 26, '#ffffff', INK, 'center', 660);
 }
 
 export function drawRoute(ctx, g, time) {
@@ -348,8 +348,8 @@ export function drawRoute(ctx, g, time) {
   // Sol/neón de fondo, sin personajes.
   ctx.fillStyle = 'rgba(255,190,80,0.16)';
   ctx.beginPath(); ctx.arc(1080, 130, 150, 0, Math.PI * 2); ctx.fill();
-  outlinedText(ctx, t('campaign.route'), W / 2, 78, 76, '#ffe14d');
-  outlinedText(ctx, t('campaign.summary', { game: t(CAMPAIGN_TITLE_KEY) }), W / 2, 138, 26, '#ffffff');
+  outlinedText(ctx, t('campaign.route'), W / 2, 78, 76, '#ffe14d', INK, 'center', 1100);
+  outlinedText(ctx, t('campaign.summary', { game: t(CAMPAIGN_TITLE_KEY) }), W / 2, 138, 26, '#ffffff', INK, 'center', 1100);
 
   const xs = [172, 470, 800, 1112];
   const ys = [400, 330, 412, 336];
@@ -400,14 +400,14 @@ export function drawRoute(ctx, g, time) {
 
   const next = clamp(g.routeNext || 0, 0, CAMPAIGN_STAGE_COUNT - 1);
   const bar = BARS[barOfStage(next)];
-  outlinedText(ctx, t('campaign.next', { place: t('campaign.place', bar), round: CAMPAIGN_STAGES[next].shortName }), W / 2, 545, 34, '#ffffff');
+  outlinedText(ctx, t('campaign.next', { place: t('campaign.place', bar), round: CAMPAIGN_STAGES[next].shortName }), W / 2, 545, 34, '#ffffff', INK, 'center', 1140);
   outlinedText(ctx, bar.mechanicLabel, W / 2, 586, 24, bar.color);
-  if (Math.floor(time * 2) % 2 === 0) outlinedText(ctx, t('campaign.enter'), W / 2, 646, 40, '#fff35c');
+  if (Math.floor(time * 2) % 2 === 0) outlinedText(ctx, t('campaign.enter'), W / 2, 646, 40, '#fff35c', INK, 'center', 1100);
   outlinedText(ctx, t(progress ? 'campaign.saved' : 'campaign.saving'), W / 2, 692, 18, '#ffb3d9');
 }
 
 export function drawCampaignEnding(ctx, g, time) {
   panel(ctx, W / 2 - 420, 92, 840, 96, 'rgba(20,10,50,0.86)', '#ffe14d', 18);
-  outlinedText(ctx, t('campaign.completed'), W / 2, 128, 56, '#fff35c');
+  outlinedText(ctx, t('campaign.completed'), W / 2, 128, 56, '#fff35c', INK, 'center', 800);
   outlinedText(ctx, t('campaign.finalScore', { score: g.score }), W / 2, 168, 28, '#ffffff');
 }

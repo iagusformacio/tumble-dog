@@ -46,7 +46,7 @@ export function createGame({ input, audio, themeId = DEFAULT_THEME_ID }) {
       bossShots: THEME.bossShots || null,
     });
     setEnemyTypes(THEME.enemyTypes);
-    setBossNames(THEME.id === 'marcos' ? { tertuliano: 'theme.marcos.bossNames.tertuliano', lider: 'theme.marcos.bossNames.lider' } : null);
+    setBossNames(THEME.bossNameKeys || null);
     bg.setImageBackgrounds(THEME.backgrounds || null);
     audio.setSongs(THEME.SONGS || null, THEME.audio || null, { volume: THEME.audioVolume, rate: THEME.audioRate });
     setWords(THEME.onomatopeyasKeys, THEME.onomatopeyaSprites || null);
@@ -498,7 +498,9 @@ export function createGame({ input, audio, themeId = DEFAULT_THEME_ID }) {
         else if (input.pressed.right) { g.gameSel = (g.gameSel + 1) % nTemas; }
         if (input.pressed.left || input.pressed.right) {
           const selT = listThemes()[g.gameSel];
-          audio.setSongs(selT.theme.SONGS || null, selT.theme.audio || null, { volume: selT.theme.audioVolume, rate: selT.theme.audioRate });
+          // La ficha del título previsualiza el juego elegido: logo, subtítulo,
+          // controles y fondo cambian juntos (antes solo cambiaba el nombre).
+          switchTheme(selT.id, true);
           if (g.titleMusic) audio.music('title');
         }
         if ((input.pressed.jump || input.pressed.start || input.pressed.shoot || (any && input.touch)) && g.stateT > 0.6 && !g.trans) {
@@ -624,8 +626,8 @@ export function createGame({ input, audio, themeId = DEFAULT_THEME_ID }) {
     const s = easeOutBack(clamp(k, 0, 1));
     ctx.save(); ctx.translate(W / 2, 300); ctx.scale(s, s); ctx.rotate(-0.04);
     burst(ctx, 420, 120, hue, g.time);
-    outlinedText(ctx, title, 0, -14, 84, '#ffffff');
-    if (sub) outlinedText(ctx, sub, 0, 58, 34, '#fff35c');
+    outlinedText(ctx, title, 0, -14, 84, '#ffffff', '#1a1030', 'center', 800);
+    if (sub) outlinedText(ctx, sub, 0, 58, 34, '#fff35c', '#1a1030', 'center', 800);
     ctx.restore();
   }
 
@@ -664,24 +666,24 @@ export function createGame({ input, audio, themeId = DEFAULT_THEME_ID }) {
     const ySel = hasLogo ? 362 : 300;
     const yStart = hasLogo ? 404 : 360;
     const yBox = hasLogo ? 442 : 410;
-    outlinedText(ctx, THEME.tagline, W / 2, yTag, 32, '#ffffff');
+    outlinedText(ctx, THEME.tagline, W / 2, yTag, 32, '#ffffff', '#1a1030', 'center', 1000);
     const temas = listThemes();
     const nTemas = temas.length;
     const sel = temas[g.gameSel];
     const selX = W / 2;
     // Con un solo tema el selector solo añadiría ruido: se anuncia el juego y ya.
     if (nTemas > 1) {
-      outlinedText(ctx, translate('ui.game'), selX - 140, ySel, 24, '#ffb3d9');
+      outlinedText(ctx, translate('ui.game'), selX - 250, ySel, 22, '#ffb3d9');
       const arrows = (g.gameSel === 0 ? '' : '← ') + sel.theme.title + (g.gameSel === nTemas - 1 ? '' : ' →');
-      outlinedText(ctx, arrows, selX, ySel, 40, '#ffe14d');
+      outlinedText(ctx, arrows, selX + 30, ySel, 38, '#ffe14d', '#1a1030', 'center', 520);
     } else {
       outlinedText(ctx, sel.theme.title, selX, ySel, 40, '#ffe14d');
     }
-    if (Math.floor(t * 2) % 2 === 0) outlinedText(ctx, input.touch ? THEME.titleScreen.startTouch : THEME.titleScreen.startKeyboard, W / 2, yStart, 46, '#fff35c');
-    ctx.save(); ctx.fillStyle = 'rgba(20,10,50,0.7)'; ctx.beginPath(); ctx.roundRect(W / 2 - 290, yBox, 580, 120, 18); ctx.fill(); ctx.strokeStyle = '#ffe14d'; ctx.lineWidth = 3; ctx.stroke(); ctx.restore();
-    outlinedText(ctx, `${THEME.titleScreen.move}    ${THEME.titleScreen.jump}    ${THEME.titleScreen.down}`, W / 2, yBox + 30, 22, '#fff');
-    outlinedText(ctx, `${THEME.titleScreen.suck}    ${THEME.titleScreen.shoot}`, W / 2, yBox + 64, 22, '#9fe7ff');
-    outlinedText(ctx, `${THEME.titleScreen.lettersHint}   ·   ${THEME.titleScreen.mute}   ·   ${THEME.titleScreen.pause}`, W / 2, yBox + 98, 18, '#ffb3d9');
+    if (Math.floor(t * 2) % 2 === 0) outlinedText(ctx, input.touch ? THEME.titleScreen.startTouch : THEME.titleScreen.startKeyboard, W / 2, yStart, 42, '#fff35c', '#1a1030', 'center', 1000);
+    ctx.save(); ctx.fillStyle = 'rgba(20,10,50,0.7)'; ctx.beginPath(); ctx.roundRect(W / 2 - 380, yBox, 760, 120, 18); ctx.fill(); ctx.strokeStyle = '#ffe14d'; ctx.lineWidth = 3; ctx.stroke(); ctx.restore();
+    ['move', 'jump', 'down'].forEach((key, i) => outlinedText(ctx, THEME.titleScreen[key], W / 2 + (i - 1) * 245, yBox + 27, 22, '#fff', '#1a1030', 'center', 225));
+    ['suck', 'shoot'].forEach((key, i) => outlinedText(ctx, THEME.titleScreen[key], W / 2 + (i ? 180 : -180), yBox + 61, 22, '#9fe7ff', '#1a1030', 'center', 340));
+    outlinedText(ctx, `${THEME.titleScreen.lettersHint}   ·   ${THEME.titleScreen.mute}   ·   ${THEME.titleScreen.pause}`, W / 2, yBox + 97, 18, '#ffb3d9', '#1a1030', 'center', 720);
     drawTitleBand(ctx);
     outlinedText(ctx, THEME.hud.record + ' ' + String(g.hi).padStart(7, '0'), W / 2, 578, 28, '#ffb3d9');
     outlinedText(ctx, THEME.titleScreen.parody, W / 2, 714, 16, 'rgba(255,255,255,0.7)');
@@ -747,9 +749,11 @@ export function createGame({ input, audio, themeId = DEFAULT_THEME_ID }) {
       ctx.fillStyle = 'rgba(10,0,30,0.4)'; ctx.fillRect(0, 0, W, H);
       if (hasSprite('presi-win')) drawSprite(ctx, 'presi-win', W / 2, FLOOR_Y, { s: 1.4, sy: 1 + Math.sin(g.time * 5) * 0.03 });
       else drawPlayerFallback(ctx, W / 2, FLOOR_Y, { s: 1.4, sy: 1 + Math.sin(g.time * 5) * 0.03 });
-      outlinedText(ctx, THEME.ending.completed, W / 2, 140, 76, hsl(g.time * 90, 95, 62));
-      outlinedText(ctx, THEME.ending.puntos + ' ' + g.score, W / 2, 220, 44, '#ffe14d');
-      if (g.stateT > 3) outlinedText(ctx, THEME.ending.next, W / 2, 290, 30, '#fff');
+      if (!g.campaign) {
+        outlinedText(ctx, THEME.ending.completed, W / 2, 140, 76, hsl(g.time * 90, 95, 62), '#1a1030', 'center', 1100);
+        outlinedText(ctx, THEME.ending.puntos + ' ' + g.score, W / 2, 220, 44, '#ffe14d');
+      }
+      if (g.stateT > 3) outlinedText(ctx, THEME.ending.next, W / 2, 290, 30, '#fff', '#1a1030', 'center', 1100);
       if (g.campaign) drawCampaignEnding(ctx, g, g.time);
     }
     if (g.paused) { ctx.fillStyle = 'rgba(10,0,30,0.6)'; ctx.fillRect(0, 0, W, H); outlinedText(ctx, translate('ui.pause'), W / 2, H / 2, 100, '#fff'); }

@@ -68,7 +68,7 @@ export function updateBoss(b, dt, ctx) {
 export function hitBoss(b, dmg, fx) {
   if (b.dying) return;
   b.hp -= dmg; b.flash = 1; b.hitT = 0.4;
-  fx.shake(0.5); fx.stop(0.08); fx.stars(b.x - 60, b.y - 140, 10); fx.text(b.x - 40, b.y - 260, pick(skin.hitWords || ['¡AY!', '¡OUCH!', '¡MI ESCAÑO!', '¡CENSURA!']), { size: 44, color: '#ffef5c' });
+  fx.shake(0.5); fx.stop(0.08); fx.stars(b.x - 60, b.y - 140, 10); fx.text(b.x - 40, b.y - 260, t(pick(skin.hitWords || [0, 1, 2, 3].map(i => `theme.tumbledog.bossHitWords.${i}`))), { size: 44, color: '#ffef5c' });
   if (b.hp <= 0) { b.hp = 0; b.dying = 0.001; fx.flash(0.9); fx.confetti(b.x, b.y - 120, 80, 1.6); }
 }
 

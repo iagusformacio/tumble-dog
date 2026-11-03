@@ -18,7 +18,7 @@ export function drawHud(ctx, g, time, theme = THEME) {
   for (let i = 0; i < Math.min(g.lives, 6); i++) drawSprite(ctx, 'ui-life', 214 + i * 38, 58, { s: 0.36, rot: Math.sin(time * 3 + i) * 0.08 });
   // Fase
   outlinedText(ctx, `${T.hud.fase} ${g.stageIndex + 1}${g.loop ? '·' + (g.loop + 1) : ''}`, W / 2, 20, 26, '#ffffff');
-  outlinedText(ctx, g.stage ? g.stage.name : '', W / 2, 46, 18, '#ffd23f');
+  outlinedText(ctx, g.stage ? g.stage.name : '', W / 2, 46, 18, '#ffd23f', '#1a1030', 'center', 440);
   // Tiempo
   if (g.state === 'play' && !g.stage.boss) {
     const k = clamp(g.stageT / T.stage.chaserAt, 0, 1);
@@ -28,7 +28,7 @@ export function drawHud(ctx, g, time, theme = THEME) {
     ctx.fillStyle = hurry ? (Math.floor(time * 8) % 2 ? '#ff3b3b' : '#ffd23f') : hsl(120 - k * 120, 85, 55);
     ctx.beginPath(); ctx.roundRect(x + 2, y + 2, (w - 4) * (1 - k), 12, 6); ctx.fill();
     ctx.strokeStyle = '#1a1030'; ctx.lineWidth = 3; ctx.beginPath(); ctx.roundRect(x, y, w, 16, 8); ctx.stroke();
-    outlinedText(ctx, hurry ? T.hud.datePrisa : (T.hud.tiempo || 'TIEMPO'), x + w / 2, 50, 18, hurry ? '#ff6b6b' : '#c8f7c5');
+    outlinedText(ctx, hurry ? T.hud.datePrisa : T.hud.tiempo, x + w / 2, 50, 18, hurry ? '#ff6b6b' : '#c8f7c5', '#1a1030', 'center', w);
   }
   // Poderes activos
   let px = W - 300;
@@ -41,7 +41,7 @@ export function drawHud(ctx, g, time, theme = THEME) {
   if (g.boss && !g.boss.dead) {
     // En campaña el cartel superior ocupa 66 px: dejar visible el nombre del jefe.
     const b = g.boss; const w = 520, x = W / 2 - w / 2, y = g.campaign ? 96 : 70;
-    outlinedText(ctx, b.name, W / 2, y + 2, 22, '#ff8fa3');
+    outlinedText(ctx, b.name, W / 2, y + 2, 22, '#ff8fa3', '#1a1030', 'center', w);
     ctx.fillStyle = 'rgba(0,0,0,0.55)'; ctx.beginPath(); ctx.roundRect(x, y + 16, w, 18, 9); ctx.fill();
     const bg = ctx.createLinearGradient(x, 0, x + w, 0); bg.addColorStop(0, '#ff3b5c'); bg.addColorStop(1, '#ffb627');
     ctx.fillStyle = bg; ctx.beginPath(); ctx.roundRect(x + 2, y + 18, (w - 4) * (b.hp / b.maxHp), 14, 7); ctx.fill();
