@@ -7,7 +7,7 @@ import { createPlayer, respawnPlayer, updatePlayer, drawPlayer, drawPlayerFallba
 import { createEnemy, updateEnemy, drawEnemy, killEnemy, updateShot, drawShot, drawEnemyFallback, setEnemyTypes, TYPE_KEYS } from './enemies.js';
 import { createBall, updateBall, drawBall } from './ball.js';
 import { createItem, updateItem, drawItem, randomItemKind, ITEM_KINDS, createLetter, updateLetter, drawLetter } from './items.js';
-import { createBoss, updateBoss, drawBoss, bossBox, hitBoss, createChaser, updateChaser, drawChaser, chaserHits, setBossNames } from './boss.js';
+import { createBoss, updateBoss, drawBoss, bossBox, hitBoss, createChaser, updateChaser, drawChaser, chaserHits, stunChaser, ballHitsChaser, setBossNames } from './boss.js';
 import { drawHud, drawVignette } from './hud.js';
 import { drawSprite, hasSprite, setSpriteMap } from './sprites.js';
 import { setSkin } from './skin.js';
@@ -59,7 +59,7 @@ export function createGame({ input, audio, themeId = DEFAULT_THEME_ID }) {
     gameSel: 0, modeSel: 0, campaign: false, routeBar: 0, routeNext: 0, mechanic: null, themeId: themeId,
     stageIndex: 0, loop: 0, stage: STAGES[0], plats: STAGES[0].plats, platLayer: null,
     player: createPlayer(), enemies: [], balls: [], shots: [], items: [], letterBubbles: [], letters: new Set(), letterPop: new Array(THEME.letters.word.length).fill(0),
-    boss: null, chaser: null, stageT: 0, hurried: false, freeze: 0, paused: false, bonusPending: false, trans: null, warnT: 0, tutorial: 0,
+    boss: null, chaser: null, chaserDue: CONFIG.chaser.arrival[themeId] ?? CONFIG.chaser.arrival.tumbledog, chaserWarned: false, stageT: 0, hurried: false, freeze: 0, paused: false, bonusPending: false, trans: null, warnT: 0, tutorial: 0,
     parade: TYPE_KEYS.map((k, i) => ({ type: k, x: -120 - i * 150 })),
   };
 
@@ -135,7 +135,8 @@ export function createGame({ input, audio, themeId = DEFAULT_THEME_ID }) {
     g.mechanic = mech ? mech.id : null;
     if (mech) mech.onStart(g);
     g.enemies = []; g.balls = []; g.shots = []; g.items = []; g.letterBubbles = []; g.boss = null; g.chaser = null;
-    g.stageT = 0; g.hurried = false; g.freeze = 0; fx.clear();
+    g.stageT = 0; g.hurried = false; g.freeze = 0;
+    g.chaserDue = CONFIG.chaser.arrival[g.themeId] ?? CONFIG.chaser.arrival.tumbledog; g.chaserWarned = false; fx.clear();
     const p = g.player; respawnPlayer(p); p.invul = 2.2; p.x = 120; p.y = FLOOR_Y - p.h; p.onGround = true;
     if (bonus) { g.state = 'bonus'; g.stateT = 0; audio.music(stageMusic(g.stageIndex, true)); return; }
     if (!g.stage.boss) {
@@ -311,10 +312,9 @@ export function createGame({ input, audio, themeId = DEFAULT_THEME_ID }) {
     g, fx, audio, input, addScore, hurt, gainLife,
     spawnFoe(type, x, y) { g.enemies.push(createEnemy(type, x, y, { enter: true, delay: 0.25, speedMul: 1 })); },
     spawnChaser() {
-      if (g.chaser) return;
-      g.chaser = createChaser();
-      fx.text(W / 2, 260, translate('ui.bill'), { size: 60, burst: true, life: 1.6, color: '#ff6b6b' });
-      fx.flash(0.4, '#ff3b5c'); audio.sfx('hurry');
+      // Un premio puede adelantar la llegada, pero nunca elimina el aviso.
+      if (g.chaser || g.stage.boss || g.state !== 'play') return;
+      g.chaserDue = Math.min(g.chaserDue, g.stageT + CONFIG.chaser.warning);
     },
     setPrisa() {
       if (g.hurried) return;
@@ -373,6 +373,10 @@ export function createGame({ input, audio, themeId = DEFAULT_THEME_ID }) {
         const cx = clamp(b.x, e.x, e.x + e.w), cy = clamp(b.y, e.y, e.y + e.h);
         if ((cx - b.x) ** 2 + (cy - b.y) ** 2 < b.r * b.r) killByBall(e, b);
       }
+      if (g.chaser && b.alive && !b.chaserHit && ballHitsChaser(g.chaser, b)) {
+        b.chaserHit = true; stunChaser(g.chaser);
+        fx.stars(g.chaser.x, g.chaser.y, 8); audio.sfx('bosshit');
+      }
       if (g.boss && !g.boss.dying && b.alive) {
         const bb = bossBox(g.boss);
         const cx = clamp(b.x, bb.x, bb.x + bb.w), cy = clamp(b.y, bb.y, bb.y + bb.h);
@@ -412,7 +416,7 @@ export function createGame({ input, audio, themeId = DEFAULT_THEME_ID }) {
         }
         for (const s of g.shots) if (p.alive && overlap(pb, { x: s.x - s.r, y: s.y - s.r, w: s.r * 2, h: s.r * 2 })) hurt();
         if (g.boss && !g.boss.dying && p.alive && overlap(pb, bossBox(g.boss))) hurt();
-        if (g.chaser && p.alive && chaserHits(g.chaser, p)) hurt();
+        if (g.chaser && !g.chaser.stun && p.alive && chaserHits(g.chaser, p)) hurt();
       }
     }
     // Prisa y perseguidor
@@ -422,7 +426,12 @@ export function createGame({ input, audio, themeId = DEFAULT_THEME_ID }) {
         fx.text(W / 2, 330, THEME.hud.datePrisa, { size: 80, burst: true, life: 1.6, color: '#ff6b6b' });
         for (const e of g.enemies) e.angry = true;
       }
-      if (!g.chaser && g.stageT > THEME.stage.chaserAt) { g.chaser = createChaser(); fx.text(W / 2, 260, THEME.juice.chaser, { size: 70, burst: true, life: 2, color: '#c9a3ff' }); fx.flash(0.5, '#6a2cff'); }
+      if (!g.chaser && !g.chaserWarned && g.stageT >= g.chaserDue - CONFIG.chaser.warning) {
+        g.chaserWarned = true; audio.sfx('warn');
+      }
+      if (!g.chaser && g.stageT >= g.chaserDue) {
+        g.chaser = createChaser(); audio.sfx('hurry'); fx.flash(0.5, '#6a2cff');
+      }
     }
     if (g.chaser) updateChaser(g.chaser, dt, p);
     // Muerte y reaparición

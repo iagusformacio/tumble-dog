@@ -65,3 +65,5 @@
 - MÚSICA (2026-11-02, #101): la canción de Dieta de Marcos va partida en 7 trozos por escena (`assets/audio/dieta-de-marcos/`, ~20 s y ~230 KB cada uno, generados con `tools/split_music.py`, fundido de 0,3 s y corte en valle de volumen); el motor carga solo el trozo de la escena (`<audio preload=none>` en caché) y precarga la siguiente, el título suena en <1 s tras el gesto y el modo Arcade no descarga ninguno. El original completo se conserva sin usarse.
 
 - B94 (#94): giro inmediato al aspirar con enemigos retenidos, burbujas reflejadas y regresiones en suelo/aire y navegador para ambos juegos.
+
+- #111: aviso y contrajuego para el perseguidor en ambos temas; la bola lo aturde, se limita su velocidad y no aparece en jefes.

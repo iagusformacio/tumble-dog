@@ -28,7 +28,12 @@ export const CONFIG = {
     chain: [100, 200, 400, 800, 1600, 3200, 6400],
   },
   enemy: { w: 48, h: 86, scale: 0.47, stunAfterBeam: 0.7 },
-  stage: { hurryAt: 32, chaserAt: 42, clearDelay: 1.6, introTime: 1.8 },
+  stage: { hurryAt: 32, clearDelay: 1.6, introTime: 1.8 },
+  chaser: {
+    arrival: { tumbledog: 42, marcos: 40 }, warning: 10, stun: 4,
+    maxSpeed: 360 * 0.7, startSpeed: 110, acceleration: 6, steering: 1.5,
+    introTime: 4,
+  },
   bossHp: { tertuliano: 10, lider: 14 },
   laTacaBoss: {
     scale: 0.9, attackPoseTime: 0.48,

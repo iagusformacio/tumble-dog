@@ -5,6 +5,7 @@ Fotogramas **reales del motor** (Canvas 2D), tema «Dieta de Marcos»:
 | Fichero | Qué se ve |
 |---|---|
 | `giro-tumbledog.jpg` / `giro-marcos.jpg` | B94 (#94): captura real en Chromium de cada juego girando a la izquierda sin soltar aspirar, con un enemigo capturado; reproducible con `npx playwright test tests/giro.spec.js`. |
+| `perseguidor-*-aviso.jpg` / `perseguidor-*-canvas.jpg` | #111: aviso y perseguidor aturdido en ambos temas; escenas controladas capturadas con Chromium en `tests/chaser.spec.js`. |
 | `titulo-marcos.png` | Pantalla de título del tema: logo, Marcos con el bocadillo, selector de juego y de modo (Campaña / Arcade). |
 | `ruta-campana.png` | Mapa de la campaña: los 4 bares con sus mecánicas y el progreso guardado. |
 | `bar-la-taca-ronda1.png` | Juego: Bar La Taca, ronda 1 de 3, con la barra de máscaras, un carajillo y Marcos. |
