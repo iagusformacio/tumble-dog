@@ -4,10 +4,11 @@ import { rand, pick } from './util.js';
 import { drawSprite, hasSprite } from './sprites.js';
 import { skin } from './skin.js';
 import { makeShot } from './enemies.js';
+import { t } from './i18n/index.js';
 
 const BOSS = {
-  tertuliano: { name: 'EL GRAN TERTULIANO', shot: 'bulo', minions: ['portavoz', 'influencer', 'tertuliano'] },
-  lider: { name: 'EL LÍDER ETERNO', shot: 'shout', minions: ['diputado', 'baron', 'asesor', 'activista'] },
+  tertuliano: { nameKey: 'theme.tumbledog.bossNames.tertuliano', shot: 'bulo', minions: ['portavoz', 'influencer', 'tertuliano'] },
+  lider: { nameKey: 'theme.tumbledog.bossNames.lider', shot: 'shout', minions: ['diputado', 'baron', 'asesor', 'activista'] },
 };
 
 // Nombres de jefe propios del tema activo (game.js los fija con setBossNames).
@@ -23,8 +24,10 @@ export function setBossNames(m) { BOSS_NAMES = m || null; }
 export function createBoss(type, hpMap, art) {
   const d = BOSS[type] || BOSS.tertuliano;
   const hp = (hpMap || CONFIG.bossHp)[type] ?? 10;
-  const name = (BOSS_NAMES && BOSS_NAMES[type]) || d.name;
-  return { type, art: art || type, ...d, name, maxHp: hp, hp, x: 1040, y: FLOOR_Y, vy: 0, t: 0, flash: 0, throwT: 2.5, shotT: 1.6, hopT: 4, dying: 0, dead: false, hitT: 0, attackT: 0, shotCount: 0, s: 0.6 };
+  const b = { type, art: art || type, ...d, maxHp: hp, hp, x: 1040, y: FLOOR_Y, vy: 0, t: 0, flash: 0, throwT: 2.5, shotT: 1.6, hopT: 4, dying: 0, dead: false, hitT: 0, attackT: 0, shotCount: 0, s: 0.6 };
+  b.nameKey = (BOSS_NAMES && BOSS_NAMES[type]) || d.nameKey;
+  Object.defineProperty(b, 'name', { enumerable: true, get: () => t(b.nameKey) });
+  return b;
 }
 
 export function bossBox(b) { return { x: b.x - 110, y: b.y - 280, w: 220, h: 280 }; }
@@ -65,7 +68,7 @@ export function updateBoss(b, dt, ctx) {
 export function hitBoss(b, dmg, fx) {
   if (b.dying) return;
   b.hp -= dmg; b.flash = 1; b.hitT = 0.4;
-  fx.shake(0.5); fx.stop(0.08); fx.stars(b.x - 60, b.y - 140, 10); fx.text(b.x - 40, b.y - 260, pick(skin.hitWords || ['¡AY!', '¡OUCH!', '¡MI ESCAÑO!', '¡CENSURA!']), { size: 44, color: '#ffef5c' });
+  fx.shake(0.5); fx.stop(0.08); fx.stars(b.x - 60, b.y - 140, 10); fx.text(b.x - 40, b.y - 260, t(pick(skin.hitWords || [0, 1, 2, 3].map(i => `theme.tumbledog.bossHitWords.${i}`))), { size: 44, color: '#ffef5c' });
   if (b.hp <= 0) { b.hp = 0; b.dying = 0.001; fx.flash(0.9); fx.confetti(b.x, b.y - 120, 80, 1.6); }
 }
 
@@ -132,7 +135,7 @@ function drawCamarero(ctx, c, time) {
   ctx.save(); ctx.translate(40, 6 + Math.sin(time * 4) * 3); ctx.rotate(0.12);
   ctx.fillStyle = '#8a8f9e'; ctx.beginPath(); ctx.ellipse(0, 0, 30, 7, 0, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
   ctx.fillStyle = '#fff'; ctx.fillRect(-12, -16, 24, 15); ctx.strokeRect(-12, -16, 24, 15);
-  ctx.fillStyle = '#c62f4a'; ctx.font = '9px Impact, sans-serif'; ctx.textAlign = 'center'; ctx.fillText('CUENTA', 0, -5);
+  ctx.fillStyle = '#c62f4a'; ctx.font = '9px Impact, sans-serif'; ctx.textAlign = 'center'; ctx.fillText(t('chaser.bill'), 0, -5);
   ctx.restore();
   ctx.restore();
 }
@@ -177,6 +180,6 @@ export function drawChaser(ctx, c, time) {
   ctx.fillStyle = '#16102b'; ctx.fillRect(-28, -66, 56, 8); ctx.strokeRect(-28, -66, 56, 8); ctx.fillRect(-18, -92, 36, 28); ctx.strokeRect(-18, -92, 36, 28);
   ctx.fillStyle = '#8a5a2b'; ctx.save(); ctx.translate(38, 10 + Math.sin(time * 4) * 4); ctx.rotate(0.2);
   ctx.fillRect(-14, -10, 30, 24); ctx.strokeRect(-14, -10, 30, 24); ctx.strokeRect(-4, -16, 10, 6);
-  ctx.fillStyle = '#fff'; ctx.font = '12px Impact, sans-serif'; ctx.textAlign = 'center'; ctx.fillText('IRPF', 1, 6); ctx.restore();
+  ctx.fillStyle = '#fff'; ctx.font = '12px Impact, sans-serif'; ctx.textAlign = 'center'; ctx.fillText(t('chaser.tax'), 1, 6); ctx.restore();
   ctx.restore();
 }

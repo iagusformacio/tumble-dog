@@ -5,6 +5,7 @@ import { rand, pick, clamp } from './util.js';
 import { drawSprite, hasSprite } from './sprites.js';
 import { skin } from './skin.js';
 import { FONT } from './fx.js';
+import { t } from './i18n/index.js';
 import { enemyTypes, enemyColors } from './themes/tumbledog.js';
 
 export const TYPES = enemyTypes;
@@ -247,7 +248,7 @@ export function drawShot(ctx, s, time) {
     ctx.fillStyle = '#fff'; ctx.strokeStyle = '#1a1030'; ctx.lineWidth = 3;
     ctx.beginPath(); ctx.ellipse(0, 0, 34, 20, 0, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
     ctx.beginPath(); ctx.moveTo(-8, 16); ctx.lineTo(-18, 30); ctx.lineTo(4, 18); ctx.fill(); ctx.stroke();
-    ctx.fillStyle = '#e0242c'; ctx.font = `20px ${FONT}`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('BULO', 0, 1);
+    ctx.fillStyle = '#e0242c'; ctx.font = `20px ${FONT}`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(t('shot.bulo'), 0, 1);
   } else if (s.kind === 'flash') {
     ctx.globalCompositeOperation = 'lighter';
     const g = ctx.createRadialGradient(0, 0, 2, 0, 0, 40); g.addColorStop(0, 'rgba(255,120,200,0.9)'); g.addColorStop(1, 'rgba(255,60,160,0)');

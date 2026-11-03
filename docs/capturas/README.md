@@ -10,6 +10,11 @@ Fotogramas **reales del motor** (Canvas 2D), tema «Dieta de Marcos»:
 | `escenarios-bar-la-taca.png` | Escenarios E1 (#96): Bar La Taca con la barra larga, taburetes, mesas con mantel, estantería de botellas y barriles como plataformas. |
 | `escenarios-mercado.png` | Escenarios E1 (#96): Bar Los Concursos, el mercado con mostradores, cajas de cerveza y toldos como plataformas. |
 | `escenarios-terraza.png` | Escenarios E1 (#96): Bar Pols, la terraza con toldo, mesas y sillas; abajo, la barra deslizante de la mecánica. |
+| `i18n-es.jpg` | I18N (#102): título de Tumble Dog en castellano, con selector de idioma. |
+| `i18n-val.jpg` | I18N (#102): título de Tumble Dog en valencià. |
+| `i18n-marcos-val.jpg` | I18N (#102): título de Dieta de Marcos en valencià («Marcos, el golut»). |
+| `i18n-movil-val.jpg` | I18N (#102): título en móvil horizontal 800×360, selector táctil dentro del canvas. |
+| `i18n-juego-val.jpg` | I18N (#102): campaña en valencià, HUD y palancas EMPASSA/VOMITA. |
 | `escenarios-bar-del-jefe.png` | Escenarios E1 (#96): Bar del Jefe de noche, con neveras, estantería, barriles y mostradores de mercado mezclados. |
 
 ## Cómo se regeneran
@@ -32,3 +37,7 @@ desde disco. Después se recomprimen a PNG8 ≤ 200 KB (Pillow) antes de commite
 
 Las capturas se hacen en local; el smoke test de Playwright sigue siendo el que
 valida el juego en el CI.
+
+## I18N (#102)
+
+Las capturas `i18n-*.jpg` son fotogramas reales de Chromium (Playwright, `tests/i18n.spec.js`), recomprimidos a JPEG ≤ 200 KB. El texto incrustado en imágenes (logo, onomatopeyas y carteles de `assets/`) sigue en castellano: traducirlo es trabajo de arte futuro, no de código.

@@ -5,6 +5,7 @@
 //   4 · Bar del Jefe: todo mezclado, de noche y con más enemigos.
 // Dibujo con arte del tema (A9) o respaldo de tebeo por código.
 import { W, FLOOR_Y, CONFIG } from './config.js';
+import { t as translate } from './i18n/index.js';
 import { FONT, outlinedText } from './fx.js';
 import { TYPE_KEYS } from './enemies.js';
 import { drawSprite, hasSprite, spriteSize } from './sprites.js';
@@ -14,14 +15,14 @@ import { clamp } from './util.js';
 const INK = '#1a1030';
 const STAIN_COLORS = ['#8b4a20', '#c95b2c', '#e0a118', '#3bceac'];
 const PRIZES = Object.freeze([
-  { id: 'puntos', label: '¡PREMIO!', good: true },
-  { id: 'turbo', label: '¡CAFÉ SOLO!', good: true },
-  { id: 'antiacido', label: '¡ANTIÁCIDO!', good: true },
-  { id: 'vida', label: '¡1UP!', good: true },
-  { id: 'digestion', label: '¡DIGESTIÓN!', good: true },
-  { id: 'secuaces', label: '¡OTRA RONDA!', good: false },
-  { id: 'prisa', label: '¡LA CUENTA!', good: false },
-  { id: 'cuenta', label: '¡EL CAMARERO!', good: false },
+  { id: 'puntos', labelKey: 'prize.puntos', good: true },
+  { id: 'turbo', labelKey: 'prize.turbo', good: true },
+  { id: 'antiacido', labelKey: 'prize.antiacido', good: true },
+  { id: 'vida', labelKey: 'prize.vida', good: true },
+  { id: 'digestion', labelKey: 'prize.digestion', good: true },
+  { id: 'secuaces', labelKey: 'prize.secuaces', good: false },
+  { id: 'prisa', labelKey: 'prize.prisa', good: false },
+  { id: 'cuenta', labelKey: 'prize.cuenta', good: false },
 ]);
 
 /** Crea la mecánica de una fase. Devuelve null si la fase no es de campaña. */
@@ -102,7 +103,7 @@ export function createBarMechanic(stage, rng = Math.random) {
       }
       if (s.slipT <= 0) {
         s.slipT = 0.8;
-        h.fx.text(p.x + p.w / 2, p.y - 20, st.kind === 'lento' ? '¡PLAF!' : '¡GLUP!', { size: 26, color: '#fff35c', life: 0.6 });
+        h.fx.text(p.x + p.w / 2, p.y - 20, translate(st.kind === 'lento' ? 'mechanic.slow' : 'mechanic.slip'), { size: 26, color: '#fff35c', life: 0.6 });
         h.audio.sfx('land');
       }
     }
@@ -112,7 +113,7 @@ export function createBarMechanic(stage, rng = Math.random) {
     const prize = PICK(PRIZES);
     const p = h.g.player;
     s.prizes++;
-    h.fx.text(b.x, b.y - 46, prize.label, { size: 40, burst: true, color: prize.good ? '#7dff8a' : '#ff6b6b', life: 1.2 });
+    h.fx.text(b.x, b.y - 46, translate(prize.labelKey), { size: 40, burst: true, color: prize.good ? '#7dff8a' : '#ff6b6b', life: 1.2 });
     h.fx.spark(b.x, b.y, 18, { hue: prize.good ? 120 : 10 });
     h.fx.confetti(b.x, b.y, prize.good ? 16 : 6, 0.6);
     h.audio.sfx(prize.good ? 'coin' : 'hurry');
@@ -137,7 +138,7 @@ export function createBarMechanic(stage, rng = Math.random) {
     if (s.ballT <= 0 && s.balls.length < 2) {
       s.ballT = R(5.5, 8.5);
       s.balls.push({ x: R(180, W - 180), y: 90, vx: R(-70, 70), vy: 0, r: 24, t: 0, life: 16, dead: false });
-      h.fx.text(W / 2, 150, '¡SORTEO!', { size: 36, color: '#4dd2ff', life: 1 });
+      h.fx.text(W / 2, 150, translate('mechanic.sorteo'), { size: 36, color: '#4dd2ff', life: 1 });
       h.audio.sfx('letter');
     }
     for (const b of s.balls) {
@@ -171,7 +172,7 @@ export function createBarMechanic(stage, rng = Math.random) {
       if (t.x < -80 || t.x > W + 80 || t.t > 12) t.dead = true;
       if (!t.dead && p.alive && Math.abs(p.x + p.w / 2 - t.x) < p.w / 2 + t.r && Math.abs(p.y + p.h / 2 - t.y) < p.h / 2 + t.r) {
         t.dead = true;
-        h.fx.text(t.x, t.y - 30, '¡PLAF!', { size: 40, burst: true, color: '#fff35c' });
+        h.fx.text(t.x, t.y - 30, translate('mechanic.tray'), { size: 40, burst: true, color: '#fff35c' });
         h.fx.shake(0.3);
         h.hurt();
       }
