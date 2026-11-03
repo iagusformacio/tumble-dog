@@ -14,6 +14,7 @@ export const CONFIG = {
     w: 46, h: 92, scale: 0.5,
     runSpeed: 360, accelGround: 4200, accelAir: 2600, friction: 5200,
     jumpSpeed: 1080, jumpCut: 0.45, coyote: 0.1, buffer: 0.12,
+    turnSquash: 0.86, // aplaste al girar (juicio visual del cambio de lado, B94)
     lives: 3, invulnerable: 2.4, respawnDelay: 1.1,
     extraLifeEvery: 40000,
   },
