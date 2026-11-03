@@ -21,7 +21,7 @@ export const THEME = {
   // Vida de los jefes por tipo.
   bossHp: { tertuliano: 10, lider: 14 },
   // Temporizado de fase.
-  stage: { hurryAt: 32, chaserAt: 42, clearDelay: 1.6, introTime: 1.8 },
+  stage: { hurryAt: 32, clearDelay: 1.6, introTime: 1.8 },
   // Mensajes al recibir daño.
   // Onomatopeyas del juego.
   // Grupos que completa localizeTheme(); sin ellos, aspirar/premios lanzaban

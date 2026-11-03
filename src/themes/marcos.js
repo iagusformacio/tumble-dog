@@ -41,7 +41,7 @@ export const THEME = {
   bossHp: { tertuliano: 10, lider: 14 },
   bossNames: { tertuliano: null, lider: null },
   bossNameKeys: { tertuliano: 'theme.marcos.bossNames.tertuliano', lider: 'theme.marcos.bossNames.lider' },
-  stage: { hurryAt: 30, chaserAt: 40, clearDelay: 1.6, introTime: 1.8 },
+  stage: { hurryAt: 30, clearDelay: 1.6, introTime: 1.8 },
   startTheme: 'barra', bonusTheme: 'mercado', nightTheme: 'noche',
   backgrounds: { noche: 'fondo-noche-jefe', barra: 'fondo-barra', terraza: 'fondo-terraza', mercado: 'fondo-mercado', playa: 'fondo-playa' },
   // Música (issues #95 y #101): la canción aportada por la persona ES la música

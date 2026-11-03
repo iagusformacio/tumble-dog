@@ -3,6 +3,7 @@ import { FONT, outlinedText } from './fx.js';
 import { drawSprite } from './sprites.js';
 import { hsl, clamp } from './util.js';
 import { THEME } from './themes/tumbledog.js';
+import { t } from './i18n/index.js';
 
 export function drawHud(ctx, g, time, theme = THEME) {
   const T = theme;
@@ -21,7 +22,7 @@ export function drawHud(ctx, g, time, theme = THEME) {
   outlinedText(ctx, g.stage ? g.stage.name : '', W / 2, 46, 18, '#ffd23f', '#1a1030', 'center', 440);
   // Tiempo
   if (g.state === 'play' && !g.stage.boss) {
-    const k = clamp(g.stageT / T.stage.chaserAt, 0, 1);
+    const k = clamp(g.stageT / g.chaserDue, 0, 1);
     const x = W - 250, y = 22, w = 220;
     ctx.fillStyle = 'rgba(0,0,0,0.45)'; ctx.beginPath(); ctx.roundRect(x, y, w, 16, 8); ctx.fill();
     const hurry = g.stageT > T.stage.hurryAt;
@@ -29,6 +30,18 @@ export function drawHud(ctx, g, time, theme = THEME) {
     ctx.beginPath(); ctx.roundRect(x + 2, y + 2, (w - 4) * (1 - k), 12, 6); ctx.fill();
     ctx.strokeStyle = '#1a1030'; ctx.lineWidth = 3; ctx.beginPath(); ctx.roundRect(x, y, w, 16, 8); ctx.stroke();
     outlinedText(ctx, hurry ? T.hud.datePrisa : T.hud.tiempo, x + w / 2, 50, 18, hurry ? '#ff6b6b' : '#c8f7c5', '#1a1030', 'center', w);
+  }
+  // Cuenta atrás y presentación persistentes: no dependen de partículas ni del idioma inicial.
+  if (g.state === 'play' && !g.stage.boss) {
+    const themeId = g.themeId === 'marcos' ? 'marcos' : 'tumbledog';
+    if (!g.chaser && g.stageT >= g.chaserDue - CONFIG.chaser.warning) {
+      const seconds = Math.max(0, Math.ceil(g.chaserDue - g.stageT));
+      outlinedText(ctx, t(`chaser.${themeId}.warning`, { seconds }), W / 2, 100, 30, '#ffe14d', '#1a1030', 'center', 720);
+    } else if (g.chaser && g.chaser.t < CONFIG.chaser.introTime) {
+      outlinedText(ctx, t(`chaser.${themeId}.name`), W / 2, 100, 30, '#ffe14d', '#1a1030', 'center', 800);
+      outlinedText(ctx, t(`chaser.${themeId}.arrival`), W / 2, 134, 24, '#ffffff', '#1a1030', 'center', 800);
+      outlinedText(ctx, t('chaser.counter'), W / 2, 162, 22, '#9fe7ff', '#1a1030', 'center', 800);
+    }
   }
   // Poderes activos
   let px = W - 300;

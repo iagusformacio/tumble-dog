@@ -105,7 +105,7 @@ export function drawBoss(ctx, b, time) {
 
 // ---- Camarero con la cuenta (perseguidor del tema «marcos», provisional por código)
 function drawCamarero(ctx, c, time) {
-  ctx.save(); ctx.translate(c.x, c.y); ctx.globalAlpha = c.alpha * 0.95;
+  ctx.save(); ctx.translate(c.x, c.y); ctx.globalAlpha *= c.alpha * 0.85 * (c.stun > 0 && Math.floor(time * 8) % 2 === 0 ? 0.4 : 1);
   if (c.vx < 0) ctx.scale(-1, 1);
   ctx.globalCompositeOperation = 'lighter';
   const g = ctx.createRadialGradient(0, 0, 10, 0, 0, 110); g.addColorStop(0, 'rgba(255,170,60,0.5)'); g.addColorStop(1, 'rgba(160,80,0,0)');
@@ -141,23 +141,32 @@ function drawCamarero(ctx, c, time) {
 }
 
 // ---- Inspector de Hacienda (invencible, aparece si tardas demasiado)
-export function createChaser() { return { x: W / 2, y: -80, t: 0, vx: 0, vy: 0, alpha: 0 }; }
+export function createChaser() { return { x: W / 2, y: -80, t: 0, vx: 0, vy: 0, alpha: 0, stun: 0 }; }
+
+export function stunChaser(c) { c.stun = CONFIG.chaser.stun; c.vx = 0; c.vy = 0; }
+
+export function ballHitsChaser(c, b) {
+  const x = Math.max(c.x - 44, Math.min(b.x, c.x + 44));
+  const y = Math.max(c.y - 56, Math.min(b.y, c.y + 56));
+  return (b.x - x) ** 2 + (b.y - y) ** 2 < b.r ** 2;
+}
 
 export function updateChaser(c, dt, player) {
   c.t += dt; c.alpha = Math.min(1, c.alpha + dt);
-  const sp = 110 + Math.min(160, c.t * 6);
+  if (c.stun > 0) { c.stun = Math.max(0, c.stun - dt); return; }
+  const sp = Math.min(CONFIG.chaser.maxSpeed, CONFIG.chaser.startSpeed + c.t * CONFIG.chaser.acceleration);
   const dx = player.x + player.w / 2 - c.x, dy = player.y + 30 - c.y;
   const d = Math.hypot(dx, dy) || 1;
-  c.vx += ((dx / d) * sp - c.vx) * Math.min(1, dt * 1.5);
-  c.vy += ((dy / d) * sp - c.vy) * Math.min(1, dt * 1.5);
-  c.x += c.vx * dt; c.y += c.vy * dt + Math.sin(c.t * 3) * 20 * dt;
+  c.vx += ((dx / d) * sp - c.vx) * Math.min(1, dt * CONFIG.chaser.steering);
+  c.vy += ((dy / d) * sp - c.vy) * Math.min(1, dt * CONFIG.chaser.steering);
+  c.x += c.vx * dt; c.y += c.vy * dt;
 }
 
 export function chaserHits(c, p) { return Math.abs(c.x - (p.x + p.w / 2)) < 44 && Math.abs(c.y - (p.y + 40)) < 56; }
 
 export function drawChaser(ctx, c, time) {
   if (skin.chaser === 'camarero') { drawCamarero(ctx, c, time); return; }
-  ctx.save(); ctx.translate(c.x, c.y); ctx.globalAlpha = c.alpha * 0.92;
+  ctx.save(); ctx.translate(c.x, c.y); ctx.globalAlpha *= c.alpha * 0.85 * (c.stun > 0 && Math.floor(time * 8) % 2 === 0 ? 0.4 : 1);
   if (c.vx < 0) ctx.scale(-1, 1);
   ctx.globalCompositeOperation = 'lighter';
   const g = ctx.createRadialGradient(0, 0, 10, 0, 0, 110); g.addColorStop(0, 'rgba(140,60,255,0.5)'); g.addColorStop(1, 'rgba(80,0,160,0)');
