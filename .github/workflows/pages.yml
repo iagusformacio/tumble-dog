@@ -23,6 +23,9 @@ jobs:
           mkdir _site
           cp index.html _site/
           cp -r src assets _site/
+          # PWA (issue #105): el manifiesto y el worker van en la raíz del despliegue,
+          # que es también el ámbito que registra el service worker.
+          cp manifest.webmanifest sw.js _site/
           touch _site/.nojekyll
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3

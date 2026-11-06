@@ -19,6 +19,8 @@ Fotogramas **reales del motor** (Canvas 2D), tema «Dieta de Marcos»:
 | `i18n-movil-val.jpg` | I18N (#102): título en móvil horizontal 800×360, selector táctil dentro del canvas. |
 | `i18n-juego-val.jpg` | I18N (#102): campaña en valencià, HUD y palancas EMPASSA/VOMITA. |
 | `escenarios-bar-del-jefe.png` | Escenarios E1 (#96): Bar del Jefe de noche, con neveras, estantería, barriles y mostradores de mercado mezclados. |
+| `movil-horizontal.png` | #105: teléfono (844×390, táctil) con el juego a pantalla completa: 16:9 centrado sobre el degradado, joystick y palancas en la zona segura y el botón «SALIR DE PANTALLA COMPLETA» del título. |
+| `movil-vertical.png` | #105: el mismo teléfono en vertical — aviso «GIRA EL MÓVIL» con el icono animado, que tapa y pausa el juego. |
 | `b94-giro-derecha.png` | B94 (#94): Marcos con X pulsado y 3 esmorzars tragados mirando a la **derecha**: cono y boquilla a la derecha, mochila a la espalda (izquierda).
 | `b94-giro-izquierda.png` | B94 (#94): el mismo instante tras pulsar izquierda **sin soltar X**: sprite, cono, boquilla y mochila volteados en un frame (par antes/después con la anterior). |
 
@@ -40,6 +42,10 @@ node tools/shot.mjs --tema marcos --modo juego --arcade --fase 7 --salida /tmp/a
 `tools/shot.mjs` sustituye el `document`/`Image` del navegador por los equivalentes
 de Node y usa `__setImagesForNode()` de `src/sprites.js` para servir los sprites
 desde disco. Después se recomprimen a PNG8 ≤ 200 KB (Pillow) antes de commitear.
+
+Las dos capturas de **móvil** no salen de `tools/shot.mjs` (necesitan CSS y
+emulación táctil): las hace Playwright en `tests/mobile.spec.js` y se copian de
+`test-results/*/canvas-movil-*.png` a esta carpeta, reducidas a PNG8 ≤ 200 KB.
 
 Las capturas se hacen en local; el smoke test de Playwright sigue siendo el que
 valida el juego en el CI.

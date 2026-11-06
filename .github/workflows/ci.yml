@@ -26,7 +26,10 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: captura-canvas
-          path: test-results/**/canvas.png
+          # canvas.png (smoke) + capturas de móvil horizontal/vertical (issue #105)
+          path: |
+            test-results/**/canvas.png
+            test-results/**/canvas-movil-*.png
           retention-days: 7
           if-no-files-found: warn
       - name: Subir informe de Playwright si algo falla
